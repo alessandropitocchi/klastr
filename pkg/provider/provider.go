@@ -1,0 +1,21 @@
+package provider
+
+import "github.com/alepito/deploy-cluster/pkg/config"
+
+// Provider defines the interface for cluster providers (kind, k3d, etc.)
+type Provider interface {
+	// Name returns the provider name
+	Name() string
+
+	// Create creates a new cluster with the given configuration
+	Create(cfg *config.Config) error
+
+	// Delete removes the cluster
+	Delete(name string) error
+
+	// GetKubeconfig returns the kubeconfig for the cluster
+	GetKubeconfig(name string) (string, error)
+
+	// Exists checks if a cluster with the given name exists
+	Exists(name string) (bool, error)
+}

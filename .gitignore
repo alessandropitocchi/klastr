@@ -1,0 +1,4 @@
+deploy-cluster
+go.mod
+go.sum
+known_hosts
