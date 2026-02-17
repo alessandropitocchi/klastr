@@ -1,0 +1,158 @@
+package kind
+
+import (
+	"testing"
+
+	"github.com/alepito/deploy-cluster/pkg/config"
+)
+
+func TestGenerateKindConfig_SingleNode(t *testing.T) {
+	p := New()
+	cfg := &config.Config{
+		Name: "test",
+		Cluster: config.ClusterConfig{
+			ControlPlanes: 1,
+			Workers:       0,
+		},
+	}
+
+	kindCfg := p.generateKindConfig(cfg)
+
+	if kindCfg.Kind != "Cluster" {
+		t.Errorf("Kind = %q, want %q", kindCfg.Kind, "Cluster")
+	}
+	if kindCfg.APIVersion != "kind.x-k8s.io/v1alpha4" {
+		t.Errorf("APIVersion = %q, want %q", kindCfg.APIVersion, "kind.x-k8s.io/v1alpha4")
+	}
+	if len(kindCfg.Nodes) != 1 {
+		t.Fatalf("Nodes count = %d, want 1", len(kindCfg.Nodes))
+	}
+	if kindCfg.Nodes[0].Role != "control-plane" {
+		t.Errorf("Node[0].Role = %q, want %q", kindCfg.Nodes[0].Role, "control-plane")
+	}
+	if kindCfg.Nodes[0].Image != "" {
+		t.Errorf("Node[0].Image = %q, want empty (no version specified)", kindCfg.Nodes[0].Image)
+	}
+}
+
+func TestGenerateKindConfig_MultiNode(t *testing.T) {
+	p := New()
+	cfg := &config.Config{
+		Name: "multi",
+		Cluster: config.ClusterConfig{
+			ControlPlanes: 3,
+			Workers:       5,
+		},
+	}
+
+	kindCfg := p.generateKindConfig(cfg)
+
+	if len(kindCfg.Nodes) != 8 {
+		t.Fatalf("Nodes count = %d, want 8 (3 cp + 5 workers)", len(kindCfg.Nodes))
+	}
+
+	cpCount := 0
+	workerCount := 0
+	for _, node := range kindCfg.Nodes {
+		switch node.Role {
+		case "control-plane":
+			cpCount++
+		case "worker":
+			workerCount++
+		default:
+			t.Errorf("unexpected role: %q", node.Role)
+		}
+	}
+
+	if cpCount != 3 {
+		t.Errorf("control-plane count = %d, want 3", cpCount)
+	}
+	if workerCount != 5 {
+		t.Errorf("worker count = %d, want 5", workerCount)
+	}
+}
+
+func TestGenerateKindConfig_WithVersion(t *testing.T) {
+	p := New()
+	cfg := &config.Config{
+		Name: "versioned",
+		Cluster: config.ClusterConfig{
+			ControlPlanes: 1,
+			Workers:       2,
+			Version:       "v1.31.0",
+		},
+	}
+
+	kindCfg := p.generateKindConfig(cfg)
+
+	expectedImage := "kindest/node:v1.31.0"
+	for i, node := range kindCfg.Nodes {
+		if node.Image != expectedImage {
+			t.Errorf("Node[%d].Image = %q, want %q", i, node.Image, expectedImage)
+		}
+	}
+}
+
+func TestGenerateKindConfig_NoVersion(t *testing.T) {
+	p := New()
+	cfg := &config.Config{
+		Name: "no-version",
+		Cluster: config.ClusterConfig{
+			ControlPlanes: 1,
+			Workers:       1,
+		},
+	}
+
+	kindCfg := p.generateKindConfig(cfg)
+
+	for i, node := range kindCfg.Nodes {
+		if node.Image != "" {
+			t.Errorf("Node[%d].Image = %q, want empty", i, node.Image)
+		}
+	}
+}
+
+func TestGenerateKindConfig_ZeroWorkers(t *testing.T) {
+	p := New()
+	cfg := &config.Config{
+		Name: "cp-only",
+		Cluster: config.ClusterConfig{
+			ControlPlanes: 1,
+			Workers:       0,
+		},
+	}
+
+	kindCfg := p.generateKindConfig(cfg)
+
+	if len(kindCfg.Nodes) != 1 {
+		t.Fatalf("Nodes count = %d, want 1", len(kindCfg.Nodes))
+	}
+	if kindCfg.Nodes[0].Role != "control-plane" {
+		t.Errorf("Node[0].Role = %q, want %q", kindCfg.Nodes[0].Role, "control-plane")
+	}
+}
+
+func TestGenerateKindConfig_NodeOrder(t *testing.T) {
+	p := New()
+	cfg := &config.Config{
+		Name: "order",
+		Cluster: config.ClusterConfig{
+			ControlPlanes: 2,
+			Workers:       3,
+		},
+	}
+
+	kindCfg := p.generateKindConfig(cfg)
+
+	// Control planes should come first
+	for i := 0; i < 2; i++ {
+		if kindCfg.Nodes[i].Role != "control-plane" {
+			t.Errorf("Node[%d].Role = %q, want control-plane (should come first)", i, kindCfg.Nodes[i].Role)
+		}
+	}
+	for i := 2; i < 5; i++ {
+		if kindCfg.Nodes[i].Role != "worker" {
+			t.Errorf("Node[%d].Role = %q, want worker", i, kindCfg.Nodes[i].Role)
+		}
+	}
+}

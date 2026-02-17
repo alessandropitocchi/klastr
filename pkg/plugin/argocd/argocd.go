@@ -150,17 +150,7 @@ func (p *Plugin) Install(cfg *config.ArgoCDConfig, kubecontext string) error {
 
 func (p *Plugin) addRepository(repo config.ArgoCDRepoConfig, kubecontext string, namespace string) error {
 	// Set defaults
-	name := repo.Name
-	if name == "" {
-		// Generate name from URL
-		name = strings.ReplaceAll(repo.URL, "https://", "")
-		name = strings.ReplaceAll(name, "http://", "")
-		name = strings.ReplaceAll(name, "git@", "")
-		name = strings.ReplaceAll(name, ":", "-")
-		name = strings.ReplaceAll(name, "/", "-")
-		name = strings.ReplaceAll(name, ".", "-")
-		name = strings.TrimSuffix(name, "-git")
-	}
+	name := p.repoName(repo)
 
 	repoType := repo.Type
 	if repoType == "" {
