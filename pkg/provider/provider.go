@@ -18,4 +18,7 @@ type Provider interface {
 
 	// Exists checks if a cluster with the given name exists
 	Exists(name string) (bool, error)
+
+	// KubeContext returns the kubectl context name for the cluster
+	KubeContext(name string) string
 }

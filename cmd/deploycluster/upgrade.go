@@ -5,6 +5,7 @@ import (
 
 	"github.com/alepito/deploy-cluster/pkg/config"
 	"github.com/alepito/deploy-cluster/pkg/plugin/argocd"
+	"github.com/alepito/deploy-cluster/pkg/plugin/ingress"
 	"github.com/alepito/deploy-cluster/pkg/plugin/storage"
 	"github.com/spf13/cobra"
 )
@@ -50,7 +51,7 @@ compared to the current state. The cluster is not recreated, but plugins
 		fmt.Printf("Upgrading cluster '%s'...\n\n", cfg.Name)
 
 		// Determine kubecontext based on provider
-		kubecontext := fmt.Sprintf("kind-%s", cfg.Name)
+		kubecontext := provider.KubeContext(cfg.Name)
 
 		// Upgrade storage plugin
 		if cfg.Plugins.Storage != nil && cfg.Plugins.Storage.Enabled {
@@ -68,6 +69,26 @@ compared to the current state. The cluster is not recreated, but plugins
 				fmt.Println("[storage] Storage already installed, re-applying...")
 				if err := storagePlugin.Install(cfg.Plugins.Storage, kubecontext); err != nil {
 					return fmt.Errorf("failed to upgrade storage: %w", err)
+				}
+			}
+		}
+
+		// Upgrade ingress plugin
+		if cfg.Plugins.Ingress != nil && cfg.Plugins.Ingress.Enabled {
+			ingressPlugin := ingress.New()
+			installed, err := ingressPlugin.IsInstalled(kubecontext)
+			if err != nil {
+				return fmt.Errorf("failed to check ingress status: %w", err)
+			}
+			if !installed {
+				fmt.Println("[ingress] Ingress not installed, performing installation...")
+				if err := ingressPlugin.Install(cfg.Plugins.Ingress, kubecontext); err != nil {
+					return fmt.Errorf("failed to install ingress: %w", err)
+				}
+			} else {
+				fmt.Println("[ingress] Ingress already installed, re-applying...")
+				if err := ingressPlugin.Install(cfg.Plugins.Ingress, kubecontext); err != nil {
+					return fmt.Errorf("failed to upgrade ingress: %w", err)
 				}
 			}
 		}

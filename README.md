@@ -2,7 +2,7 @@
 
 CLI tool per il deploy di cluster Kubernetes locali con supporto plugin.
 
-Permette di creare cluster con topologia configurabile (numero di worker e control plane) e installare automaticamente componenti come ArgoCD, definendo repository e applicazioni direttamente da configurazione.
+Permette di creare cluster con topologia configurabile (numero di worker e control plane) e installare automaticamente componenti come storage (local-path-provisioner), ingress (nginx) e ArgoCD, definendo repository e applicazioni direttamente da configurazione.
 
 ## Requisiti
 
@@ -79,6 +79,9 @@ plugins:
   storage:
     enabled: true
     type: local-path
+  ingress:
+    enabled: true
+    type: nginx
   argocd:
     enabled: true
     namespace: argocd
@@ -142,6 +145,32 @@ kubectl get storageclass
 # NAME                   PROVISIONER             RECLAIMPOLICY   DEFAULT
 # local-path (default)   rancher.io/local-path   Delete          Yes
 ```
+
+### Plugin Ingress
+
+Installa un ingress controller nel cluster per esporre i servizi via HTTP/HTTPS.
+
+| Campo | Tipo | Default | Descrizione |
+|-------|------|---------|-------------|
+| `enabled` | bool | `false` | Abilita l'installazione dell'ingress controller |
+| `type` | string | **obbligatorio** | Tipo di controller: `nginx` |
+
+#### Tipi supportati
+
+| Tipo | Descrizione |
+|------|-------------|
+| `nginx` | [ingress-nginx](https://kubernetes.github.io/ingress-nginx/) — controller ufficiale NGINX per Kubernetes. Usa il manifest specifico per kind che configura automaticamente i port mapping. |
+
+#### Esempio
+
+```yaml
+plugins:
+  ingress:
+    enabled: true
+    type: nginx
+```
+
+Dopo l'installazione, le risorse `Ingress` con `ingressClassName: nginx` vengono gestite automaticamente.
 
 ### Plugin ArgoCD
 
@@ -265,6 +294,7 @@ Il comando `upgrade` aggiorna un cluster esistente applicando solo le differenze
 
 Cosa fa:
 - **Storage**: se abilitato e non installato, lo installa. Se già presente, ri-applica il manifest (idempotente).
+- **Ingress**: se abilitato e non installato, lo installa. Se già presente, ri-applica il manifest (idempotente).
 - **ArgoCD**: se abilitato e non installato, fa un'installazione completa. Se già presente:
   - Ri-applica il manifest ArgoCD (aggiorna la versione se cambiata)
   - **Repos**: applica quelli desiderati (idempotente), elimina quelli non più in configurazione
@@ -287,6 +317,8 @@ Provider: kind
 Status: running
 
 Storage: installed (local-path-provisioner)
+
+Ingress: installed (nginx)
 
 ArgoCD: installed (namespace: argocd)
   Repos (1):

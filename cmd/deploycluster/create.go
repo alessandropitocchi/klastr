@@ -5,6 +5,7 @@ import (
 
 	"github.com/alepito/deploy-cluster/pkg/config"
 	"github.com/alepito/deploy-cluster/pkg/plugin/argocd"
+	"github.com/alepito/deploy-cluster/pkg/plugin/ingress"
 	"github.com/alepito/deploy-cluster/pkg/plugin/storage"
 	"github.com/spf13/cobra"
 )
@@ -53,7 +54,7 @@ var createCmd = &cobra.Command{
 		}
 
 		// Determine kubecontext based on provider
-		kubecontext := fmt.Sprintf("kind-%s", cfg.Name)
+		kubecontext := provider.KubeContext(cfg.Name)
 
 		// Install plugins
 		if cfg.Plugins.Storage != nil && cfg.Plugins.Storage.Enabled {
@@ -61,6 +62,14 @@ var createCmd = &cobra.Command{
 			storagePlugin := storage.New()
 			if err := storagePlugin.Install(cfg.Plugins.Storage, kubecontext); err != nil {
 				return fmt.Errorf("failed to install storage: %w", err)
+			}
+		}
+
+		if cfg.Plugins.Ingress != nil && cfg.Plugins.Ingress.Enabled {
+			fmt.Println()
+			ingressPlugin := ingress.New()
+			if err := ingressPlugin.Install(cfg.Plugins.Ingress, kubecontext); err != nil {
+				return fmt.Errorf("failed to install ingress: %w", err)
 			}
 		}
 

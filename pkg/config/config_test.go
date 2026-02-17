@@ -425,3 +425,117 @@ cluster:
 		t.Error("Load() should fail when validation fails")
 	}
 }
+
+func TestValidate_StorageMissingType(t *testing.T) {
+	cfg := &Config{
+		Name:     "test",
+		Provider: ProviderConfig{Type: "kind"},
+		Cluster:  ClusterConfig{ControlPlanes: 1, Workers: 0},
+		Plugins: PluginsConfig{
+			Storage: &StorageConfig{Enabled: true},
+		},
+	}
+	err := cfg.Validate()
+	if err == nil {
+		t.Fatal("Validate() should fail for storage without type")
+	}
+	if !strings.Contains(err.Error(), "storage.type is required") {
+		t.Errorf("error should mention storage.type, got: %v", err)
+	}
+}
+
+func TestValidate_StorageInvalidType(t *testing.T) {
+	cfg := &Config{
+		Name:     "test",
+		Provider: ProviderConfig{Type: "kind"},
+		Cluster:  ClusterConfig{ControlPlanes: 1, Workers: 0},
+		Plugins: PluginsConfig{
+			Storage: &StorageConfig{Enabled: true, Type: "openebs"},
+		},
+	}
+	err := cfg.Validate()
+	if err == nil {
+		t.Fatal("Validate() should fail for unsupported storage type")
+	}
+	if !strings.Contains(err.Error(), "not supported") {
+		t.Errorf("error should mention not supported, got: %v", err)
+	}
+}
+
+func TestValidate_StorageValidType(t *testing.T) {
+	cfg := &Config{
+		Name:     "test",
+		Provider: ProviderConfig{Type: "kind"},
+		Cluster:  ClusterConfig{ControlPlanes: 1, Workers: 0},
+		Plugins: PluginsConfig{
+			Storage: &StorageConfig{Enabled: true, Type: "local-path"},
+		},
+	}
+	if err := cfg.Validate(); err != nil {
+		t.Errorf("Validate() should pass for valid storage type, got: %v", err)
+	}
+}
+
+func TestValidate_DisabledStorageSkipsValidation(t *testing.T) {
+	cfg := &Config{
+		Name:     "test",
+		Provider: ProviderConfig{Type: "kind"},
+		Cluster:  ClusterConfig{ControlPlanes: 1, Workers: 0},
+		Plugins: PluginsConfig{
+			Storage: &StorageConfig{Enabled: false, Type: "invalid"},
+		},
+	}
+	if err := cfg.Validate(); err != nil {
+		t.Errorf("Validate() should skip storage validation when disabled, got: %v", err)
+	}
+}
+
+func TestValidate_IngressMissingType(t *testing.T) {
+	cfg := &Config{
+		Name:     "test",
+		Provider: ProviderConfig{Type: "kind"},
+		Cluster:  ClusterConfig{ControlPlanes: 1, Workers: 0},
+		Plugins: PluginsConfig{
+			Ingress: &IngressConfig{Enabled: true},
+		},
+	}
+	err := cfg.Validate()
+	if err == nil {
+		t.Fatal("Validate() should fail for ingress without type")
+	}
+	if !strings.Contains(err.Error(), "ingress.type is required") {
+		t.Errorf("error should mention ingress.type, got: %v", err)
+	}
+}
+
+func TestValidate_IngressInvalidType(t *testing.T) {
+	cfg := &Config{
+		Name:     "test",
+		Provider: ProviderConfig{Type: "kind"},
+		Cluster:  ClusterConfig{ControlPlanes: 1, Workers: 0},
+		Plugins: PluginsConfig{
+			Ingress: &IngressConfig{Enabled: true, Type: "traefik"},
+		},
+	}
+	err := cfg.Validate()
+	if err == nil {
+		t.Fatal("Validate() should fail for unsupported ingress type")
+	}
+	if !strings.Contains(err.Error(), "not supported") {
+		t.Errorf("error should mention not supported, got: %v", err)
+	}
+}
+
+func TestValidate_IngressValidType(t *testing.T) {
+	cfg := &Config{
+		Name:     "test",
+		Provider: ProviderConfig{Type: "kind"},
+		Cluster:  ClusterConfig{ControlPlanes: 1, Workers: 0},
+		Plugins: PluginsConfig{
+			Ingress: &IngressConfig{Enabled: true, Type: "nginx"},
+		},
+	}
+	if err := cfg.Validate(); err != nil {
+		t.Errorf("Validate() should pass for valid ingress type, got: %v", err)
+	}
+}

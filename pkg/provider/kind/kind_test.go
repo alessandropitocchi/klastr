@@ -156,3 +156,12 @@ func TestGenerateKindConfig_NodeOrder(t *testing.T) {
 		}
 	}
 }
+
+func TestKubeContext(t *testing.T) {
+	p := New()
+	got := p.KubeContext("my-cluster")
+	want := "kind-my-cluster"
+	if got != want {
+		t.Errorf("KubeContext() = %q, want %q", got, want)
+	}
+}

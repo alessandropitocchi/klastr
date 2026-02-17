@@ -8,7 +8,11 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var validProviders = []string{"kind"}
+var (
+	validProviders    = []string{"kind"}
+	validStorageTypes = []string{"local-path"}
+	validIngressTypes = []string{"nginx"}
+)
 
 type Config struct {
 	Name     string          `yaml:"name"`
@@ -92,6 +96,10 @@ func DefaultConfig() *Config {
 				Enabled: false,
 				Type:    "local-path",
 			},
+			Ingress: &IngressConfig{
+				Enabled: false,
+				Type:    "nginx",
+			},
 			ArgoCD: &ArgoCDConfig{
 				Enabled:   false,
 				Namespace: "argocd",
@@ -152,6 +160,40 @@ func (c *Config) Validate() error {
 
 	if c.Cluster.Workers < 0 {
 		errs = append(errs, "cluster.workers cannot be negative")
+	}
+
+	if stor := c.Plugins.Storage; stor != nil && stor.Enabled {
+		if stor.Type == "" {
+			errs = append(errs, "plugins.storage.type is required")
+		} else {
+			valid := false
+			for _, t := range validStorageTypes {
+				if stor.Type == t {
+					valid = true
+					break
+				}
+			}
+			if !valid {
+				errs = append(errs, fmt.Sprintf("plugins.storage.type %q is not supported (valid: %s)", stor.Type, strings.Join(validStorageTypes, ", ")))
+			}
+		}
+	}
+
+	if ing := c.Plugins.Ingress; ing != nil && ing.Enabled {
+		if ing.Type == "" {
+			errs = append(errs, "plugins.ingress.type is required")
+		} else {
+			valid := false
+			for _, t := range validIngressTypes {
+				if ing.Type == t {
+					valid = true
+					break
+				}
+			}
+			if !valid {
+				errs = append(errs, fmt.Sprintf("plugins.ingress.type %q is not supported (valid: %s)", ing.Type, strings.Join(validIngressTypes, ", ")))
+			}
+		}
 	}
 
 	if argo := c.Plugins.ArgoCD; argo != nil && argo.Enabled {

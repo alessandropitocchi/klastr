@@ -129,6 +129,10 @@ func (p *Provider) Exists(name string) (bool, error) {
 	return false, nil
 }
 
+func (p *Provider) KubeContext(name string) string {
+	return fmt.Sprintf("kind-%s", name)
+}
+
 func (p *Provider) generateKindConfig(cfg *config.Config) *KindConfig {
 	kindCfg := &KindConfig{
 		Kind:       "Cluster",

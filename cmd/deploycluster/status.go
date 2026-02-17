@@ -5,6 +5,7 @@ import (
 
 	"github.com/alepito/deploy-cluster/pkg/config"
 	"github.com/alepito/deploy-cluster/pkg/plugin/argocd"
+	"github.com/alepito/deploy-cluster/pkg/plugin/ingress"
 	"github.com/alepito/deploy-cluster/pkg/plugin/storage"
 	"github.com/spf13/cobra"
 )
@@ -43,7 +44,7 @@ var statusCmd = &cobra.Command{
 			return nil
 		}
 
-		kubecontext := fmt.Sprintf("kind-%s", cfg.Name)
+		kubecontext := provider.KubeContext(cfg.Name)
 
 		// Storage status
 		storagePlugin := storage.New()
@@ -55,6 +56,18 @@ var statusCmd = &cobra.Command{
 			fmt.Printf("\nStorage: installed (local-path-provisioner)\n")
 		} else {
 			fmt.Printf("\nStorage: not installed\n")
+		}
+
+		// Ingress status
+		ingressPlugin := ingress.New()
+		ingressPlugin.Verbose = false
+		ingressInstalled, err := ingressPlugin.IsInstalled(kubecontext)
+		if err != nil {
+			fmt.Printf("\nIngress: error checking (%v)\n", err)
+		} else if ingressInstalled {
+			fmt.Printf("\nIngress: installed (nginx)\n")
+		} else {
+			fmt.Printf("\nIngress: not installed\n")
 		}
 
 		// ArgoCD status
