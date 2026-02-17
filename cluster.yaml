@@ -18,6 +18,9 @@ plugins:
     monitoring:
         enabled: true
         type: prometheus
+        ingress:
+            enabled: true
+            host: grafana.localhost
     argocd:
         enabled: true
         namespace: argocd

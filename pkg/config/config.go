@@ -95,9 +95,15 @@ type CertManagerConfig struct {
 }
 
 type MonitoringConfig struct {
+	Enabled bool                    `yaml:"enabled"`
+	Type    string                  `yaml:"type"`              // prometheus
+	Version string                  `yaml:"version,omitempty"` // chart version (default: 72.6.2)
+	Ingress *MonitoringIngressConfig `yaml:"ingress,omitempty"` // Ingress for Grafana UI
+}
+
+type MonitoringIngressConfig struct {
 	Enabled bool   `yaml:"enabled"`
-	Type    string `yaml:"type"`              // prometheus
-	Version string `yaml:"version,omitempty"` // chart version (default: 72.6.2)
+	Host    string `yaml:"host"` // Hostname for Grafana (e.g. grafana.localhost)
 }
 
 // DefaultConfig returns a starter configuration
@@ -238,6 +244,11 @@ func (c *Config) Validate() error {
 			}
 			if !valid {
 				errs = append(errs, fmt.Sprintf("plugins.monitoring.type %q is not supported (valid: %s)", mon.Type, strings.Join(validMonitoringTypes, ", ")))
+			}
+		}
+		if ing := mon.Ingress; ing != nil && ing.Enabled {
+			if ing.Host == "" {
+				errs = append(errs, "plugins.monitoring.ingress.host is required when ingress is enabled")
 			}
 		}
 	}

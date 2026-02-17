@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/alepito/deploy-cluster/pkg/config"
@@ -90,12 +91,58 @@ func (p *Plugin) installPrometheus(cfg *config.MonitoringConfig, kubecontext str
 	}
 
 	p.log("[monitoring] ✓ kube-prometheus-stack installed successfully\n")
-	p.log("\n[monitoring] To access Grafana:\n")
-	p.log("  kubectl port-forward svc/kube-prometheus-stack-grafana -n %s 3000:80\n", namespace)
-	p.log("  Open: http://localhost:3000 (admin/prom-operator)\n")
+
+	// Configure ingress for Grafana if enabled
+	if cfg.Ingress != nil && cfg.Ingress.Enabled {
+		if err := p.configureGrafanaIngress(cfg.Ingress, kubecontext); err != nil {
+			return fmt.Errorf("failed to configure Grafana ingress: %w", err)
+		}
+	} else {
+		p.log("\n[monitoring] To access Grafana:\n")
+		p.log("  kubectl port-forward svc/kube-prometheus-stack-grafana -n %s 3000:80\n", namespace)
+		p.log("  Open: http://localhost:3000 (admin/prom-operator)\n")
+	}
+
 	p.log("\n[monitoring] To access Prometheus:\n")
 	p.log("  kubectl port-forward svc/kube-prometheus-stack-prometheus -n %s 9090:9090\n", namespace)
 	p.log("  Open: http://localhost:9090\n")
+	return nil
+}
+
+func (p *Plugin) configureGrafanaIngress(cfg *config.MonitoringIngressConfig, kubecontext string) error {
+	p.log("[monitoring] Configuring ingress for Grafana...\n")
+
+	manifest := fmt.Sprintf(`apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana-ingress
+  namespace: %s
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: %s
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kube-prometheus-stack-grafana
+                port:
+                  number: 80`, namespace, cfg.Host)
+
+	cmd := exec.Command("kubectl", "--context", kubecontext, "apply", "-f", "-")
+	cmd.Stdin = strings.NewReader(manifest)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to apply grafana ingress: %w", err)
+	}
+
+	p.log("[monitoring] ✓ Grafana available at: http://%s (admin/prom-operator)\n", cfg.Host)
 	return nil
 }
 
