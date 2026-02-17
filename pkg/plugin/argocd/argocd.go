@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/alepito/deploy-cluster/pkg/config"
+	"gopkg.in/yaml.v3"
 )
 
 const repoSecretTemplate = `apiVersion: v1
@@ -107,6 +108,17 @@ func (p *Plugin) Install(cfg *config.ArgoCDConfig, kubecontext string) error {
 		p.log("[argocd] ✓ Repositories added\n")
 	}
 
+	// Create applications
+	if len(cfg.Apps) > 0 {
+		p.log("[argocd] Creating applications...\n")
+		for _, app := range cfg.Apps {
+			if err := p.createApplication(app, kubecontext, namespace); err != nil {
+				return fmt.Errorf("failed to create application %s: %w", app.Name, err)
+			}
+		}
+		p.log("[argocd] ✓ Applications created\n")
+	}
+
 	// Print access info
 	p.log("\n[argocd] ✓ ArgoCD installed successfully!\n")
 	p.log("\n[argocd] To access ArgoCD UI:\n")
@@ -119,6 +131,17 @@ func (p *Plugin) Install(cfg *config.ArgoCDConfig, kubecontext string) error {
 		p.log("\n[argocd] Configured repositories:\n")
 		for _, repo := range cfg.Repos {
 			p.log("  • %s (%s)\n", repo.URL, repo.Name)
+		}
+	}
+
+	if len(cfg.Apps) > 0 {
+		p.log("\n[argocd] Configured applications:\n")
+		for _, app := range cfg.Apps {
+			if app.Chart != "" {
+				p.log("  • %s (chart: %s@%s → %s)\n", app.Name, app.Chart, app.TargetRevision, app.Namespace)
+			} else {
+				p.log("  • %s (path: %s@%s → %s)\n", app.Name, app.Path, app.TargetRevision, app.Namespace)
+			}
 		}
 	}
 
@@ -230,6 +253,281 @@ func (p *Plugin) addRepository(repo config.ArgoCDRepoConfig, kubecontext string,
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
+}
+
+func (p *Plugin) createApplication(app config.ArgoCDAppConfig, kubecontext string, argoNamespace string) error {
+	// Set defaults
+	project := app.Project
+	if project == "" {
+		project = "default"
+	}
+	destNamespace := app.Namespace
+	if destNamespace == "" {
+		destNamespace = "default"
+	}
+	targetRevision := app.TargetRevision
+	if targetRevision == "" {
+		targetRevision = "HEAD"
+	}
+	autoSync := true
+	if app.AutoSync != nil {
+		autoSync = *app.AutoSync
+	}
+
+	// Build source section
+	var sourceYAML string
+	if app.Chart != "" {
+		// Helm chart source
+		sourceYAML = fmt.Sprintf("    repoURL: %s\n    chart: %s\n    targetRevision: %s\n", app.RepoURL, app.Chart, targetRevision)
+	} else {
+		// Git repo source
+		path := app.Path
+		if path == "" {
+			path = "."
+		}
+		sourceYAML = fmt.Sprintf("    repoURL: %s\n    targetRevision: %s\n    path: %s\n", app.RepoURL, targetRevision, path)
+	}
+
+	// Build helm values
+	var valuesYAML string
+	if len(app.Values) > 0 {
+		valuesBytes, err := yaml.Marshal(app.Values)
+		if err != nil {
+			return fmt.Errorf("failed to marshal values: %w", err)
+		}
+		valuesYAML = string(valuesBytes)
+	} else if app.ValuesFile != "" {
+		filePath := app.ValuesFile
+		if strings.HasPrefix(filePath, "~/") {
+			home, _ := os.UserHomeDir()
+			filePath = home + filePath[1:]
+		}
+		data, err := os.ReadFile(filePath)
+		if err != nil {
+			return fmt.Errorf("failed to read values file %s: %w", app.ValuesFile, err)
+		}
+		valuesYAML = string(data)
+	}
+
+	// Build helm section if values exist
+	helmSection := ""
+	if valuesYAML != "" {
+		// Indent values for the manifest
+		indentedValues := ""
+		for _, line := range strings.Split(strings.TrimSpace(valuesYAML), "\n") {
+			indentedValues += "          " + line + "\n"
+		}
+		helmSection = fmt.Sprintf("    helm:\n      values: |\n%s", indentedValues)
+	}
+
+	// Build sync policy
+	syncPolicy := ""
+	if autoSync {
+		syncPolicy = `  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+`
+	}
+
+	// Build full manifest
+	manifest := fmt.Sprintf(`apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: %s
+  namespace: %s
+spec:
+  project: %s
+  source:
+%s%s  destination:
+    server: https://kubernetes.default.svc
+    namespace: %s
+%s`, app.Name, argoNamespace, project, sourceYAML, helmSection, destNamespace, syncPolicy)
+
+	p.log("[argocd] Creating application '%s'...\n", app.Name)
+	p.log("[argocd] Application manifest:\n---\n%s---\n", manifest)
+
+	// Apply manifest
+	cmd := exec.Command("kubectl", "--context", kubecontext, "apply", "-f", "-")
+	cmd.Stdin = strings.NewReader(manifest)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+func (p *Plugin) Upgrade(cfg *config.ArgoCDConfig, kubecontext string) error {
+	namespace := cfg.Namespace
+	if namespace == "" {
+		namespace = "argocd"
+	}
+
+	version := cfg.Version
+	if version == "" {
+		version = "stable"
+	}
+
+	p.log("[argocd] Upgrading ArgoCD...\n")
+
+	// Re-apply ArgoCD manifest (idempotent, updates version if changed)
+	manifestURL := fmt.Sprintf("https://raw.githubusercontent.com/argoproj/argo-cd/%s/manifests/install.yaml", version)
+	p.log("[argocd] Applying manifest from %s...\n", manifestURL)
+	if err := p.runKubectlApply(kubecontext, namespace, manifestURL); err != nil {
+		return fmt.Errorf("failed to apply ArgoCD manifest: %w", err)
+	}
+
+	p.log("[argocd] Waiting for ArgoCD server to be ready...\n")
+	if err := p.waitForDeployment(kubecontext, namespace, "argocd-server", 5*time.Minute); err != nil {
+		return fmt.Errorf("ArgoCD server not ready: %w", err)
+	}
+	p.log("[argocd] ✓ ArgoCD server is ready\n")
+
+	// --- Repos diff ---
+	desiredRepos := make(map[string]config.ArgoCDRepoConfig)
+	for _, repo := range cfg.Repos {
+		name := p.repoName(repo)
+		desiredRepos[name] = repo
+	}
+
+	currentRepos, err := p.listCurrentRepos(kubecontext, namespace)
+	if err != nil {
+		return fmt.Errorf("failed to list current repos: %w", err)
+	}
+
+	// Add/update desired repos (kubectl apply is idempotent)
+	for _, repo := range cfg.Repos {
+		if err := p.addRepository(repo, kubecontext, namespace); err != nil {
+			return fmt.Errorf("failed to add/update repository %s: %w", repo.URL, err)
+		}
+	}
+	p.log("[argocd] ✓ Repositories applied (%d)\n", len(cfg.Repos))
+
+	// Remove repos that are no longer in config
+	removedRepos := 0
+	for _, currentName := range currentRepos {
+		if _, desired := desiredRepos[currentName]; !desired {
+			p.log("[argocd] Removing repository '%s'...\n", currentName)
+			if err := p.deleteRepo(currentName, kubecontext, namespace); err != nil {
+				return fmt.Errorf("failed to delete repository %s: %w", currentName, err)
+			}
+			removedRepos++
+		}
+	}
+	if removedRepos > 0 {
+		p.log("[argocd] ✓ Removed %d repository(ies)\n", removedRepos)
+	}
+
+	// --- Apps diff ---
+	desiredApps := make(map[string]config.ArgoCDAppConfig)
+	for _, app := range cfg.Apps {
+		desiredApps[app.Name] = app
+	}
+
+	currentApps, err := p.listCurrentApps(kubecontext, namespace)
+	if err != nil {
+		return fmt.Errorf("failed to list current apps: %w", err)
+	}
+
+	// Add/update desired apps (kubectl apply is idempotent)
+	for _, app := range cfg.Apps {
+		if err := p.createApplication(app, kubecontext, namespace); err != nil {
+			return fmt.Errorf("failed to add/update application %s: %w", app.Name, err)
+		}
+	}
+	p.log("[argocd] ✓ Applications applied (%d)\n", len(cfg.Apps))
+
+	// Remove apps that are no longer in config
+	removedApps := 0
+	for _, currentName := range currentApps {
+		if _, desired := desiredApps[currentName]; !desired {
+			p.log("[argocd] Removing application '%s'...\n", currentName)
+			if err := p.deleteApp(currentName, kubecontext, namespace); err != nil {
+				return fmt.Errorf("failed to delete application %s: %w", currentName, err)
+			}
+			removedApps++
+		}
+	}
+	if removedApps > 0 {
+		p.log("[argocd] ✓ Removed %d application(s)\n", removedApps)
+	}
+
+	p.log("\n[argocd] ✓ ArgoCD upgrade completed\n")
+	return nil
+}
+
+// repoName returns the secret name for a repo config (without the "repo-" prefix).
+func (p *Plugin) repoName(repo config.ArgoCDRepoConfig) string {
+	name := repo.Name
+	if name == "" {
+		name = strings.ReplaceAll(repo.URL, "https://", "")
+		name = strings.ReplaceAll(name, "http://", "")
+		name = strings.ReplaceAll(name, "git@", "")
+		name = strings.ReplaceAll(name, ":", "-")
+		name = strings.ReplaceAll(name, "/", "-")
+		name = strings.ReplaceAll(name, ".", "-")
+		name = strings.TrimSuffix(name, "-git")
+	}
+	return name
+}
+
+// listCurrentRepos returns the names of repo secrets (without the "repo-" prefix)
+// that have the ArgoCD repository label.
+func (p *Plugin) listCurrentRepos(kubecontext, namespace string) ([]string, error) {
+	cmd := exec.Command("kubectl", "--context", kubecontext,
+		"get", "secrets", "-n", namespace,
+		"-l", "argocd.argoproj.io/secret-type=repository",
+		"-o", "jsonpath={.items[*].metadata.name}")
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+
+	raw := strings.TrimSpace(string(output))
+	if raw == "" {
+		return nil, nil
+	}
+
+	var names []string
+	for _, fullName := range strings.Fields(raw) {
+		// Secret names are "repo-<name>", strip the prefix to match config names
+		name := strings.TrimPrefix(fullName, "repo-")
+		names = append(names, name)
+	}
+	return names, nil
+}
+
+// listCurrentApps returns the names of ArgoCD Application resources in the namespace.
+func (p *Plugin) listCurrentApps(kubecontext, namespace string) ([]string, error) {
+	cmd := exec.Command("kubectl", "--context", kubecontext,
+		"get", "applications.argoproj.io", "-n", namespace,
+		"-o", "jsonpath={.items[*].metadata.name}")
+	output, err := cmd.Output()
+	if err != nil {
+		// If the CRD doesn't exist yet, treat as empty
+		if strings.Contains(err.Error(), "the server doesn't have a resource type") {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	raw := strings.TrimSpace(string(output))
+	if raw == "" {
+		return nil, nil
+	}
+
+	return strings.Fields(raw), nil
+}
+
+// deleteRepo deletes a repository secret by name.
+func (p *Plugin) deleteRepo(name, kubecontext, namespace string) error {
+	secretName := "repo-" + name
+	return p.runKubectl(kubecontext, "delete", "secret", secretName, "-n", namespace)
+}
+
+// deleteApp deletes an ArgoCD Application by name.
+func (p *Plugin) deleteApp(name, kubecontext, namespace string) error {
+	return p.runKubectl(kubecontext, "delete", "application.argoproj.io", name, "-n", namespace)
 }
 
 func (p *Plugin) Uninstall(kubecontext string, namespace string) error {

@@ -30,10 +30,24 @@ type PluginsConfig struct {
 }
 
 type ArgoCDConfig struct {
-	Enabled   bool              `yaml:"enabled"`
-	Namespace string            `yaml:"namespace,omitempty"` // ArgoCD installation namespace
-	Version   string            `yaml:"version,omitempty"`   // ArgoCD version
-	Repos     []ArgoCDRepoConfig `yaml:"repos,omitempty"`    // Repositories to add
+	Enabled   bool               `yaml:"enabled"`
+	Namespace string             `yaml:"namespace,omitempty"` // ArgoCD installation namespace
+	Version   string             `yaml:"version,omitempty"`   // ArgoCD version
+	Repos     []ArgoCDRepoConfig `yaml:"repos,omitempty"`     // Repositories to add
+	Apps      []ArgoCDAppConfig  `yaml:"apps,omitempty"`      // Applications to create
+}
+
+type ArgoCDAppConfig struct {
+	Name            string            `yaml:"name"`                      // Application name
+	Namespace       string            `yaml:"namespace,omitempty"`       // Destination namespace
+	Project         string            `yaml:"project,omitempty"`         // ArgoCD project (default: default)
+	RepoURL         string            `yaml:"repoURL"`                   // Chart repo URL or Git repo URL
+	Chart           string            `yaml:"chart,omitempty"`           // Helm chart name (for helm repos)
+	Path            string            `yaml:"path,omitempty"`            // Path in Git repo (for git sources)
+	TargetRevision  string            `yaml:"targetRevision,omitempty"`  // Chart version or branch/tag
+	Values          map[string]interface{} `yaml:"values,omitempty"`     // Inline Helm values
+	ValuesFile      string            `yaml:"valuesFile,omitempty"`      // Path to external values file
+	AutoSync        *bool             `yaml:"autoSync,omitempty"`        // Enable auto sync (default: true)
 }
 
 type ArgoCDRepoConfig struct {
@@ -79,6 +93,21 @@ func DefaultConfig() *Config {
 						Name: "my-gitops-repo",
 						URL:  "https://github.com/user/gitops-repo.git",
 						Type: "git",
+					},
+				},
+				Apps: []ArgoCDAppConfig{
+					{
+						Name:           "nginx",
+						Namespace:      "demo-app",
+						RepoURL:        "https://charts.bitnami.com/bitnami",
+						Chart:          "nginx",
+						TargetRevision: "18.2.4",
+						Values: map[string]interface{}{
+							"replicaCount": 2,
+							"service": map[string]interface{}{
+								"type": "ClusterIP",
+							},
+						},
 					},
 				},
 			},

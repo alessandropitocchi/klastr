@@ -3,7 +3,7 @@ provider:
     type: kind
 cluster:
     controlPlanes: 1
-    workers: 2
+    workers: 1
     version: v1.31.0
 plugins:
     argocd:
@@ -11,7 +11,15 @@ plugins:
         namespace: argocd
         version: stable
         repos:
-            - name: my-gitops-repo
+            - name: app-repo
               url: git@git.elmec.com:PITOCCHI/test-argo.git
               type: git
-              sshKeyFile: ~/.ssh/argocd_gitlab_ed25519
+              sshKeyFile: ~/.ssh/id_ed25519
+        apps:
+            - name: metallb
+              namespace: demo-app
+              repoURL: https://metallb.github.io/metallb
+              chart: metallb
+              targetRevision: 0.15.3
+              values:
+                replicaCount: 3
