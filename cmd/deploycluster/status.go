@@ -5,7 +5,9 @@ import (
 
 	"github.com/alepito/deploy-cluster/pkg/config"
 	"github.com/alepito/deploy-cluster/pkg/plugin/argocd"
+	"github.com/alepito/deploy-cluster/pkg/plugin/certmanager"
 	"github.com/alepito/deploy-cluster/pkg/plugin/ingress"
+	"github.com/alepito/deploy-cluster/pkg/plugin/monitoring"
 	"github.com/alepito/deploy-cluster/pkg/plugin/storage"
 	"github.com/spf13/cobra"
 )
@@ -68,6 +70,30 @@ var statusCmd = &cobra.Command{
 			fmt.Printf("\nIngress: installed (nginx)\n")
 		} else {
 			fmt.Printf("\nIngress: not installed\n")
+		}
+
+		// Cert-manager status
+		cmPlugin := certmanager.New()
+		cmPlugin.Verbose = false
+		cmInstalled, err := cmPlugin.IsInstalled(kubecontext)
+		if err != nil {
+			fmt.Printf("\nCert-manager: error checking (%v)\n", err)
+		} else if cmInstalled {
+			fmt.Printf("\nCert-manager: installed\n")
+		} else {
+			fmt.Printf("\nCert-manager: not installed\n")
+		}
+
+		// Monitoring status
+		monPlugin := monitoring.New()
+		monPlugin.Verbose = false
+		monInstalled, err := monPlugin.IsInstalled(kubecontext)
+		if err != nil {
+			fmt.Printf("\nMonitoring: error checking (%v)\n", err)
+		} else if monInstalled {
+			fmt.Printf("\nMonitoring: installed (prometheus)\n")
+		} else {
+			fmt.Printf("\nMonitoring: not installed\n")
 		}
 
 		// ArgoCD status

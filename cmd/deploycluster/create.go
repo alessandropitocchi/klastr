@@ -5,7 +5,9 @@ import (
 
 	"github.com/alepito/deploy-cluster/pkg/config"
 	"github.com/alepito/deploy-cluster/pkg/plugin/argocd"
+	"github.com/alepito/deploy-cluster/pkg/plugin/certmanager"
 	"github.com/alepito/deploy-cluster/pkg/plugin/ingress"
+	"github.com/alepito/deploy-cluster/pkg/plugin/monitoring"
 	"github.com/alepito/deploy-cluster/pkg/plugin/storage"
 	"github.com/spf13/cobra"
 )
@@ -70,6 +72,22 @@ var createCmd = &cobra.Command{
 			ingressPlugin := ingress.New()
 			if err := ingressPlugin.Install(cfg.Plugins.Ingress, kubecontext); err != nil {
 				return fmt.Errorf("failed to install ingress: %w", err)
+			}
+		}
+
+		if cfg.Plugins.CertManager != nil && cfg.Plugins.CertManager.Enabled {
+			fmt.Println()
+			cmPlugin := certmanager.New()
+			if err := cmPlugin.Install(cfg.Plugins.CertManager, kubecontext); err != nil {
+				return fmt.Errorf("failed to install cert-manager: %w", err)
+			}
+		}
+
+		if cfg.Plugins.Monitoring != nil && cfg.Plugins.Monitoring.Enabled {
+			fmt.Println()
+			monPlugin := monitoring.New()
+			if err := monPlugin.Install(cfg.Plugins.Monitoring, kubecontext); err != nil {
+				return fmt.Errorf("failed to install monitoring: %w", err)
 			}
 		}
 

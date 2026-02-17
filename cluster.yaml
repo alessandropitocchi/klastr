@@ -12,6 +12,12 @@ plugins:
     ingress:
         enabled: true
         type: nginx
+    certManager:
+        enabled: true
+        version: v1.16.3
+    monitoring:
+        enabled: true
+        type: prometheus
     argocd:
         enabled: true
         namespace: argocd

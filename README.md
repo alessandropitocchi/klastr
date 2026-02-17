@@ -82,6 +82,12 @@ plugins:
   ingress:
     enabled: true
     type: nginx
+  certManager:
+    enabled: true
+    version: v1.16.3
+  monitoring:
+    enabled: true
+    type: prometheus
   argocd:
     enabled: true
     namespace: argocd
@@ -171,6 +177,56 @@ plugins:
 ```
 
 Dopo l'installazione, le risorse `Ingress` con `ingressClassName: nginx` vengono gestite automaticamente.
+
+### Plugin Cert-Manager
+
+Installa [cert-manager](https://cert-manager.io/) per la gestione automatica dei certificati TLS nel cluster. Utile in combinazione con ingress per abilitare HTTPS.
+
+| Campo | Tipo | Default | Descrizione |
+|-------|------|---------|-------------|
+| `enabled` | bool | `false` | Abilita l'installazione di cert-manager |
+| `version` | string | `v1.16.3` | Versione di cert-manager |
+
+#### Esempio
+
+```yaml
+plugins:
+  certManager:
+    enabled: true
+    version: v1.16.3
+```
+
+Dopo l'installazione puoi creare risorse `Issuer`, `ClusterIssuer` e `Certificate` per ottenere certificati TLS automatici (es. Let's Encrypt, self-signed).
+
+### Plugin Monitoring
+
+Installa lo stack [kube-prometheus](https://github.com/prometheus-operator/kube-prometheus) che include Prometheus, Grafana, Alertmanager, node-exporter e kube-state-metrics.
+
+| Campo | Tipo | Default | Descrizione |
+|-------|------|---------|-------------|
+| `enabled` | bool | `false` | Abilita l'installazione del monitoring |
+| `type` | string | **obbligatorio** | Tipo di stack: `prometheus` |
+
+#### Esempio
+
+```yaml
+plugins:
+  monitoring:
+    enabled: true
+    type: prometheus
+```
+
+Dopo l'installazione:
+
+```bash
+# Grafana (admin/admin)
+kubectl port-forward svc/grafana -n monitoring 3000:3000
+# http://localhost:3000
+
+# Prometheus
+kubectl port-forward svc/prometheus-k8s -n monitoring 9090:9090
+# http://localhost:9090
+```
 
 ### Plugin ArgoCD
 
@@ -295,6 +351,8 @@ Il comando `upgrade` aggiorna un cluster esistente applicando solo le differenze
 Cosa fa:
 - **Storage**: se abilitato e non installato, lo installa. Se già presente, ri-applica il manifest (idempotente).
 - **Ingress**: se abilitato e non installato, lo installa. Se già presente, ri-applica il manifest (idempotente).
+- **Cert-Manager**: se abilitato e non installato, lo installa. Se già presente, ri-applica il manifest (aggiorna versione se cambiata).
+- **Monitoring**: se abilitato e non installato, lo installa (CRDs + manifesti). Se già presente, ri-applica (idempotente).
 - **ArgoCD**: se abilitato e non installato, fa un'installazione completa. Se già presente:
   - Ri-applica il manifest ArgoCD (aggiorna la versione se cambiata)
   - **Repos**: applica quelli desiderati (idempotente), elimina quelli non più in configurazione

@@ -9,9 +9,10 @@ import (
 )
 
 var (
-	validProviders    = []string{"kind"}
-	validStorageTypes = []string{"local-path"}
-	validIngressTypes = []string{"nginx"}
+	validProviders       = []string{"kind"}
+	validStorageTypes    = []string{"local-path"}
+	validIngressTypes    = []string{"nginx"}
+	validMonitoringTypes = []string{"prometheus"}
 )
 
 type Config struct {
@@ -32,9 +33,11 @@ type ClusterConfig struct {
 }
 
 type PluginsConfig struct {
-	ArgoCD  *ArgoCDConfig  `yaml:"argocd,omitempty"`
-	Storage *StorageConfig `yaml:"storage,omitempty"`
-	Ingress *IngressConfig `yaml:"ingress,omitempty"`
+	Storage     *StorageConfig     `yaml:"storage,omitempty"`
+	Ingress     *IngressConfig     `yaml:"ingress,omitempty"`
+	CertManager *CertManagerConfig `yaml:"certManager,omitempty"`
+	Monitoring  *MonitoringConfig  `yaml:"monitoring,omitempty"`
+	ArgoCD      *ArgoCDConfig      `yaml:"argocd,omitempty"`
 }
 
 type ArgoCDConfig struct {
@@ -79,6 +82,16 @@ type IngressConfig struct {
 	Type    string `yaml:"type"` // nginx, traefik
 }
 
+type CertManagerConfig struct {
+	Enabled bool   `yaml:"enabled"`
+	Version string `yaml:"version,omitempty"` // cert-manager version (default: v1.16.3)
+}
+
+type MonitoringConfig struct {
+	Enabled bool   `yaml:"enabled"`
+	Type    string `yaml:"type"` // prometheus
+}
+
 // DefaultConfig returns a starter configuration
 func DefaultConfig() *Config {
 	return &Config{
@@ -99,6 +112,14 @@ func DefaultConfig() *Config {
 			Ingress: &IngressConfig{
 				Enabled: false,
 				Type:    "nginx",
+			},
+			CertManager: &CertManagerConfig{
+				Enabled: false,
+				Version: "v1.16.3",
+			},
+			Monitoring: &MonitoringConfig{
+				Enabled: false,
+				Type:    "prometheus",
 			},
 			ArgoCD: &ArgoCDConfig{
 				Enabled:   false,
@@ -192,6 +213,23 @@ func (c *Config) Validate() error {
 			}
 			if !valid {
 				errs = append(errs, fmt.Sprintf("plugins.ingress.type %q is not supported (valid: %s)", ing.Type, strings.Join(validIngressTypes, ", ")))
+			}
+		}
+	}
+
+	if mon := c.Plugins.Monitoring; mon != nil && mon.Enabled {
+		if mon.Type == "" {
+			errs = append(errs, "plugins.monitoring.type is required")
+		} else {
+			valid := false
+			for _, t := range validMonitoringTypes {
+				if mon.Type == t {
+					valid = true
+					break
+				}
+			}
+			if !valid {
+				errs = append(errs, fmt.Sprintf("plugins.monitoring.type %q is not supported (valid: %s)", mon.Type, strings.Join(validMonitoringTypes, ", ")))
 			}
 		}
 	}

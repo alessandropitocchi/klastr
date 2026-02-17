@@ -539,3 +539,53 @@ func TestValidate_IngressValidType(t *testing.T) {
 		t.Errorf("Validate() should pass for valid ingress type, got: %v", err)
 	}
 }
+
+func TestValidate_MonitoringMissingType(t *testing.T) {
+	cfg := &Config{
+		Name:     "test",
+		Provider: ProviderConfig{Type: "kind"},
+		Cluster:  ClusterConfig{ControlPlanes: 1, Workers: 0},
+		Plugins: PluginsConfig{
+			Monitoring: &MonitoringConfig{Enabled: true},
+		},
+	}
+	err := cfg.Validate()
+	if err == nil {
+		t.Fatal("Validate() should fail for monitoring without type")
+	}
+	if !strings.Contains(err.Error(), "monitoring.type is required") {
+		t.Errorf("error should mention monitoring.type, got: %v", err)
+	}
+}
+
+func TestValidate_MonitoringInvalidType(t *testing.T) {
+	cfg := &Config{
+		Name:     "test",
+		Provider: ProviderConfig{Type: "kind"},
+		Cluster:  ClusterConfig{ControlPlanes: 1, Workers: 0},
+		Plugins: PluginsConfig{
+			Monitoring: &MonitoringConfig{Enabled: true, Type: "datadog"},
+		},
+	}
+	err := cfg.Validate()
+	if err == nil {
+		t.Fatal("Validate() should fail for unsupported monitoring type")
+	}
+	if !strings.Contains(err.Error(), "not supported") {
+		t.Errorf("error should mention not supported, got: %v", err)
+	}
+}
+
+func TestValidate_MonitoringValidType(t *testing.T) {
+	cfg := &Config{
+		Name:     "test",
+		Provider: ProviderConfig{Type: "kind"},
+		Cluster:  ClusterConfig{ControlPlanes: 1, Workers: 0},
+		Plugins: PluginsConfig{
+			Monitoring: &MonitoringConfig{Enabled: true, Type: "prometheus"},
+		},
+	}
+	if err := cfg.Validate(); err != nil {
+		t.Errorf("Validate() should pass for valid monitoring type, got: %v", err)
+	}
+}

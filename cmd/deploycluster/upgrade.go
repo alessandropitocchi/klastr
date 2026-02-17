@@ -5,7 +5,9 @@ import (
 
 	"github.com/alepito/deploy-cluster/pkg/config"
 	"github.com/alepito/deploy-cluster/pkg/plugin/argocd"
+	"github.com/alepito/deploy-cluster/pkg/plugin/certmanager"
 	"github.com/alepito/deploy-cluster/pkg/plugin/ingress"
+	"github.com/alepito/deploy-cluster/pkg/plugin/monitoring"
 	"github.com/alepito/deploy-cluster/pkg/plugin/storage"
 	"github.com/spf13/cobra"
 )
@@ -99,6 +101,46 @@ Use --dry-run to preview changes without applying them.`,
 			}
 		}
 
+		// Upgrade cert-manager plugin
+		if cfg.Plugins.CertManager != nil && cfg.Plugins.CertManager.Enabled {
+			cmPlugin := certmanager.New()
+			installed, err := cmPlugin.IsInstalled(kubecontext)
+			if err != nil {
+				return fmt.Errorf("failed to check cert-manager status: %w", err)
+			}
+			if !installed {
+				fmt.Println("[cert-manager] Not installed, performing installation...")
+				if err := cmPlugin.Install(cfg.Plugins.CertManager, kubecontext); err != nil {
+					return fmt.Errorf("failed to install cert-manager: %w", err)
+				}
+			} else {
+				fmt.Println("[cert-manager] Already installed, re-applying...")
+				if err := cmPlugin.Install(cfg.Plugins.CertManager, kubecontext); err != nil {
+					return fmt.Errorf("failed to upgrade cert-manager: %w", err)
+				}
+			}
+		}
+
+		// Upgrade monitoring plugin
+		if cfg.Plugins.Monitoring != nil && cfg.Plugins.Monitoring.Enabled {
+			monPlugin := monitoring.New()
+			installed, err := monPlugin.IsInstalled(kubecontext)
+			if err != nil {
+				return fmt.Errorf("failed to check monitoring status: %w", err)
+			}
+			if !installed {
+				fmt.Println("[monitoring] Not installed, performing installation...")
+				if err := monPlugin.Install(cfg.Plugins.Monitoring, kubecontext); err != nil {
+					return fmt.Errorf("failed to install monitoring: %w", err)
+				}
+			} else {
+				fmt.Println("[monitoring] Already installed, re-applying...")
+				if err := monPlugin.Install(cfg.Plugins.Monitoring, kubecontext); err != nil {
+					return fmt.Errorf("failed to upgrade monitoring: %w", err)
+				}
+			}
+		}
+
 		// Upgrade ArgoCD plugin
 		argoPlugin := argocd.New()
 
@@ -170,6 +212,40 @@ func runUpgradeDryRun(cfg *config.Config, kubecontext string) error {
 			fmt.Printf("\n[ingress] %s: installed (re-apply)\n", cfg.Plugins.Ingress.Type)
 		} else {
 			fmt.Printf("\n[ingress] %s: not installed (will install)\n", cfg.Plugins.Ingress.Type)
+		}
+	}
+
+	// Cert-manager
+	if cfg.Plugins.CertManager != nil && cfg.Plugins.CertManager.Enabled {
+		cmPlugin := certmanager.New()
+		cmPlugin.Verbose = false
+		installed, err := cmPlugin.IsInstalled(kubecontext)
+		if err != nil {
+			return fmt.Errorf("failed to check cert-manager status: %w", err)
+		}
+		version := cfg.Plugins.CertManager.Version
+		if version == "" {
+			version = "v1.16.3"
+		}
+		if installed {
+			fmt.Printf("\n[cert-manager] %s: installed (re-apply)\n", version)
+		} else {
+			fmt.Printf("\n[cert-manager] %s: not installed (will install)\n", version)
+		}
+	}
+
+	// Monitoring
+	if cfg.Plugins.Monitoring != nil && cfg.Plugins.Monitoring.Enabled {
+		monPlugin := monitoring.New()
+		monPlugin.Verbose = false
+		installed, err := monPlugin.IsInstalled(kubecontext)
+		if err != nil {
+			return fmt.Errorf("failed to check monitoring status: %w", err)
+		}
+		if installed {
+			fmt.Printf("\n[monitoring] %s: installed (re-apply)\n", cfg.Plugins.Monitoring.Type)
+		} else {
+			fmt.Printf("\n[monitoring] %s: not installed (will install)\n", cfg.Plugins.Monitoring.Type)
 		}
 	}
 

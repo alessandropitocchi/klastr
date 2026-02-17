@@ -4,19 +4,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**deploy-cluster** is a CLI tool for deploying Kubernetes clusters on kind (Kubernetes in Docker). It allows users to define cluster topology and install plugins (storage, ingress, ArgoCD) from a single YAML configuration file.
+**deploy-cluster** is a CLI tool for deploying Kubernetes clusters on kind (Kubernetes in Docker). It allows users to define cluster topology and install plugins (storage, ingress, cert-manager, monitoring, ArgoCD) from a single YAML configuration file.
 
 ## Architecture
 
 ### Core Concepts
 
 - **Providers**: Abstraction layer for cluster providers. Interface in `pkg/provider/provider.go`. Currently implemented: **kind**.
-- **Plugins**: Modular components installed on clusters. Each plugin has its own package under `pkg/plugin/`. Implemented: **storage** (local-path-provisioner), **ingress** (nginx), **ArgoCD**.
+- **Plugins**: Modular components installed on clusters. Each plugin has its own package under `pkg/plugin/`. Implemented: **storage** (local-path-provisioner), **ingress** (nginx), **cert-manager**, **monitoring** (kube-prometheus), **ArgoCD**.
 - **Config**: Single `cluster.yaml` defines cluster topology + all plugins. Parsed and validated in `pkg/config/`.
 
 ### Plugin Installation Order
 
-`create` and `upgrade` install plugins in this order: **storage → ingress → ArgoCD**. Storage first so PVCs are available; ingress before ArgoCD so Ingress resources work immediately.
+`create` and `upgrade` install plugins in this order: **storage → ingress → cert-manager → monitoring → ArgoCD**. Storage first so PVCs are available; ingress before ArgoCD so Ingress resources work immediately; cert-manager before monitoring for TLS support.
 
 ## Commands
 
@@ -73,6 +73,10 @@ pkg/
       storage.go            # Storage plugin (local-path-provisioner)
     ingress/
       ingress.go            # Ingress plugin (nginx)
+    certmanager/
+      certmanager.go        # Cert-manager plugin (TLS certificates)
+    monitoring/
+      monitoring.go         # Monitoring plugin (kube-prometheus stack)
 ```
 
 ### Key Design Decisions
@@ -91,4 +95,6 @@ Key test areas:
 - `pkg/plugin/argocd/`: repoName generation, diff logic (add/remove repos/apps)
 - `pkg/plugin/storage/`: type routing, error messages
 - `pkg/plugin/ingress/`: type routing, error messages
+- `pkg/plugin/certmanager/`: version handling, manifest URL generation
+- `pkg/plugin/monitoring/`: type routing, manifest URLs
 - `pkg/provider/kind/`: generateKindConfig, KubeContext
