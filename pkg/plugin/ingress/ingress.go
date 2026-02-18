@@ -16,11 +16,12 @@ const (
 )
 
 type Plugin struct {
-	Log *logger.Logger
+	Log     *logger.Logger
+	Timeout time.Duration
 }
 
-func New(log *logger.Logger) *Plugin {
-	return &Plugin{Log: log}
+func New(log *logger.Logger, timeout time.Duration) *Plugin {
+	return &Plugin{Log: log, Timeout: timeout}
 }
 
 func (p *Plugin) Name() string {
@@ -71,7 +72,7 @@ func (p *Plugin) installNginx(kubecontext string) error {
 	p.Log.Info("Waiting for nginx ingress controller to be ready...\n")
 	waitCmd := exec.Command("kubectl", "--context", kubecontext,
 		"rollout", "status", "deployment/ingress-nginx-controller",
-		"-n", "ingress-nginx", "--timeout", (3 * time.Minute).String())
+		"-n", "ingress-nginx", "--timeout", p.Timeout.String())
 	waitCmd.Stdout = os.Stdout
 	waitCmd.Stderr = os.Stderr
 	if err := waitCmd.Run(); err != nil {

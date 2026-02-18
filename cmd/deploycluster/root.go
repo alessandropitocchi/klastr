@@ -3,14 +3,16 @@ package main
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/alepito/deploy-cluster/pkg/logger"
 	"github.com/spf13/cobra"
 )
 
 var (
-	verbose bool
-	quiet   bool
+	verbose       bool
+	quiet         bool
+	globalTimeout time.Duration
 )
 
 var rootCmd = &cobra.Command{
@@ -48,4 +50,5 @@ func Execute() {
 func init() {
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "enable verbose (debug) output")
 	rootCmd.PersistentFlags().BoolVar(&quiet, "quiet", false, "suppress all output except errors")
+	rootCmd.PersistentFlags().DurationVar(&globalTimeout, "timeout", 5*time.Minute, "timeout for plugin operations (kubectl/helm)")
 }

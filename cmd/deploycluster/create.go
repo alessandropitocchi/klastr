@@ -76,7 +76,7 @@ var createCmd = &cobra.Command{
 		if cfg.Plugins.Storage != nil && cfg.Plugins.Storage.Enabled {
 			log.Info("\n")
 			pluginLog := newLogger("[storage]")
-			storagePlugin := storage.New(pluginLog)
+			storagePlugin := storage.New(pluginLog, globalTimeout)
 			err := storagePlugin.Install(cfg.Plugins.Storage, kubecontext)
 			results = append(results, pluginResult{Name: "storage", Err: err})
 			if err != nil && createFailFast {
@@ -88,7 +88,7 @@ var createCmd = &cobra.Command{
 		if cfg.Plugins.Ingress != nil && cfg.Plugins.Ingress.Enabled {
 			log.Info("\n")
 			pluginLog := newLogger("[ingress]")
-			ingressPlugin := ingress.New(pluginLog)
+			ingressPlugin := ingress.New(pluginLog, globalTimeout)
 			err := ingressPlugin.Install(cfg.Plugins.Ingress, kubecontext)
 			results = append(results, pluginResult{Name: "ingress", Err: err})
 			if err != nil && createFailFast {
@@ -100,7 +100,7 @@ var createCmd = &cobra.Command{
 		if cfg.Plugins.CertManager != nil && cfg.Plugins.CertManager.Enabled {
 			log.Info("\n")
 			pluginLog := newLogger("[cert-manager]")
-			cmPlugin := certmanager.New(pluginLog)
+			cmPlugin := certmanager.New(pluginLog, globalTimeout)
 			err := cmPlugin.Install(cfg.Plugins.CertManager, kubecontext)
 			results = append(results, pluginResult{Name: "cert-manager", Err: err})
 			if err != nil && createFailFast {
@@ -112,7 +112,7 @@ var createCmd = &cobra.Command{
 		if cfg.Plugins.Monitoring != nil && cfg.Plugins.Monitoring.Enabled {
 			log.Info("\n")
 			pluginLog := newLogger("[monitoring]")
-			monPlugin := monitoring.New(pluginLog)
+			monPlugin := monitoring.New(pluginLog, globalTimeout)
 			err := monPlugin.Install(cfg.Plugins.Monitoring, kubecontext)
 			results = append(results, pluginResult{Name: "monitoring", Err: err})
 			if err != nil && createFailFast {
@@ -124,7 +124,7 @@ var createCmd = &cobra.Command{
 		if cfg.Plugins.Dashboard != nil && cfg.Plugins.Dashboard.Enabled {
 			log.Info("\n")
 			pluginLog := newLogger("[dashboard]")
-			dashPlugin := dashboard.New(pluginLog)
+			dashPlugin := dashboard.New(pluginLog, globalTimeout)
 			err := dashPlugin.Install(cfg.Plugins.Dashboard, kubecontext)
 			results = append(results, pluginResult{Name: "dashboard", Err: err})
 			if err != nil && createFailFast {
@@ -136,7 +136,7 @@ var createCmd = &cobra.Command{
 		if len(cfg.Plugins.CustomApps) > 0 {
 			log.Info("\n")
 			pluginLog := newLogger("[customApps]")
-			customPlugin := customapps.New(pluginLog)
+			customPlugin := customapps.New(pluginLog, globalTimeout)
 			err := customPlugin.InstallAll(cfg.Plugins.CustomApps, kubecontext)
 			results = append(results, pluginResult{Name: "customApps", Err: err})
 			if err != nil && createFailFast {
@@ -148,7 +148,7 @@ var createCmd = &cobra.Command{
 		if cfg.Plugins.ArgoCD != nil && cfg.Plugins.ArgoCD.Enabled {
 			log.Info("\n")
 			pluginLog := newLogger("[argocd]")
-			argoPlugin := argocd.New(pluginLog)
+			argoPlugin := argocd.New(pluginLog, globalTimeout)
 			err := argoPlugin.Install(cfg.Plugins.ArgoCD, kubecontext)
 			results = append(results, pluginResult{Name: "argocd", Err: err})
 			if err != nil && createFailFast {

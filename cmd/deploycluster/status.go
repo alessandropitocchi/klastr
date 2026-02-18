@@ -55,7 +55,7 @@ var statusCmd = &cobra.Command{
 		quietLog := logger.New("", logger.LevelQuiet)
 
 		// Storage status
-		storagePlugin := storage.New(quietLog)
+		storagePlugin := storage.New(quietLog, globalTimeout)
 		storageInstalled, err := storagePlugin.IsInstalled(kubecontext)
 		if err != nil {
 			fmt.Printf("\nStorage: error checking (%v)\n", err)
@@ -66,7 +66,7 @@ var statusCmd = &cobra.Command{
 		}
 
 		// Ingress status
-		ingressPlugin := ingress.New(quietLog)
+		ingressPlugin := ingress.New(quietLog, globalTimeout)
 		ingressInstalled, err := ingressPlugin.IsInstalled(kubecontext)
 		if err != nil {
 			fmt.Printf("\nIngress: error checking (%v)\n", err)
@@ -77,7 +77,7 @@ var statusCmd = &cobra.Command{
 		}
 
 		// Cert-manager status
-		cmPlugin := certmanager.New(quietLog)
+		cmPlugin := certmanager.New(quietLog, globalTimeout)
 		cmInstalled, err := cmPlugin.IsInstalled(kubecontext)
 		if err != nil {
 			fmt.Printf("\nCert-manager: error checking (%v)\n", err)
@@ -88,7 +88,7 @@ var statusCmd = &cobra.Command{
 		}
 
 		// Monitoring status
-		monPlugin := monitoring.New(quietLog)
+		monPlugin := monitoring.New(quietLog, globalTimeout)
 		monInstalled, err := monPlugin.IsInstalled(kubecontext)
 		if err != nil {
 			fmt.Printf("\nMonitoring: error checking (%v)\n", err)
@@ -99,7 +99,7 @@ var statusCmd = &cobra.Command{
 		}
 
 		// Dashboard status
-		dashPlugin := dashboard.New(quietLog)
+		dashPlugin := dashboard.New(quietLog, globalTimeout)
 		dashInstalled, err := dashPlugin.IsInstalled(kubecontext)
 		if err != nil {
 			fmt.Printf("\nDashboard: error checking (%v)\n", err)
@@ -111,7 +111,7 @@ var statusCmd = &cobra.Command{
 
 		// Custom Apps status
 		if len(cfg.Plugins.CustomApps) > 0 {
-			customPlugin := customapps.New(quietLog)
+			customPlugin := customapps.New(quietLog, globalTimeout)
 			installed, _ := customPlugin.ListInstalled(cfg.Plugins.CustomApps, kubecontext)
 			installedSet := make(map[string]bool)
 			for _, name := range installed {
@@ -128,7 +128,7 @@ var statusCmd = &cobra.Command{
 		}
 
 		// ArgoCD status
-		argoPlugin := argocd.New(quietLog)
+		argoPlugin := argocd.New(quietLog, globalTimeout)
 
 		namespace := "argocd"
 		if cfg.Plugins.ArgoCD != nil && cfg.Plugins.ArgoCD.Namespace != "" {

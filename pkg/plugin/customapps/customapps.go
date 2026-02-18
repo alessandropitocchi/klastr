@@ -14,11 +14,12 @@ import (
 )
 
 type Plugin struct {
-	Log *logger.Logger
+	Log     *logger.Logger
+	Timeout time.Duration
 }
 
-func New(log *logger.Logger) *Plugin {
-	return &Plugin{Log: log}
+func New(log *logger.Logger, timeout time.Duration) *Plugin {
+	return &Plugin{Log: log, Timeout: timeout}
 }
 
 func (p *Plugin) Name() string {
@@ -50,7 +51,7 @@ func (p *Plugin) Install(app config.CustomAppConfig, kubecontext string) error {
 		"--create-namespace",
 		"--kube-context", kubecontext,
 		"--wait",
-		"--timeout", (5 * time.Minute).String(),
+		"--timeout", p.Timeout.String(),
 	}
 
 	if app.Version != "" {

@@ -2,6 +2,7 @@ package dashboard
 
 import (
 	"testing"
+	"time"
 
 	"github.com/alepito/deploy-cluster/pkg/config"
 	"github.com/alepito/deploy-cluster/pkg/logger"
@@ -12,7 +13,7 @@ func testLogger() *logger.Logger {
 }
 
 func TestNew(t *testing.T) {
-	p := New(testLogger())
+	p := New(testLogger(), 5*time.Minute)
 	if p == nil {
 		t.Fatal("New() should return non-nil plugin")
 	}
@@ -22,14 +23,14 @@ func TestNew(t *testing.T) {
 }
 
 func TestName(t *testing.T) {
-	p := New(testLogger())
+	p := New(testLogger(), 5*time.Minute)
 	if got := p.Name(); got != "dashboard" {
 		t.Errorf("Name() = %q, want %q", got, "dashboard")
 	}
 }
 
 func TestInstall_UnsupportedType(t *testing.T) {
-	p := New(testLogger())
+	p := New(testLogger(), 5*time.Minute)
 	cfg := &config.DashboardConfig{Enabled: true, Type: "lens"}
 	err := p.Install(cfg, "fake-context")
 	if err == nil {
@@ -41,7 +42,7 @@ func TestInstall_UnsupportedType(t *testing.T) {
 }
 
 func TestUninstall_UnsupportedType(t *testing.T) {
-	p := New(testLogger())
+	p := New(testLogger(), 5*time.Minute)
 	cfg := &config.DashboardConfig{Enabled: true, Type: "lens"}
 	err := p.Uninstall(cfg, "fake-context")
 	if err == nil {
@@ -53,7 +54,7 @@ func TestUninstall_UnsupportedType(t *testing.T) {
 }
 
 func TestChartVersion_Default(t *testing.T) {
-	p := New(testLogger())
+	p := New(testLogger(), 5*time.Minute)
 	cfg := &config.DashboardConfig{Enabled: true, Type: "headlamp"}
 	if got := p.chartVersion(cfg); got != defaultHeadlampVersion {
 		t.Errorf("chartVersion() = %q, want %q", got, defaultHeadlampVersion)
@@ -61,7 +62,7 @@ func TestChartVersion_Default(t *testing.T) {
 }
 
 func TestChartVersion_Custom(t *testing.T) {
-	p := New(testLogger())
+	p := New(testLogger(), 5*time.Minute)
 	cfg := &config.DashboardConfig{Enabled: true, Type: "headlamp", Version: "0.20.0"}
 	if got := p.chartVersion(cfg); got != "0.20.0" {
 		t.Errorf("chartVersion() = %q, want %q", got, "0.20.0")

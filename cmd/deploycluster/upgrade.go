@@ -71,7 +71,7 @@ Use --dry-run to preview changes without applying them.`,
 		// Upgrade storage plugin
 		if cfg.Plugins.Storage != nil && cfg.Plugins.Storage.Enabled {
 			pluginLog := newLogger("[storage]")
-			storagePlugin := storage.New(pluginLog)
+			storagePlugin := storage.New(pluginLog, globalTimeout)
 			installed, checkErr := storagePlugin.IsInstalled(kubecontext)
 			if checkErr != nil {
 				results = append(results, pluginResult{Name: "storage", Err: fmt.Errorf("failed to check status: %w", checkErr)})
@@ -93,7 +93,7 @@ Use --dry-run to preview changes without applying them.`,
 		// Upgrade ingress plugin
 		if cfg.Plugins.Ingress != nil && cfg.Plugins.Ingress.Enabled {
 			pluginLog := newLogger("[ingress]")
-			ingressPlugin := ingress.New(pluginLog)
+			ingressPlugin := ingress.New(pluginLog, globalTimeout)
 			installed, checkErr := ingressPlugin.IsInstalled(kubecontext)
 			if checkErr != nil {
 				results = append(results, pluginResult{Name: "ingress", Err: fmt.Errorf("failed to check status: %w", checkErr)})
@@ -115,7 +115,7 @@ Use --dry-run to preview changes without applying them.`,
 		// Upgrade cert-manager plugin
 		if cfg.Plugins.CertManager != nil && cfg.Plugins.CertManager.Enabled {
 			pluginLog := newLogger("[cert-manager]")
-			cmPlugin := certmanager.New(pluginLog)
+			cmPlugin := certmanager.New(pluginLog, globalTimeout)
 			installed, checkErr := cmPlugin.IsInstalled(kubecontext)
 			if checkErr != nil {
 				results = append(results, pluginResult{Name: "cert-manager", Err: fmt.Errorf("failed to check status: %w", checkErr)})
@@ -137,7 +137,7 @@ Use --dry-run to preview changes without applying them.`,
 		// Upgrade monitoring plugin
 		if cfg.Plugins.Monitoring != nil && cfg.Plugins.Monitoring.Enabled {
 			pluginLog := newLogger("[monitoring]")
-			monPlugin := monitoring.New(pluginLog)
+			monPlugin := monitoring.New(pluginLog, globalTimeout)
 			installed, checkErr := monPlugin.IsInstalled(kubecontext)
 			if checkErr != nil {
 				results = append(results, pluginResult{Name: "monitoring", Err: fmt.Errorf("failed to check status: %w", checkErr)})
@@ -159,7 +159,7 @@ Use --dry-run to preview changes without applying them.`,
 		// Upgrade dashboard plugin
 		if cfg.Plugins.Dashboard != nil && cfg.Plugins.Dashboard.Enabled {
 			pluginLog := newLogger("[dashboard]")
-			dashPlugin := dashboard.New(pluginLog)
+			dashPlugin := dashboard.New(pluginLog, globalTimeout)
 			installed, checkErr := dashPlugin.IsInstalled(kubecontext)
 			if checkErr != nil {
 				results = append(results, pluginResult{Name: "dashboard", Err: fmt.Errorf("failed to check status: %w", checkErr)})
@@ -182,7 +182,7 @@ Use --dry-run to preview changes without applying them.`,
 		if len(cfg.Plugins.CustomApps) > 0 {
 			pluginLog := newLogger("[customApps]")
 			pluginLog.Info("Upgrading custom apps...\n")
-			customPlugin := customapps.New(pluginLog)
+			customPlugin := customapps.New(pluginLog, globalTimeout)
 			err := customPlugin.InstallAll(cfg.Plugins.CustomApps, kubecontext)
 			results = append(results, pluginResult{Name: "customApps", Err: err})
 			if err != nil && upgradeFailFast {
@@ -194,7 +194,7 @@ Use --dry-run to preview changes without applying them.`,
 		// Upgrade ArgoCD plugin
 		if cfg.Plugins.ArgoCD != nil && cfg.Plugins.ArgoCD.Enabled {
 			pluginLog := newLogger("[argocd]")
-			argoPlugin := argocd.New(pluginLog)
+			argoPlugin := argocd.New(pluginLog, globalTimeout)
 
 			namespace := cfg.Plugins.ArgoCD.Namespace
 			if namespace == "" {
@@ -218,7 +218,7 @@ Use --dry-run to preview changes without applying them.`,
 			}
 		} else if cfg.Plugins.ArgoCD != nil && !cfg.Plugins.ArgoCD.Enabled {
 			pluginLog := newLogger("[argocd]")
-			argoPlugin := argocd.New(pluginLog)
+			argoPlugin := argocd.New(pluginLog, globalTimeout)
 			namespace := cfg.Plugins.ArgoCD.Namespace
 			if namespace == "" {
 				namespace = "argocd"
@@ -250,7 +250,7 @@ func runUpgradeDryRun(cfg *config.Config, kubecontext string) error {
 	// Storage
 	if cfg.Plugins.Storage != nil && cfg.Plugins.Storage.Enabled {
 		pluginLog := newLogger("[storage]")
-		storagePlugin := storage.New(pluginLog)
+		storagePlugin := storage.New(pluginLog, globalTimeout)
 		installed, err := storagePlugin.IsInstalled(kubecontext)
 		if err != nil {
 			return fmt.Errorf("failed to check storage status: %w", err)
@@ -265,7 +265,7 @@ func runUpgradeDryRun(cfg *config.Config, kubecontext string) error {
 	// Ingress
 	if cfg.Plugins.Ingress != nil && cfg.Plugins.Ingress.Enabled {
 		pluginLog := newLogger("[ingress]")
-		ingressPlugin := ingress.New(pluginLog)
+		ingressPlugin := ingress.New(pluginLog, globalTimeout)
 		installed, err := ingressPlugin.IsInstalled(kubecontext)
 		if err != nil {
 			return fmt.Errorf("failed to check ingress status: %w", err)
@@ -280,7 +280,7 @@ func runUpgradeDryRun(cfg *config.Config, kubecontext string) error {
 	// Cert-manager
 	if cfg.Plugins.CertManager != nil && cfg.Plugins.CertManager.Enabled {
 		pluginLog := newLogger("[cert-manager]")
-		cmPlugin := certmanager.New(pluginLog)
+		cmPlugin := certmanager.New(pluginLog, globalTimeout)
 		installed, err := cmPlugin.IsInstalled(kubecontext)
 		if err != nil {
 			return fmt.Errorf("failed to check cert-manager status: %w", err)
@@ -299,7 +299,7 @@ func runUpgradeDryRun(cfg *config.Config, kubecontext string) error {
 	// Monitoring
 	if cfg.Plugins.Monitoring != nil && cfg.Plugins.Monitoring.Enabled {
 		pluginLog := newLogger("[monitoring]")
-		monPlugin := monitoring.New(pluginLog)
+		monPlugin := monitoring.New(pluginLog, globalTimeout)
 		installed, err := monPlugin.IsInstalled(kubecontext)
 		if err != nil {
 			return fmt.Errorf("failed to check monitoring status: %w", err)
@@ -314,7 +314,7 @@ func runUpgradeDryRun(cfg *config.Config, kubecontext string) error {
 	// Dashboard
 	if cfg.Plugins.Dashboard != nil && cfg.Plugins.Dashboard.Enabled {
 		pluginLog := newLogger("[dashboard]")
-		dashPlugin := dashboard.New(pluginLog)
+		dashPlugin := dashboard.New(pluginLog, globalTimeout)
 		installed, err := dashPlugin.IsInstalled(kubecontext)
 		if err != nil {
 			return fmt.Errorf("failed to check dashboard status: %w", err)
@@ -329,7 +329,7 @@ func runUpgradeDryRun(cfg *config.Config, kubecontext string) error {
 	// Custom Apps
 	if len(cfg.Plugins.CustomApps) > 0 {
 		pluginLog := newLogger("[customApps]")
-		customPlugin := customapps.New(pluginLog)
+		customPlugin := customapps.New(pluginLog, globalTimeout)
 		fmt.Println("\n[customApps] Custom apps:")
 		for _, app := range cfg.Plugins.CustomApps {
 			ns := app.Namespace
@@ -355,7 +355,7 @@ func runUpgradeDryRun(cfg *config.Config, kubecontext string) error {
 	// ArgoCD
 	if cfg.Plugins.ArgoCD != nil && cfg.Plugins.ArgoCD.Enabled {
 		pluginLog := newLogger("[argocd]")
-		argoPlugin := argocd.New(pluginLog)
+		argoPlugin := argocd.New(pluginLog, globalTimeout)
 
 		namespace := cfg.Plugins.ArgoCD.Namespace
 		if namespace == "" {

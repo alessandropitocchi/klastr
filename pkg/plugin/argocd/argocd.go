@@ -41,11 +41,12 @@ stringData:
 `
 
 type Plugin struct {
-	Log *logger.Logger
+	Log     *logger.Logger
+	Timeout time.Duration
 }
 
-func New(log *logger.Logger) *Plugin {
-	return &Plugin{Log: log}
+func New(log *logger.Logger, timeout time.Duration) *Plugin {
+	return &Plugin{Log: log, Timeout: timeout}
 }
 
 func (p *Plugin) Name() string {
@@ -88,7 +89,7 @@ func (p *Plugin) Install(cfg *config.ArgoCDConfig, kubecontext string) error {
 
 	// Wait for ArgoCD to be ready
 	p.Log.Info("Waiting for ArgoCD server to be ready...\n")
-	if err := p.waitForDeployment(kubecontext, namespace, "argocd-server", 5*time.Minute); err != nil {
+	if err := p.waitForDeployment(kubecontext, namespace, "argocd-server", p.Timeout); err != nil {
 		return fmt.Errorf("ArgoCD server not ready: %w", err)
 	}
 	p.Log.Success("ArgoCD server is ready\n")
@@ -380,7 +381,7 @@ func (p *Plugin) Upgrade(cfg *config.ArgoCDConfig, kubecontext string) error {
 	}
 
 	p.Log.Info("Waiting for ArgoCD server to be ready...\n")
-	if err := p.waitForDeployment(kubecontext, namespace, "argocd-server", 5*time.Minute); err != nil {
+	if err := p.waitForDeployment(kubecontext, namespace, "argocd-server", p.Timeout); err != nil {
 		return fmt.Errorf("ArgoCD server not ready: %w", err)
 	}
 	p.Log.Success("ArgoCD server is ready\n")
@@ -658,7 +659,7 @@ data:
 		return fmt.Errorf("failed to restart argocd-server: %w", err)
 	}
 
-	if err := p.waitForDeployment(kubecontext, namespace, "argocd-server", 3*time.Minute); err != nil {
+	if err := p.waitForDeployment(kubecontext, namespace, "argocd-server", p.Timeout); err != nil {
 		return fmt.Errorf("argocd-server not ready after restart: %w", err)
 	}
 

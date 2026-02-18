@@ -2,6 +2,7 @@ package certmanager
 
 import (
 	"testing"
+	"time"
 
 	"github.com/alepito/deploy-cluster/pkg/logger"
 )
@@ -11,7 +12,7 @@ func testLogger() *logger.Logger {
 }
 
 func TestNew(t *testing.T) {
-	p := New(testLogger())
+	p := New(testLogger(), 5*time.Minute)
 	if p == nil {
 		t.Fatal("New() should return non-nil plugin")
 	}
@@ -21,14 +22,14 @@ func TestNew(t *testing.T) {
 }
 
 func TestName(t *testing.T) {
-	p := New(testLogger())
+	p := New(testLogger(), 5*time.Minute)
 	if got := p.Name(); got != "cert-manager" {
 		t.Errorf("Name() = %q, want %q", got, "cert-manager")
 	}
 }
 
 func TestManifestURL_DefaultVersion(t *testing.T) {
-	p := New(testLogger())
+	p := New(testLogger(), 5*time.Minute)
 	url := p.manifestURL("v1.16.3")
 	want := "https://github.com/cert-manager/cert-manager/releases/download/v1.16.3/cert-manager.yaml"
 	if url != want {
@@ -37,7 +38,7 @@ func TestManifestURL_DefaultVersion(t *testing.T) {
 }
 
 func TestManifestURL_CustomVersion(t *testing.T) {
-	p := New(testLogger())
+	p := New(testLogger(), 5*time.Minute)
 	url := p.manifestURL("v1.14.0")
 	want := "https://github.com/cert-manager/cert-manager/releases/download/v1.14.0/cert-manager.yaml"
 	if url != want {

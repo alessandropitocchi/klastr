@@ -2,6 +2,7 @@ package argocd
 
 import (
 	"testing"
+	"time"
 
 	"github.com/alepito/deploy-cluster/pkg/config"
 	"github.com/alepito/deploy-cluster/pkg/logger"
@@ -12,7 +13,7 @@ func testLogger() *logger.Logger {
 }
 
 func TestRepoName_ExplicitName(t *testing.T) {
-	p := New(testLogger())
+	p := New(testLogger(), 5*time.Minute)
 	repo := config.ArgoCDRepoConfig{
 		Name: "my-repo",
 		URL:  "https://github.com/user/repo.git",
@@ -24,7 +25,7 @@ func TestRepoName_ExplicitName(t *testing.T) {
 }
 
 func TestRepoName_GeneratedFromHTTPS(t *testing.T) {
-	p := New(testLogger())
+	p := New(testLogger(), 5*time.Minute)
 	repo := config.ArgoCDRepoConfig{
 		URL: "https://github.com/user/repo.git",
 	}
@@ -36,7 +37,7 @@ func TestRepoName_GeneratedFromHTTPS(t *testing.T) {
 }
 
 func TestRepoName_GeneratedFromSSH(t *testing.T) {
-	p := New(testLogger())
+	p := New(testLogger(), 5*time.Minute)
 	repo := config.ArgoCDRepoConfig{
 		URL: "git@github.com:user/repo.git",
 	}
@@ -48,7 +49,7 @@ func TestRepoName_GeneratedFromSSH(t *testing.T) {
 }
 
 func TestRepoName_TrimsGitSuffix(t *testing.T) {
-	p := New(testLogger())
+	p := New(testLogger(), 5*time.Minute)
 	repo := config.ArgoCDRepoConfig{
 		URL: "https://github.com/user/myapp.git",
 	}
@@ -61,7 +62,7 @@ func TestRepoName_TrimsGitSuffix(t *testing.T) {
 }
 
 func TestDiffRepos_AddAndRemove(t *testing.T) {
-	p := New(testLogger())
+	p := New(testLogger(), 5*time.Minute)
 
 	desiredRepos := []config.ArgoCDRepoConfig{
 		{Name: "repo-a", URL: "https://a.com"},
@@ -113,7 +114,7 @@ func TestDiffApps_AddAndRemove(t *testing.T) {
 }
 
 func TestDiffRepos_AllNew(t *testing.T) {
-	p := New(testLogger())
+	p := New(testLogger(), 5*time.Minute)
 
 	desiredRepos := []config.ArgoCDRepoConfig{
 		{Name: "repo-a", URL: "https://a.com"},

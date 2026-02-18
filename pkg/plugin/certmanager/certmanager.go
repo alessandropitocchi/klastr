@@ -14,11 +14,12 @@ import (
 const defaultVersion = "v1.16.3"
 
 type Plugin struct {
-	Log *logger.Logger
+	Log     *logger.Logger
+	Timeout time.Duration
 }
 
-func New(log *logger.Logger) *Plugin {
-	return &Plugin{Log: log}
+func New(log *logger.Logger, timeout time.Duration) *Plugin {
+	return &Plugin{Log: log, Timeout: timeout}
 }
 
 func (p *Plugin) Name() string {
@@ -52,7 +53,7 @@ func (p *Plugin) Install(cfg *config.CertManagerConfig, kubecontext string) erro
 	p.Log.Info("Waiting for cert-manager-webhook to be ready...\n")
 	waitCmd := exec.Command("kubectl", "--context", kubecontext,
 		"rollout", "status", "deployment/cert-manager-webhook",
-		"-n", "cert-manager", "--timeout", (3 * time.Minute).String())
+		"-n", "cert-manager", "--timeout", p.Timeout.String())
 	waitCmd.Stdout = os.Stdout
 	waitCmd.Stderr = os.Stderr
 	if err := waitCmd.Run(); err != nil {
@@ -63,7 +64,7 @@ func (p *Plugin) Install(cfg *config.CertManagerConfig, kubecontext string) erro
 	p.Log.Info("Waiting for cert-manager controller to be ready...\n")
 	waitCtrl := exec.Command("kubectl", "--context", kubecontext,
 		"rollout", "status", "deployment/cert-manager",
-		"-n", "cert-manager", "--timeout", (2 * time.Minute).String())
+		"-n", "cert-manager", "--timeout", p.Timeout.String())
 	waitCtrl.Stdout = os.Stdout
 	waitCtrl.Stderr = os.Stderr
 	if err := waitCtrl.Run(); err != nil {

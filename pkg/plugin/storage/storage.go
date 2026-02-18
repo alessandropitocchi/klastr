@@ -17,11 +17,12 @@ const (
 )
 
 type Plugin struct {
-	Log *logger.Logger
+	Log     *logger.Logger
+	Timeout time.Duration
 }
 
-func New(log *logger.Logger) *Plugin {
-	return &Plugin{Log: log}
+func New(log *logger.Logger, timeout time.Duration) *Plugin {
+	return &Plugin{Log: log, Timeout: timeout}
 }
 
 func (p *Plugin) Name() string {
@@ -74,7 +75,7 @@ func (p *Plugin) installLocalPath(kubecontext string) error {
 	p.Log.Info("Waiting for local-path-provisioner to be ready...\n")
 	waitCmd := exec.Command("kubectl", "--context", kubecontext,
 		"rollout", "status", "deployment/local-path-provisioner",
-		"-n", "local-path-storage", "--timeout", (2 * time.Minute).String())
+		"-n", "local-path-storage", "--timeout", p.Timeout.String())
 	waitCmd.Stdout = os.Stdout
 	waitCmd.Stderr = os.Stderr
 	if err := waitCmd.Run(); err != nil {
