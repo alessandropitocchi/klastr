@@ -20,6 +20,16 @@ func TestNew(t *testing.T) {
 	if p.Log == nil {
 		t.Error("Log should not be nil")
 	}
+	if p.Timeout != 5*time.Minute {
+		t.Errorf("Timeout = %v, want %v", p.Timeout, 5*time.Minute)
+	}
+}
+
+func TestNew_CustomTimeout(t *testing.T) {
+	p := New(testLogger(), 30*time.Second)
+	if p.Timeout != 30*time.Second {
+		t.Errorf("Timeout = %v, want %v", p.Timeout, 30*time.Second)
+	}
 }
 
 func TestName(t *testing.T) {

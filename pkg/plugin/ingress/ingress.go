@@ -11,6 +11,9 @@ import (
 	"github.com/alepito/deploy-cluster/pkg/retry"
 )
 
+// execCommand is a package-level variable for creating exec.Cmd, replaceable in tests.
+var execCommand = exec.Command
+
 const (
 	nginxManifestURL = "https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.12.0/deploy/static/provider/kind/deploy.yaml"
 )
@@ -47,7 +50,7 @@ func (p *Plugin) Uninstall(cfg *config.IngressConfig, kubecontext string) error 
 }
 
 func (p *Plugin) IsInstalled(kubecontext string) (bool, error) {
-	cmd := exec.Command("kubectl", "--context", kubecontext,
+	cmd := execCommand("kubectl", "--context", kubecontext,
 		"get", "deployment", "ingress-nginx-controller", "-n", "ingress-nginx")
 	if err := cmd.Run(); err != nil {
 		return false, nil
@@ -59,7 +62,7 @@ func (p *Plugin) installNginx(kubecontext string) error {
 	p.Log.Info("Installing nginx ingress controller...\n")
 
 	err := retry.Run(3, 5*time.Second, p.Log.Warn, func() error {
-		cmd := exec.Command("kubectl", "--context", kubecontext,
+		cmd := execCommand("kubectl", "--context", kubecontext,
 			"apply", "-f", nginxManifestURL)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
@@ -70,7 +73,7 @@ func (p *Plugin) installNginx(kubecontext string) error {
 	}
 
 	p.Log.Info("Waiting for nginx ingress controller to be ready...\n")
-	waitCmd := exec.Command("kubectl", "--context", kubecontext,
+	waitCmd := execCommand("kubectl", "--context", kubecontext,
 		"rollout", "status", "deployment/ingress-nginx-controller",
 		"-n", "ingress-nginx", "--timeout", p.Timeout.String())
 	waitCmd.Stdout = os.Stdout
@@ -87,7 +90,7 @@ func (p *Plugin) installNginx(kubecontext string) error {
 func (p *Plugin) uninstallNginx(kubecontext string) error {
 	p.Log.Info("Uninstalling nginx ingress controller...\n")
 
-	cmd := exec.Command("kubectl", "--context", kubecontext,
+	cmd := execCommand("kubectl", "--context", kubecontext,
 		"delete", "-f", nginxManifestURL)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

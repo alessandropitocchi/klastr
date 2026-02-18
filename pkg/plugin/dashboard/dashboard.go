@@ -12,6 +12,9 @@ import (
 	"github.com/alepito/deploy-cluster/pkg/retry"
 )
 
+// execCommand is a package-level variable for creating exec.Cmd, replaceable in tests.
+var execCommand = exec.Command
+
 const (
 	defaultHeadlampChart   = "oci://ghcr.io/headlamp-k8s/charts/headlamp"
 	defaultHeadlampVersion = "0.25.0"
@@ -51,7 +54,7 @@ func (p *Plugin) Uninstall(cfg *config.DashboardConfig, kubecontext string) erro
 }
 
 func (p *Plugin) IsInstalled(kubecontext string) (bool, error) {
-	cmd := exec.Command("helm", "status", releaseName,
+	cmd := execCommand("helm", "status", releaseName,
 		"--namespace", namespace, "--kube-context", kubecontext)
 	if err := cmd.Run(); err != nil {
 		return false, nil
@@ -81,7 +84,7 @@ func (p *Plugin) installHeadlamp(cfg *config.DashboardConfig, kubecontext string
 	}
 
 	err := retry.Run(3, 5*time.Second, p.Log.Warn, func() error {
-		cmd := exec.Command("helm", args...)
+		cmd := execCommand("helm", args...)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		return cmd.Run()
@@ -105,7 +108,7 @@ subjects:
     name: headlamp
     namespace: %s`, namespace)
 
-	crbCmd := exec.Command("kubectl", "--context", kubecontext, "apply", "-f", "-")
+	crbCmd := execCommand("kubectl", "--context", kubecontext, "apply", "-f", "-")
 	crbCmd.Stdin = strings.NewReader(crbManifest)
 	crbCmd.Stdout = os.Stdout
 	crbCmd.Stderr = os.Stderr
@@ -155,7 +158,7 @@ spec:
                   number: 80`, namespace, cfg.Host)
 
 	err := retry.Run(3, 5*time.Second, p.Log.Warn, func() error {
-		cmd := exec.Command("kubectl", "--context", kubecontext, "apply", "-f", "-")
+		cmd := execCommand("kubectl", "--context", kubecontext, "apply", "-f", "-")
 		cmd.Stdin = strings.NewReader(manifest)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
@@ -172,7 +175,7 @@ spec:
 func (p *Plugin) uninstallHeadlamp(kubecontext string) error {
 	p.Log.Info("Uninstalling Headlamp...\n")
 
-	cmd := exec.Command("helm", "uninstall", releaseName,
+	cmd := execCommand("helm", "uninstall", releaseName,
 		"--namespace", namespace,
 		"--kube-context", kubecontext)
 	cmd.Stdout = os.Stdout
@@ -182,7 +185,7 @@ func (p *Plugin) uninstallHeadlamp(kubecontext string) error {
 	}
 
 	// Clean up ClusterRoleBinding
-	crbCmd := exec.Command("kubectl", "--context", kubecontext,
+	crbCmd := execCommand("kubectl", "--context", kubecontext,
 		"delete", "clusterrolebinding", "headlamp-admin", "--ignore-not-found=true")
 	crbCmd.Stdout = os.Stdout
 	crbCmd.Stderr = os.Stderr

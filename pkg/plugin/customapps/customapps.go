@@ -13,6 +13,9 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// execCommand is a package-level variable for creating exec.Cmd, replaceable in tests.
+var execCommand = exec.Command
+
 type Plugin struct {
 	Log     *logger.Logger
 	Timeout time.Duration
@@ -71,7 +74,7 @@ func (p *Plugin) Install(app config.CustomAppConfig, kubecontext string) error {
 	}
 
 	err = retry.Run(3, 5*time.Second, p.Log.Warn, func() error {
-		cmd := exec.Command("helm", args...)
+		cmd := execCommand("helm", args...)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		return cmd.Run()
@@ -100,7 +103,7 @@ func (p *Plugin) Uninstall(name, namespace, kubecontext string) error {
 
 	p.Log.Info("Uninstalling %s...\n", name)
 
-	cmd := exec.Command("helm", "uninstall", name,
+	cmd := execCommand("helm", "uninstall", name,
 		"--namespace", namespace,
 		"--kube-context", kubecontext)
 	cmd.Stdout = os.Stdout
@@ -118,7 +121,7 @@ func (p *Plugin) IsInstalled(name, namespace, kubecontext string) (bool, error) 
 	if namespace == "" {
 		namespace = name
 	}
-	cmd := exec.Command("helm", "status", name,
+	cmd := execCommand("helm", "status", name,
 		"--namespace", namespace, "--kube-context", kubecontext)
 	if err := cmd.Run(); err != nil {
 		return false, nil
@@ -228,7 +231,7 @@ spec:
                   number: %d`, app.Name, namespace, ing.Host, serviceName, servicePort)
 
 	err := retry.Run(3, 5*time.Second, p.Log.Warn, func() error {
-		cmd := exec.Command("kubectl", "--context", kubecontext, "apply", "-f", "-")
+		cmd := execCommand("kubectl", "--context", kubecontext, "apply", "-f", "-")
 		cmd.Stdin = strings.NewReader(manifest)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr

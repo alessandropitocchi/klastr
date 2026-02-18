@@ -12,6 +12,9 @@ import (
 	"github.com/alepito/deploy-cluster/pkg/retry"
 )
 
+// execCommand is a package-level variable for creating exec.Cmd, replaceable in tests.
+var execCommand = exec.Command
+
 const (
 	localPathProvisionerURL = "https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.30/deploy/local-path-storage.yaml"
 )
@@ -48,7 +51,7 @@ func (p *Plugin) Uninstall(cfg *config.StorageConfig, kubecontext string) error 
 }
 
 func (p *Plugin) IsInstalled(kubecontext string) (bool, error) {
-	cmd := exec.Command("kubectl", "--context", kubecontext,
+	cmd := execCommand("kubectl", "--context", kubecontext,
 		"get", "deployment", "local-path-provisioner", "-n", "local-path-storage")
 	if err := cmd.Run(); err != nil {
 		return false, nil
@@ -61,7 +64,7 @@ func (p *Plugin) installLocalPath(kubecontext string) error {
 
 	// Apply manifest with retry
 	err := retry.Run(3, 5*time.Second, p.Log.Warn, func() error {
-		cmd := exec.Command("kubectl", "--context", kubecontext,
+		cmd := execCommand("kubectl", "--context", kubecontext,
 			"apply", "-f", localPathProvisionerURL)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
@@ -73,7 +76,7 @@ func (p *Plugin) installLocalPath(kubecontext string) error {
 
 	// Wait for deployment
 	p.Log.Info("Waiting for local-path-provisioner to be ready...\n")
-	waitCmd := exec.Command("kubectl", "--context", kubecontext,
+	waitCmd := execCommand("kubectl", "--context", kubecontext,
 		"rollout", "status", "deployment/local-path-provisioner",
 		"-n", "local-path-storage", "--timeout", p.Timeout.String())
 	waitCmd.Stdout = os.Stdout
@@ -84,7 +87,7 @@ func (p *Plugin) installLocalPath(kubecontext string) error {
 
 	// Set as default StorageClass
 	p.Log.Debug("Setting local-path as default StorageClass...\n")
-	patchCmd := exec.Command("kubectl", "--context", kubecontext,
+	patchCmd := execCommand("kubectl", "--context", kubecontext,
 		"patch", "storageclass", "local-path",
 		"-p", `{"metadata":{"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}`)
 	patchCmd.Stdout = os.Stdout
@@ -95,7 +98,7 @@ func (p *Plugin) installLocalPath(kubecontext string) error {
 	}
 
 	// Unset kind's default standard StorageClass if present
-	unsetCmd := exec.Command("kubectl", "--context", kubecontext,
+	unsetCmd := execCommand("kubectl", "--context", kubecontext,
 		"patch", "storageclass", "standard",
 		"-p", `{"metadata":{"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}`)
 	if err := unsetCmd.Run(); err != nil {
@@ -111,7 +114,7 @@ func (p *Plugin) installLocalPath(kubecontext string) error {
 func (p *Plugin) uninstallLocalPath(kubecontext string) error {
 	p.Log.Info("Uninstalling local-path-provisioner...\n")
 
-	cmd := exec.Command("kubectl", "--context", kubecontext,
+	cmd := execCommand("kubectl", "--context", kubecontext,
 		"delete", "-f", localPathProvisionerURL)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

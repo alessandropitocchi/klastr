@@ -11,6 +11,9 @@ import (
 	"github.com/alepito/deploy-cluster/pkg/retry"
 )
 
+// execCommand is a package-level variable for creating exec.Cmd, replaceable in tests.
+var execCommand = exec.Command
+
 const defaultVersion = "v1.16.3"
 
 type Plugin struct {
@@ -40,7 +43,7 @@ func (p *Plugin) Install(cfg *config.CertManagerConfig, kubecontext string) erro
 
 	url := p.manifestURL(version)
 	err := retry.Run(3, 5*time.Second, p.Log.Warn, func() error {
-		cmd := exec.Command("kubectl", "--context", kubecontext, "apply", "-f", url)
+		cmd := execCommand("kubectl", "--context", kubecontext, "apply", "-f", url)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		return cmd.Run()
@@ -51,7 +54,7 @@ func (p *Plugin) Install(cfg *config.CertManagerConfig, kubecontext string) erro
 
 	// Wait for webhook to be ready (critical for cert-manager to work)
 	p.Log.Info("Waiting for cert-manager-webhook to be ready...\n")
-	waitCmd := exec.Command("kubectl", "--context", kubecontext,
+	waitCmd := execCommand("kubectl", "--context", kubecontext,
 		"rollout", "status", "deployment/cert-manager-webhook",
 		"-n", "cert-manager", "--timeout", p.Timeout.String())
 	waitCmd.Stdout = os.Stdout
@@ -62,7 +65,7 @@ func (p *Plugin) Install(cfg *config.CertManagerConfig, kubecontext string) erro
 
 	// Also wait for the main controller
 	p.Log.Info("Waiting for cert-manager controller to be ready...\n")
-	waitCtrl := exec.Command("kubectl", "--context", kubecontext,
+	waitCtrl := execCommand("kubectl", "--context", kubecontext,
 		"rollout", "status", "deployment/cert-manager",
 		"-n", "cert-manager", "--timeout", p.Timeout.String())
 	waitCtrl.Stdout = os.Stdout
@@ -85,7 +88,7 @@ func (p *Plugin) Uninstall(cfg *config.CertManagerConfig, kubecontext string) er
 	p.Log.Info("Uninstalling cert-manager...\n")
 
 	url := p.manifestURL(version)
-	cmd := exec.Command("kubectl", "--context", kubecontext, "delete", "-f", url)
+	cmd := execCommand("kubectl", "--context", kubecontext, "delete", "-f", url)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
@@ -97,7 +100,7 @@ func (p *Plugin) Uninstall(cfg *config.CertManagerConfig, kubecontext string) er
 }
 
 func (p *Plugin) IsInstalled(kubecontext string) (bool, error) {
-	cmd := exec.Command("kubectl", "--context", kubecontext,
+	cmd := execCommand("kubectl", "--context", kubecontext,
 		"get", "deployment", "cert-manager", "-n", "cert-manager")
 	if err := cmd.Run(); err != nil {
 		return false, nil

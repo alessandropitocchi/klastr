@@ -12,6 +12,9 @@ import (
 	"github.com/alepito/deploy-cluster/pkg/retry"
 )
 
+// execCommand is a package-level variable for creating exec.Cmd, replaceable in tests.
+var execCommand = exec.Command
+
 const (
 	defaultChartRef     = "oci://ghcr.io/prometheus-community/charts/kube-prometheus-stack"
 	defaultChartVersion = "72.6.2"
@@ -51,7 +54,7 @@ func (p *Plugin) Uninstall(cfg *config.MonitoringConfig, kubecontext string) err
 }
 
 func (p *Plugin) IsInstalled(kubecontext string) (bool, error) {
-	cmd := exec.Command("helm", "status", releaseName,
+	cmd := execCommand("helm", "status", releaseName,
 		"--namespace", namespace, "--kube-context", kubecontext)
 	if err := cmd.Run(); err != nil {
 		return false, nil
@@ -81,7 +84,7 @@ func (p *Plugin) installPrometheus(cfg *config.MonitoringConfig, kubecontext str
 	}
 
 	err := retry.Run(3, 5*time.Second, p.Log.Warn, func() error {
-		cmd := exec.Command("helm", args...)
+		cmd := execCommand("helm", args...)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		return cmd.Run()
@@ -135,7 +138,7 @@ spec:
                   number: 80`, namespace, cfg.Host)
 
 	err := retry.Run(3, 5*time.Second, p.Log.Warn, func() error {
-		cmd := exec.Command("kubectl", "--context", kubecontext, "apply", "-f", "-")
+		cmd := execCommand("kubectl", "--context", kubecontext, "apply", "-f", "-")
 		cmd.Stdin = strings.NewReader(manifest)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
@@ -152,7 +155,7 @@ spec:
 func (p *Plugin) uninstallPrometheus(kubecontext string) error {
 	p.Log.Info("Uninstalling kube-prometheus-stack...\n")
 
-	cmd := exec.Command("helm", "uninstall", releaseName,
+	cmd := execCommand("helm", "uninstall", releaseName,
 		"--namespace", namespace,
 		"--kube-context", kubecontext)
 	cmd.Stdout = os.Stdout
@@ -176,7 +179,7 @@ func (p *Plugin) uninstallPrometheus(kubecontext string) error {
 		"thanosrulers.monitoring.coreos.com",
 	}
 	for _, crd := range crds {
-		crdCmd := exec.Command("kubectl", "--context", kubecontext,
+		crdCmd := execCommand("kubectl", "--context", kubecontext,
 			"delete", "crd", crd, "--ignore-not-found=true")
 		crdCmd.Stdout = os.Stdout
 		crdCmd.Stderr = os.Stderr

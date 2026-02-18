@@ -12,6 +12,26 @@ func testLogger() *logger.Logger {
 	return logger.New("[argocd]", logger.LevelQuiet)
 }
 
+func TestNew(t *testing.T) {
+	p := New(testLogger(), 5*time.Minute)
+	if p == nil {
+		t.Fatal("New() should return non-nil plugin")
+	}
+	if p.Log == nil {
+		t.Error("Log should not be nil")
+	}
+	if p.Timeout != 5*time.Minute {
+		t.Errorf("Timeout = %v, want %v", p.Timeout, 5*time.Minute)
+	}
+}
+
+func TestNew_CustomTimeout(t *testing.T) {
+	p := New(testLogger(), 30*time.Second)
+	if p.Timeout != 30*time.Second {
+		t.Errorf("Timeout = %v, want %v", p.Timeout, 30*time.Second)
+	}
+}
+
 func TestRepoName_ExplicitName(t *testing.T) {
 	p := New(testLogger(), 5*time.Minute)
 	repo := config.ArgoCDRepoConfig{

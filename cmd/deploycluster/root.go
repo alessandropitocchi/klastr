@@ -25,6 +25,9 @@ and plugin support (ArgoCD, storage, ingress).`,
 		if verbose && quiet {
 			return fmt.Errorf("--verbose and --quiet are mutually exclusive")
 		}
+		if globalTimeout <= 0 {
+			return fmt.Errorf("--timeout must be a positive duration")
+		}
 		return nil
 	},
 }

@@ -15,6 +15,9 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// execCommand is a package-level variable for creating exec.Cmd, replaceable in tests.
+var execCommand = exec.Command
+
 const repoSecretTemplate = `apiVersion: v1
 kind: Secret
 metadata:
@@ -248,7 +251,7 @@ func (p *Plugin) addRepository(repo config.ArgoCDRepoConfig, kubecontext string,
 	// Apply manifest with retry
 	manifestStr := manifest.String()
 	return retry.Run(3, 5*time.Second, p.Log.Warn, func() error {
-		cmd := exec.Command("kubectl", "--context", kubecontext, "apply", "-f", "-")
+		cmd := execCommand("kubectl", "--context", kubecontext, "apply", "-f", "-")
 		cmd.Stdin = strings.NewReader(manifestStr)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
@@ -352,7 +355,7 @@ spec:
 
 	// Apply manifest with retry
 	return retry.Run(3, 5*time.Second, p.Log.Warn, func() error {
-		cmd := exec.Command("kubectl", "--context", kubecontext, "apply", "-f", "-")
+		cmd := execCommand("kubectl", "--context", kubecontext, "apply", "-f", "-")
 		cmd.Stdin = strings.NewReader(manifest)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
@@ -572,7 +575,7 @@ func (p *Plugin) repoName(repo config.ArgoCDRepoConfig) string {
 // listCurrentRepos returns the names of repo secrets (without the "repo-" prefix)
 // that have the ArgoCD repository label.
 func (p *Plugin) ListCurrentRepos(kubecontext, namespace string) ([]string, error) {
-	cmd := exec.Command("kubectl", "--context", kubecontext,
+	cmd := execCommand("kubectl", "--context", kubecontext,
 		"get", "secrets", "-n", namespace,
 		"-l", "argocd.argoproj.io/secret-type=repository",
 		"-o", "jsonpath={.items[*].metadata.name}")
@@ -597,7 +600,7 @@ func (p *Plugin) ListCurrentRepos(kubecontext, namespace string) ([]string, erro
 
 // listCurrentApps returns the names of ArgoCD Application resources in the namespace.
 func (p *Plugin) ListCurrentApps(kubecontext, namespace string) ([]string, error) {
-	cmd := exec.Command("kubectl", "--context", kubecontext,
+	cmd := execCommand("kubectl", "--context", kubecontext,
 		"get", "applications.argoproj.io", "-n", namespace,
 		"-o", "jsonpath={.items[*].metadata.name}")
 	output, err := cmd.Output()
@@ -643,7 +646,7 @@ data:
   server.insecure: "true"`, namespace)
 
 	err := retry.Run(3, 5*time.Second, p.Log.Warn, func() error {
-		cmd := exec.Command("kubectl", "--context", kubecontext, "apply", "-f", "-")
+		cmd := execCommand("kubectl", "--context", kubecontext, "apply", "-f", "-")
 		cmd.Stdin = strings.NewReader(cmManifest)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
@@ -701,7 +704,7 @@ spec:
 
 	p.Log.Debug("Applying Ingress resource for host '%s'...\n", cfg.Host)
 	err = retry.Run(3, 5*time.Second, p.Log.Warn, func() error {
-		ingressCmd := exec.Command("kubectl", "--context", kubecontext, "apply", "-f", "-")
+		ingressCmd := execCommand("kubectl", "--context", kubecontext, "apply", "-f", "-")
 		ingressCmd.Stdin = strings.NewReader(manifest)
 		ingressCmd.Stdout = os.Stdout
 		ingressCmd.Stderr = os.Stderr
@@ -739,7 +742,7 @@ func (p *Plugin) IsInstalled(kubecontext string, namespace string) (bool, error)
 		namespace = "argocd"
 	}
 
-	cmd := exec.Command("kubectl", "--context", kubecontext, "get", "deployment", "argocd-server", "-n", namespace)
+	cmd := execCommand("kubectl", "--context", kubecontext, "get", "deployment", "argocd-server", "-n", namespace)
 	if err := cmd.Run(); err != nil {
 		return false, nil
 	}
@@ -749,7 +752,7 @@ func (p *Plugin) IsInstalled(kubecontext string, namespace string) (bool, error)
 func (p *Plugin) runKubectl(kubecontext string, args ...string) error {
 	fullArgs := append([]string{"--context", kubecontext}, args...)
 	return retry.Run(3, 5*time.Second, p.Log.Warn, func() error {
-		cmd := exec.Command("kubectl", fullArgs...)
+		cmd := execCommand("kubectl", fullArgs...)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		return cmd.Run()
@@ -758,7 +761,7 @@ func (p *Plugin) runKubectl(kubecontext string, args ...string) error {
 
 func (p *Plugin) runKubectlApply(kubecontext string, namespace string, url string) error {
 	return retry.Run(3, 5*time.Second, p.Log.Warn, func() error {
-		cmd := exec.Command("kubectl", "--context", kubecontext, "apply", "-n", namespace, "-f", url, "--server-side", "--force-conflicts")
+		cmd := execCommand("kubectl", "--context", kubecontext, "apply", "-n", namespace, "-f", url, "--server-side", "--force-conflicts")
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		return cmd.Run()
@@ -766,7 +769,7 @@ func (p *Plugin) runKubectlApply(kubecontext string, namespace string, url strin
 }
 
 func (p *Plugin) waitForDeployment(kubecontext string, namespace string, name string, timeout time.Duration) error {
-	cmd := exec.Command("kubectl", "--context", kubecontext, "rollout", "status", "deployment/"+name, "-n", namespace, "--timeout", timeout.String())
+	cmd := execCommand("kubectl", "--context", kubecontext, "rollout", "status", "deployment/"+name, "-n", namespace, "--timeout", timeout.String())
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
