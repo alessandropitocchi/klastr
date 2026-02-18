@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/alepito/deploy-cluster/pkg/config"
+	"github.com/alepito/deploy-cluster/pkg/logger"
+	"github.com/alepito/deploy-cluster/pkg/retry"
 )
 
 const (
@@ -18,21 +20,15 @@ const (
 )
 
 type Plugin struct {
-	Verbose bool
+	Log *logger.Logger
 }
 
-func New() *Plugin {
-	return &Plugin{Verbose: true}
+func New(log *logger.Logger) *Plugin {
+	return &Plugin{Log: log}
 }
 
 func (p *Plugin) Name() string {
 	return "monitoring"
-}
-
-func (p *Plugin) log(format string, args ...any) {
-	if p.Verbose {
-		fmt.Printf(format, args...)
-	}
 }
 
 func (p *Plugin) Install(cfg *config.MonitoringConfig, kubecontext string) error {
@@ -71,7 +67,7 @@ func (p *Plugin) chartVersion(cfg *config.MonitoringConfig) string {
 
 func (p *Plugin) installPrometheus(cfg *config.MonitoringConfig, kubecontext string) error {
 	version := p.chartVersion(cfg)
-	p.log("[monitoring] Installing kube-prometheus-stack %s via Helm...\n", version)
+	p.Log.Info("Installing kube-prometheus-stack %s via Helm...\n", version)
 
 	args := []string{
 		"upgrade", "--install", releaseName, defaultChartRef,
@@ -83,14 +79,17 @@ func (p *Plugin) installPrometheus(cfg *config.MonitoringConfig, kubecontext str
 		"--timeout", (5 * time.Minute).String(),
 	}
 
-	cmd := exec.Command("helm", args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
+	err := retry.Run(3, 5*time.Second, p.Log.Warn, func() error {
+		cmd := exec.Command("helm", args...)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		return cmd.Run()
+	})
+	if err != nil {
 		return fmt.Errorf("failed to install kube-prometheus-stack: %w", err)
 	}
 
-	p.log("[monitoring] ✓ kube-prometheus-stack installed successfully\n")
+	p.Log.Success("kube-prometheus-stack installed successfully\n")
 
 	// Configure ingress for Grafana if enabled
 	if cfg.Ingress != nil && cfg.Ingress.Enabled {
@@ -98,19 +97,19 @@ func (p *Plugin) installPrometheus(cfg *config.MonitoringConfig, kubecontext str
 			return fmt.Errorf("failed to configure Grafana ingress: %w", err)
 		}
 	} else {
-		p.log("\n[monitoring] To access Grafana:\n")
-		p.log("  kubectl port-forward svc/kube-prometheus-stack-grafana -n %s 3000:80\n", namespace)
-		p.log("  Open: http://localhost:3000 (admin/prom-operator)\n")
+		p.Log.Info("\nTo access Grafana:\n")
+		p.Log.Info("  kubectl port-forward svc/kube-prometheus-stack-grafana -n %s 3000:80\n", namespace)
+		p.Log.Info("  Open: http://localhost:3000 (admin/prom-operator)\n")
 	}
 
-	p.log("\n[monitoring] To access Prometheus:\n")
-	p.log("  kubectl port-forward svc/kube-prometheus-stack-prometheus -n %s 9090:9090\n", namespace)
-	p.log("  Open: http://localhost:9090\n")
+	p.Log.Info("\nTo access Prometheus:\n")
+	p.Log.Info("  kubectl port-forward svc/kube-prometheus-stack-prometheus -n %s 9090:9090\n", namespace)
+	p.Log.Info("  Open: http://localhost:9090\n")
 	return nil
 }
 
 func (p *Plugin) configureGrafanaIngress(cfg *config.MonitoringIngressConfig, kubecontext string) error {
-	p.log("[monitoring] Configuring ingress for Grafana...\n")
+	p.Log.Info("Configuring ingress for Grafana...\n")
 
 	manifest := fmt.Sprintf(`apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -134,20 +133,23 @@ spec:
                 port:
                   number: 80`, namespace, cfg.Host)
 
-	cmd := exec.Command("kubectl", "--context", kubecontext, "apply", "-f", "-")
-	cmd.Stdin = strings.NewReader(manifest)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
+	err := retry.Run(3, 5*time.Second, p.Log.Warn, func() error {
+		cmd := exec.Command("kubectl", "--context", kubecontext, "apply", "-f", "-")
+		cmd.Stdin = strings.NewReader(manifest)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		return cmd.Run()
+	})
+	if err != nil {
 		return fmt.Errorf("failed to apply grafana ingress: %w", err)
 	}
 
-	p.log("[monitoring] ✓ Grafana available at: http://%s (admin/prom-operator)\n", cfg.Host)
+	p.Log.Success("Grafana available at: http://%s (admin/prom-operator)\n", cfg.Host)
 	return nil
 }
 
 func (p *Plugin) uninstallPrometheus(kubecontext string) error {
-	p.log("[monitoring] Uninstalling kube-prometheus-stack...\n")
+	p.Log.Info("Uninstalling kube-prometheus-stack...\n")
 
 	cmd := exec.Command("helm", "uninstall", releaseName,
 		"--namespace", namespace,
@@ -159,7 +161,7 @@ func (p *Plugin) uninstallPrometheus(kubecontext string) error {
 	}
 
 	// Clean up CRDs (helm doesn't remove CRDs by default)
-	p.log("[monitoring] Cleaning up Prometheus CRDs...\n")
+	p.Log.Info("Cleaning up Prometheus CRDs...\n")
 	crds := []string{
 		"alertmanagerconfigs.monitoring.coreos.com",
 		"alertmanagers.monitoring.coreos.com",
@@ -180,6 +182,6 @@ func (p *Plugin) uninstallPrometheus(kubecontext string) error {
 		_ = crdCmd.Run()
 	}
 
-	p.log("[monitoring] ✓ kube-prometheus-stack uninstalled\n")
+	p.Log.Success("kube-prometheus-stack uninstalled\n")
 	return nil
 }

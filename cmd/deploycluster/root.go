@@ -4,7 +4,13 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/alepito/deploy-cluster/pkg/logger"
 	"github.com/spf13/cobra"
+)
+
+var (
+	verbose bool
+	quiet   bool
 )
 
 var rootCmd = &cobra.Command{
@@ -13,6 +19,23 @@ var rootCmd = &cobra.Command{
 	Long: `deploy-cluster is a CLI tool for deploying Kubernetes clusters
 on various providers (kind, k3d) with configurable topology
 and plugin support (ArgoCD, storage, ingress).`,
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		if verbose && quiet {
+			return fmt.Errorf("--verbose and --quiet are mutually exclusive")
+		}
+		return nil
+	},
+}
+
+// newLogger creates a logger based on global flag state.
+func newLogger(prefix string) *logger.Logger {
+	level := logger.LevelNormal
+	if verbose {
+		level = logger.LevelVerbose
+	} else if quiet {
+		level = logger.LevelQuiet
+	}
+	return logger.New(prefix, level)
 }
 
 func Execute() {
@@ -20,4 +43,9 @@ func Execute() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+}
+
+func init() {
+	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "enable verbose (debug) output")
+	rootCmd.PersistentFlags().BoolVar(&quiet, "quiet", false, "suppress all output except errors")
 }

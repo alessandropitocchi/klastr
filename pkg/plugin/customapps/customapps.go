@@ -8,25 +8,21 @@ import (
 	"time"
 
 	"github.com/alepito/deploy-cluster/pkg/config"
+	"github.com/alepito/deploy-cluster/pkg/logger"
+	"github.com/alepito/deploy-cluster/pkg/retry"
 	"gopkg.in/yaml.v3"
 )
 
 type Plugin struct {
-	Verbose bool
+	Log *logger.Logger
 }
 
-func New() *Plugin {
-	return &Plugin{Verbose: true}
+func New(log *logger.Logger) *Plugin {
+	return &Plugin{Log: log}
 }
 
 func (p *Plugin) Name() string {
 	return "customApps"
-}
-
-func (p *Plugin) log(format string, args ...any) {
-	if p.Verbose {
-		fmt.Printf(format, args...)
-	}
 }
 
 // InstallAll installs all custom apps from the config.
@@ -46,7 +42,7 @@ func (p *Plugin) Install(app config.CustomAppConfig, kubecontext string) error {
 		namespace = app.Name
 	}
 
-	p.log("[customApps] Installing %s (%s)...\n", app.Name, app.Chart)
+	p.Log.Info("Installing %s (%s)...\n", app.Name, app.Chart)
 
 	args := []string{
 		"upgrade", "--install", app.Name, app.Chart,
@@ -73,14 +69,17 @@ func (p *Plugin) Install(app config.CustomAppConfig, kubecontext string) error {
 		args = append(args, "--values", valuesFile)
 	}
 
-	cmd := exec.Command("helm", args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
+	err = retry.Run(3, 5*time.Second, p.Log.Warn, func() error {
+		cmd := exec.Command("helm", args...)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		return cmd.Run()
+	})
+	if err != nil {
 		return fmt.Errorf("helm install failed: %w", err)
 	}
 
-	p.log("[customApps] ✓ %s installed successfully\n", app.Name)
+	p.Log.Success("%s installed successfully\n", app.Name)
 
 	// Configure ingress if enabled
 	if app.Ingress != nil && app.Ingress.Enabled {
@@ -98,7 +97,7 @@ func (p *Plugin) Uninstall(name, namespace, kubecontext string) error {
 		namespace = name
 	}
 
-	p.log("[customApps] Uninstalling %s...\n", name)
+	p.Log.Info("Uninstalling %s...\n", name)
 
 	cmd := exec.Command("helm", "uninstall", name,
 		"--namespace", namespace,
@@ -109,7 +108,7 @@ func (p *Plugin) Uninstall(name, namespace, kubecontext string) error {
 		return fmt.Errorf("helm uninstall failed: %w", err)
 	}
 
-	p.log("[customApps] ✓ %s uninstalled\n", name)
+	p.Log.Success("%s uninstalled\n", name)
 	return nil
 }
 
@@ -203,7 +202,7 @@ func (p *Plugin) configureIngress(app config.CustomAppConfig, kubecontext string
 		servicePort = 80
 	}
 
-	p.log("[customApps] Configuring ingress for %s (%s)...\n", app.Name, ing.Host)
+	p.Log.Info("Configuring ingress for %s (%s)...\n", app.Name, ing.Host)
 
 	manifest := fmt.Sprintf(`apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -227,14 +226,17 @@ spec:
                 port:
                   number: %d`, app.Name, namespace, ing.Host, serviceName, servicePort)
 
-	cmd := exec.Command("kubectl", "--context", kubecontext, "apply", "-f", "-")
-	cmd.Stdin = strings.NewReader(manifest)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
+	err := retry.Run(3, 5*time.Second, p.Log.Warn, func() error {
+		cmd := exec.Command("kubectl", "--context", kubecontext, "apply", "-f", "-")
+		cmd.Stdin = strings.NewReader(manifest)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		return cmd.Run()
+	})
+	if err != nil {
 		return fmt.Errorf("failed to apply ingress: %w", err)
 	}
 
-	p.log("[customApps] ✓ %s available at: http://%s\n", app.Name, ing.Host)
+	p.Log.Success("%s available at: http://%s\n", app.Name, ing.Host)
 	return nil
 }

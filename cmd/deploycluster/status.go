@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/alepito/deploy-cluster/pkg/config"
+	"github.com/alepito/deploy-cluster/pkg/logger"
 	"github.com/alepito/deploy-cluster/pkg/plugin/argocd"
 	"github.com/alepito/deploy-cluster/pkg/plugin/certmanager"
 	"github.com/alepito/deploy-cluster/pkg/plugin/customapps"
@@ -50,9 +51,11 @@ var statusCmd = &cobra.Command{
 
 		kubecontext := provider.KubeContext(cfg.Name)
 
+		// Use quiet logger for status checks — plugins should not print during status
+		quietLog := logger.New("", logger.LevelQuiet)
+
 		// Storage status
-		storagePlugin := storage.New()
-		storagePlugin.Verbose = false
+		storagePlugin := storage.New(quietLog)
 		storageInstalled, err := storagePlugin.IsInstalled(kubecontext)
 		if err != nil {
 			fmt.Printf("\nStorage: error checking (%v)\n", err)
@@ -63,8 +66,7 @@ var statusCmd = &cobra.Command{
 		}
 
 		// Ingress status
-		ingressPlugin := ingress.New()
-		ingressPlugin.Verbose = false
+		ingressPlugin := ingress.New(quietLog)
 		ingressInstalled, err := ingressPlugin.IsInstalled(kubecontext)
 		if err != nil {
 			fmt.Printf("\nIngress: error checking (%v)\n", err)
@@ -75,8 +77,7 @@ var statusCmd = &cobra.Command{
 		}
 
 		// Cert-manager status
-		cmPlugin := certmanager.New()
-		cmPlugin.Verbose = false
+		cmPlugin := certmanager.New(quietLog)
 		cmInstalled, err := cmPlugin.IsInstalled(kubecontext)
 		if err != nil {
 			fmt.Printf("\nCert-manager: error checking (%v)\n", err)
@@ -87,8 +88,7 @@ var statusCmd = &cobra.Command{
 		}
 
 		// Monitoring status
-		monPlugin := monitoring.New()
-		monPlugin.Verbose = false
+		monPlugin := monitoring.New(quietLog)
 		monInstalled, err := monPlugin.IsInstalled(kubecontext)
 		if err != nil {
 			fmt.Printf("\nMonitoring: error checking (%v)\n", err)
@@ -99,8 +99,7 @@ var statusCmd = &cobra.Command{
 		}
 
 		// Dashboard status
-		dashPlugin := dashboard.New()
-		dashPlugin.Verbose = false
+		dashPlugin := dashboard.New(quietLog)
 		dashInstalled, err := dashPlugin.IsInstalled(kubecontext)
 		if err != nil {
 			fmt.Printf("\nDashboard: error checking (%v)\n", err)
@@ -112,8 +111,7 @@ var statusCmd = &cobra.Command{
 
 		// Custom Apps status
 		if len(cfg.Plugins.CustomApps) > 0 {
-			customPlugin := customapps.New()
-			customPlugin.Verbose = false
+			customPlugin := customapps.New(quietLog)
 			installed, _ := customPlugin.ListInstalled(cfg.Plugins.CustomApps, kubecontext)
 			installedSet := make(map[string]bool)
 			for _, name := range installed {
@@ -130,8 +128,7 @@ var statusCmd = &cobra.Command{
 		}
 
 		// ArgoCD status
-		argoPlugin := argocd.New()
-		argoPlugin.Verbose = false
+		argoPlugin := argocd.New(quietLog)
 
 		namespace := "argocd"
 		if cfg.Plugins.ArgoCD != nil && cfg.Plugins.ArgoCD.Namespace != "" {

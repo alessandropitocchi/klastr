@@ -7,26 +7,22 @@ import (
 	"time"
 
 	"github.com/alepito/deploy-cluster/pkg/config"
+	"github.com/alepito/deploy-cluster/pkg/logger"
+	"github.com/alepito/deploy-cluster/pkg/retry"
 )
 
 const defaultVersion = "v1.16.3"
 
 type Plugin struct {
-	Verbose bool
+	Log *logger.Logger
 }
 
-func New() *Plugin {
-	return &Plugin{Verbose: true}
+func New(log *logger.Logger) *Plugin {
+	return &Plugin{Log: log}
 }
 
 func (p *Plugin) Name() string {
 	return "cert-manager"
-}
-
-func (p *Plugin) log(format string, args ...any) {
-	if p.Verbose {
-		fmt.Printf(format, args...)
-	}
 }
 
 func (p *Plugin) manifestURL(version string) string {
@@ -39,18 +35,21 @@ func (p *Plugin) Install(cfg *config.CertManagerConfig, kubecontext string) erro
 		version = defaultVersion
 	}
 
-	p.log("[cert-manager] Installing cert-manager %s...\n", version)
+	p.Log.Info("Installing cert-manager %s...\n", version)
 
 	url := p.manifestURL(version)
-	cmd := exec.Command("kubectl", "--context", kubecontext, "apply", "-f", url)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
+	err := retry.Run(3, 5*time.Second, p.Log.Warn, func() error {
+		cmd := exec.Command("kubectl", "--context", kubecontext, "apply", "-f", url)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		return cmd.Run()
+	})
+	if err != nil {
 		return fmt.Errorf("failed to apply cert-manager manifest: %w", err)
 	}
 
 	// Wait for webhook to be ready (critical for cert-manager to work)
-	p.log("[cert-manager] Waiting for cert-manager-webhook to be ready...\n")
+	p.Log.Info("Waiting for cert-manager-webhook to be ready...\n")
 	waitCmd := exec.Command("kubectl", "--context", kubecontext,
 		"rollout", "status", "deployment/cert-manager-webhook",
 		"-n", "cert-manager", "--timeout", (3 * time.Minute).String())
@@ -61,7 +60,7 @@ func (p *Plugin) Install(cfg *config.CertManagerConfig, kubecontext string) erro
 	}
 
 	// Also wait for the main controller
-	p.log("[cert-manager] Waiting for cert-manager controller to be ready...\n")
+	p.Log.Info("Waiting for cert-manager controller to be ready...\n")
 	waitCtrl := exec.Command("kubectl", "--context", kubecontext,
 		"rollout", "status", "deployment/cert-manager",
 		"-n", "cert-manager", "--timeout", (2 * time.Minute).String())
@@ -71,8 +70,8 @@ func (p *Plugin) Install(cfg *config.CertManagerConfig, kubecontext string) erro
 		return fmt.Errorf("cert-manager controller not ready: %w", err)
 	}
 
-	p.log("[cert-manager] ✓ cert-manager %s installed successfully\n", version)
-	p.log("[cert-manager] You can now create Issuer/ClusterIssuer and Certificate resources\n")
+	p.Log.Success("cert-manager %s installed successfully\n", version)
+	p.Log.Info("You can now create Issuer/ClusterIssuer and Certificate resources\n")
 	return nil
 }
 
@@ -82,7 +81,7 @@ func (p *Plugin) Uninstall(cfg *config.CertManagerConfig, kubecontext string) er
 		version = defaultVersion
 	}
 
-	p.log("[cert-manager] Uninstalling cert-manager...\n")
+	p.Log.Info("Uninstalling cert-manager...\n")
 
 	url := p.manifestURL(version)
 	cmd := exec.Command("kubectl", "--context", kubecontext, "delete", "-f", url)
@@ -92,7 +91,7 @@ func (p *Plugin) Uninstall(cfg *config.CertManagerConfig, kubecontext string) er
 		return fmt.Errorf("failed to delete cert-manager: %w", err)
 	}
 
-	p.log("[cert-manager] ✓ cert-manager uninstalled\n")
+	p.Log.Success("cert-manager uninstalled\n")
 	return nil
 }
 

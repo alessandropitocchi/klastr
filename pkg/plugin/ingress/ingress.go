@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/alepito/deploy-cluster/pkg/config"
+	"github.com/alepito/deploy-cluster/pkg/logger"
+	"github.com/alepito/deploy-cluster/pkg/retry"
 )
 
 const (
@@ -14,21 +16,15 @@ const (
 )
 
 type Plugin struct {
-	Verbose bool
+	Log *logger.Logger
 }
 
-func New() *Plugin {
-	return &Plugin{Verbose: true}
+func New(log *logger.Logger) *Plugin {
+	return &Plugin{Log: log}
 }
 
 func (p *Plugin) Name() string {
 	return "ingress"
-}
-
-func (p *Plugin) log(format string, args ...any) {
-	if p.Verbose {
-		fmt.Printf(format, args...)
-	}
 }
 
 func (p *Plugin) Install(cfg *config.IngressConfig, kubecontext string) error {
@@ -59,17 +55,20 @@ func (p *Plugin) IsInstalled(kubecontext string) (bool, error) {
 }
 
 func (p *Plugin) installNginx(kubecontext string) error {
-	p.log("[ingress] Installing nginx ingress controller...\n")
+	p.Log.Info("Installing nginx ingress controller...\n")
 
-	cmd := exec.Command("kubectl", "--context", kubecontext,
-		"apply", "-f", nginxManifestURL)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
+	err := retry.Run(3, 5*time.Second, p.Log.Warn, func() error {
+		cmd := exec.Command("kubectl", "--context", kubecontext,
+			"apply", "-f", nginxManifestURL)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		return cmd.Run()
+	})
+	if err != nil {
 		return fmt.Errorf("failed to apply nginx ingress manifest: %w", err)
 	}
 
-	p.log("[ingress] Waiting for nginx ingress controller to be ready...\n")
+	p.Log.Info("Waiting for nginx ingress controller to be ready...\n")
 	waitCmd := exec.Command("kubectl", "--context", kubecontext,
 		"rollout", "status", "deployment/ingress-nginx-controller",
 		"-n", "ingress-nginx", "--timeout", (3 * time.Minute).String())
@@ -79,13 +78,13 @@ func (p *Plugin) installNginx(kubecontext string) error {
 		return fmt.Errorf("nginx ingress controller not ready: %w", err)
 	}
 
-	p.log("[ingress] ✓ nginx ingress controller installed successfully\n")
-	p.log("[ingress] Ingress class: nginx\n")
+	p.Log.Success("nginx ingress controller installed successfully\n")
+	p.Log.Info("Ingress class: nginx\n")
 	return nil
 }
 
 func (p *Plugin) uninstallNginx(kubecontext string) error {
-	p.log("[ingress] Uninstalling nginx ingress controller...\n")
+	p.Log.Info("Uninstalling nginx ingress controller...\n")
 
 	cmd := exec.Command("kubectl", "--context", kubecontext,
 		"delete", "-f", nginxManifestURL)
@@ -95,6 +94,6 @@ func (p *Plugin) uninstallNginx(kubecontext string) error {
 		return fmt.Errorf("failed to delete nginx ingress: %w", err)
 	}
 
-	p.log("[ingress] ✓ nginx ingress controller uninstalled\n")
+	p.Log.Success("nginx ingress controller uninstalled\n")
 	return nil
 }

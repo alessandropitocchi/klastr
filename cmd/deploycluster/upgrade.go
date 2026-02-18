@@ -18,6 +18,7 @@ var (
 	upgradeConfigFile string
 	upgradeEnvFile    string
 	upgradeDryRun     bool
+	upgradeFailFast   bool
 )
 
 var upgradeCmd = &cobra.Command{
@@ -29,13 +30,15 @@ compared to the current state. The cluster is not recreated, but plugins
 
 Use --dry-run to preview changes without applying them.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		log := newLogger("")
+
 		// Load .env file
 		if err := config.LoadEnvFile(upgradeEnvFile); err != nil {
 			return fmt.Errorf("failed to load env file: %w", err)
 		}
 
 		// Load config
-		fmt.Printf("Loading configuration from %s...\n", upgradeConfigFile)
+		log.Info("Loading configuration from %s...\n", upgradeConfigFile)
 		cfg, err := config.Load(upgradeConfigFile)
 		if err != nil {
 			return fmt.Errorf("failed to load config: %w", err)
@@ -61,154 +64,182 @@ Use --dry-run to preview changes without applying them.`,
 			return runUpgradeDryRun(cfg, kubecontext)
 		}
 
-		fmt.Printf("Upgrading cluster '%s'...\n\n", cfg.Name)
+		log.Info("Upgrading cluster '%s'...\n\n", cfg.Name)
+
+		var results []pluginResult
 
 		// Upgrade storage plugin
 		if cfg.Plugins.Storage != nil && cfg.Plugins.Storage.Enabled {
-			storagePlugin := storage.New()
-			installed, err := storagePlugin.IsInstalled(kubecontext)
-			if err != nil {
-				return fmt.Errorf("failed to check storage status: %w", err)
-			}
-			if !installed {
-				fmt.Println("[storage] Storage not installed, performing installation...")
-				if err := storagePlugin.Install(cfg.Plugins.Storage, kubecontext); err != nil {
-					return fmt.Errorf("failed to install storage: %w", err)
-				}
+			pluginLog := newLogger("[storage]")
+			storagePlugin := storage.New(pluginLog)
+			installed, checkErr := storagePlugin.IsInstalled(kubecontext)
+			if checkErr != nil {
+				results = append(results, pluginResult{Name: "storage", Err: fmt.Errorf("failed to check status: %w", checkErr)})
 			} else {
-				fmt.Println("[storage] Storage already installed, re-applying...")
-				if err := storagePlugin.Install(cfg.Plugins.Storage, kubecontext); err != nil {
-					return fmt.Errorf("failed to upgrade storage: %w", err)
+				if !installed {
+					pluginLog.Info("Storage not installed, performing installation...\n")
+				} else {
+					pluginLog.Info("Storage already installed, re-applying...\n")
 				}
+				err := storagePlugin.Install(cfg.Plugins.Storage, kubecontext)
+				results = append(results, pluginResult{Name: "storage", Err: err})
+			}
+			if hasErrors(results) && upgradeFailFast {
+				printSummary(results, log)
+				return fmt.Errorf("some plugins failed to upgrade, see summary above")
 			}
 		}
 
 		// Upgrade ingress plugin
 		if cfg.Plugins.Ingress != nil && cfg.Plugins.Ingress.Enabled {
-			ingressPlugin := ingress.New()
-			installed, err := ingressPlugin.IsInstalled(kubecontext)
-			if err != nil {
-				return fmt.Errorf("failed to check ingress status: %w", err)
-			}
-			if !installed {
-				fmt.Println("[ingress] Ingress not installed, performing installation...")
-				if err := ingressPlugin.Install(cfg.Plugins.Ingress, kubecontext); err != nil {
-					return fmt.Errorf("failed to install ingress: %w", err)
-				}
+			pluginLog := newLogger("[ingress]")
+			ingressPlugin := ingress.New(pluginLog)
+			installed, checkErr := ingressPlugin.IsInstalled(kubecontext)
+			if checkErr != nil {
+				results = append(results, pluginResult{Name: "ingress", Err: fmt.Errorf("failed to check status: %w", checkErr)})
 			} else {
-				fmt.Println("[ingress] Ingress already installed, re-applying...")
-				if err := ingressPlugin.Install(cfg.Plugins.Ingress, kubecontext); err != nil {
-					return fmt.Errorf("failed to upgrade ingress: %w", err)
+				if !installed {
+					pluginLog.Info("Ingress not installed, performing installation...\n")
+				} else {
+					pluginLog.Info("Ingress already installed, re-applying...\n")
 				}
+				err := ingressPlugin.Install(cfg.Plugins.Ingress, kubecontext)
+				results = append(results, pluginResult{Name: "ingress", Err: err})
+			}
+			if hasErrors(results) && upgradeFailFast {
+				printSummary(results, log)
+				return fmt.Errorf("some plugins failed to upgrade, see summary above")
 			}
 		}
 
 		// Upgrade cert-manager plugin
 		if cfg.Plugins.CertManager != nil && cfg.Plugins.CertManager.Enabled {
-			cmPlugin := certmanager.New()
-			installed, err := cmPlugin.IsInstalled(kubecontext)
-			if err != nil {
-				return fmt.Errorf("failed to check cert-manager status: %w", err)
-			}
-			if !installed {
-				fmt.Println("[cert-manager] Not installed, performing installation...")
-				if err := cmPlugin.Install(cfg.Plugins.CertManager, kubecontext); err != nil {
-					return fmt.Errorf("failed to install cert-manager: %w", err)
-				}
+			pluginLog := newLogger("[cert-manager]")
+			cmPlugin := certmanager.New(pluginLog)
+			installed, checkErr := cmPlugin.IsInstalled(kubecontext)
+			if checkErr != nil {
+				results = append(results, pluginResult{Name: "cert-manager", Err: fmt.Errorf("failed to check status: %w", checkErr)})
 			} else {
-				fmt.Println("[cert-manager] Already installed, re-applying...")
-				if err := cmPlugin.Install(cfg.Plugins.CertManager, kubecontext); err != nil {
-					return fmt.Errorf("failed to upgrade cert-manager: %w", err)
+				if !installed {
+					pluginLog.Info("Not installed, performing installation...\n")
+				} else {
+					pluginLog.Info("Already installed, re-applying...\n")
 				}
+				err := cmPlugin.Install(cfg.Plugins.CertManager, kubecontext)
+				results = append(results, pluginResult{Name: "cert-manager", Err: err})
+			}
+			if hasErrors(results) && upgradeFailFast {
+				printSummary(results, log)
+				return fmt.Errorf("some plugins failed to upgrade, see summary above")
 			}
 		}
 
 		// Upgrade monitoring plugin
 		if cfg.Plugins.Monitoring != nil && cfg.Plugins.Monitoring.Enabled {
-			monPlugin := monitoring.New()
-			installed, err := monPlugin.IsInstalled(kubecontext)
-			if err != nil {
-				return fmt.Errorf("failed to check monitoring status: %w", err)
-			}
-			if !installed {
-				fmt.Println("[monitoring] Not installed, performing installation...")
-				if err := monPlugin.Install(cfg.Plugins.Monitoring, kubecontext); err != nil {
-					return fmt.Errorf("failed to install monitoring: %w", err)
-				}
+			pluginLog := newLogger("[monitoring]")
+			monPlugin := monitoring.New(pluginLog)
+			installed, checkErr := monPlugin.IsInstalled(kubecontext)
+			if checkErr != nil {
+				results = append(results, pluginResult{Name: "monitoring", Err: fmt.Errorf("failed to check status: %w", checkErr)})
 			} else {
-				fmt.Println("[monitoring] Already installed, re-applying...")
-				if err := monPlugin.Install(cfg.Plugins.Monitoring, kubecontext); err != nil {
-					return fmt.Errorf("failed to upgrade monitoring: %w", err)
+				if !installed {
+					pluginLog.Info("Not installed, performing installation...\n")
+				} else {
+					pluginLog.Info("Already installed, re-applying...\n")
 				}
+				err := monPlugin.Install(cfg.Plugins.Monitoring, kubecontext)
+				results = append(results, pluginResult{Name: "monitoring", Err: err})
+			}
+			if hasErrors(results) && upgradeFailFast {
+				printSummary(results, log)
+				return fmt.Errorf("some plugins failed to upgrade, see summary above")
 			}
 		}
 
 		// Upgrade dashboard plugin
 		if cfg.Plugins.Dashboard != nil && cfg.Plugins.Dashboard.Enabled {
-			dashPlugin := dashboard.New()
-			installed, err := dashPlugin.IsInstalled(kubecontext)
-			if err != nil {
-				return fmt.Errorf("failed to check dashboard status: %w", err)
-			}
-			if !installed {
-				fmt.Println("[dashboard] Dashboard not installed, performing installation...")
-				if err := dashPlugin.Install(cfg.Plugins.Dashboard, kubecontext); err != nil {
-					return fmt.Errorf("failed to install dashboard: %w", err)
-				}
+			pluginLog := newLogger("[dashboard]")
+			dashPlugin := dashboard.New(pluginLog)
+			installed, checkErr := dashPlugin.IsInstalled(kubecontext)
+			if checkErr != nil {
+				results = append(results, pluginResult{Name: "dashboard", Err: fmt.Errorf("failed to check status: %w", checkErr)})
 			} else {
-				fmt.Println("[dashboard] Dashboard already installed, re-applying...")
-				if err := dashPlugin.Install(cfg.Plugins.Dashboard, kubecontext); err != nil {
-					return fmt.Errorf("failed to upgrade dashboard: %w", err)
+				if !installed {
+					pluginLog.Info("Dashboard not installed, performing installation...\n")
+				} else {
+					pluginLog.Info("Dashboard already installed, re-applying...\n")
 				}
+				err := dashPlugin.Install(cfg.Plugins.Dashboard, kubecontext)
+				results = append(results, pluginResult{Name: "dashboard", Err: err})
+			}
+			if hasErrors(results) && upgradeFailFast {
+				printSummary(results, log)
+				return fmt.Errorf("some plugins failed to upgrade, see summary above")
 			}
 		}
 
 		// Upgrade custom apps
 		if len(cfg.Plugins.CustomApps) > 0 {
-			fmt.Println("[customApps] Upgrading custom apps...")
-			customPlugin := customapps.New()
-			if err := customPlugin.InstallAll(cfg.Plugins.CustomApps, kubecontext); err != nil {
-				return fmt.Errorf("failed to upgrade custom apps: %w", err)
+			pluginLog := newLogger("[customApps]")
+			pluginLog.Info("Upgrading custom apps...\n")
+			customPlugin := customapps.New(pluginLog)
+			err := customPlugin.InstallAll(cfg.Plugins.CustomApps, kubecontext)
+			results = append(results, pluginResult{Name: "customApps", Err: err})
+			if err != nil && upgradeFailFast {
+				printSummary(results, log)
+				return fmt.Errorf("some plugins failed to upgrade, see summary above")
 			}
 		}
 
 		// Upgrade ArgoCD plugin
-		argoPlugin := argocd.New()
-
 		if cfg.Plugins.ArgoCD != nil && cfg.Plugins.ArgoCD.Enabled {
+			pluginLog := newLogger("[argocd]")
+			argoPlugin := argocd.New(pluginLog)
+
 			namespace := cfg.Plugins.ArgoCD.Namespace
 			if namespace == "" {
 				namespace = "argocd"
 			}
 
-			installed, err := argoPlugin.IsInstalled(kubecontext, namespace)
-			if err != nil {
-				return fmt.Errorf("failed to check ArgoCD status: %w", err)
-			}
-
-			if !installed {
-				fmt.Println("[argocd] ArgoCD not installed, performing full installation...")
-				if err := argoPlugin.Install(cfg.Plugins.ArgoCD, kubecontext); err != nil {
-					return fmt.Errorf("failed to install ArgoCD: %w", err)
-				}
+			installed, checkErr := argoPlugin.IsInstalled(kubecontext, namespace)
+			if checkErr != nil {
+				results = append(results, pluginResult{Name: "argocd", Err: fmt.Errorf("failed to check status: %w", checkErr)})
+			} else if !installed {
+				pluginLog.Info("ArgoCD not installed, performing full installation...\n")
+				err := argoPlugin.Install(cfg.Plugins.ArgoCD, kubecontext)
+				results = append(results, pluginResult{Name: "argocd", Err: err})
 			} else {
-				if err := argoPlugin.Upgrade(cfg.Plugins.ArgoCD, kubecontext); err != nil {
-					return fmt.Errorf("failed to upgrade ArgoCD: %w", err)
-				}
+				err := argoPlugin.Upgrade(cfg.Plugins.ArgoCD, kubecontext)
+				results = append(results, pluginResult{Name: "argocd", Err: err})
+			}
+			if hasErrors(results) && upgradeFailFast {
+				printSummary(results, log)
+				return fmt.Errorf("some plugins failed to upgrade, see summary above")
 			}
 		} else if cfg.Plugins.ArgoCD != nil && !cfg.Plugins.ArgoCD.Enabled {
+			pluginLog := newLogger("[argocd]")
+			argoPlugin := argocd.New(pluginLog)
 			namespace := cfg.Plugins.ArgoCD.Namespace
 			if namespace == "" {
 				namespace = "argocd"
 			}
 			installed, err := argoPlugin.IsInstalled(kubecontext, namespace)
 			if err == nil && installed {
-				fmt.Println("[argocd] WARNING: ArgoCD is installed but disabled in config. It will NOT be automatically uninstalled.")
-				fmt.Printf("[argocd] To uninstall manually: kubectl delete namespace %s --context %s\n", namespace, kubecontext)
+				log.Warn("[argocd] WARNING: ArgoCD is installed but disabled in config. It will NOT be automatically uninstalled.\n")
+				log.Warn("[argocd] To uninstall manually: kubectl delete namespace %s --context %s\n", namespace, kubecontext)
 			}
 		}
 
-		fmt.Printf("\nUpgrade completed for cluster '%s'.\n", cfg.Name)
+		// Print summary
+		if len(results) > 0 {
+			printSummary(results, log)
+		}
+
+		if hasErrors(results) {
+			return fmt.Errorf("some plugins failed to upgrade, see summary above")
+		}
+
+		log.Success("\nUpgrade completed for cluster '%s'.\n", cfg.Name)
 		return nil
 	},
 }
@@ -218,8 +249,8 @@ func runUpgradeDryRun(cfg *config.Config, kubecontext string) error {
 
 	// Storage
 	if cfg.Plugins.Storage != nil && cfg.Plugins.Storage.Enabled {
-		storagePlugin := storage.New()
-		storagePlugin.Verbose = false
+		pluginLog := newLogger("[storage]")
+		storagePlugin := storage.New(pluginLog)
 		installed, err := storagePlugin.IsInstalled(kubecontext)
 		if err != nil {
 			return fmt.Errorf("failed to check storage status: %w", err)
@@ -233,8 +264,8 @@ func runUpgradeDryRun(cfg *config.Config, kubecontext string) error {
 
 	// Ingress
 	if cfg.Plugins.Ingress != nil && cfg.Plugins.Ingress.Enabled {
-		ingressPlugin := ingress.New()
-		ingressPlugin.Verbose = false
+		pluginLog := newLogger("[ingress]")
+		ingressPlugin := ingress.New(pluginLog)
 		installed, err := ingressPlugin.IsInstalled(kubecontext)
 		if err != nil {
 			return fmt.Errorf("failed to check ingress status: %w", err)
@@ -248,8 +279,8 @@ func runUpgradeDryRun(cfg *config.Config, kubecontext string) error {
 
 	// Cert-manager
 	if cfg.Plugins.CertManager != nil && cfg.Plugins.CertManager.Enabled {
-		cmPlugin := certmanager.New()
-		cmPlugin.Verbose = false
+		pluginLog := newLogger("[cert-manager]")
+		cmPlugin := certmanager.New(pluginLog)
 		installed, err := cmPlugin.IsInstalled(kubecontext)
 		if err != nil {
 			return fmt.Errorf("failed to check cert-manager status: %w", err)
@@ -267,8 +298,8 @@ func runUpgradeDryRun(cfg *config.Config, kubecontext string) error {
 
 	// Monitoring
 	if cfg.Plugins.Monitoring != nil && cfg.Plugins.Monitoring.Enabled {
-		monPlugin := monitoring.New()
-		monPlugin.Verbose = false
+		pluginLog := newLogger("[monitoring]")
+		monPlugin := monitoring.New(pluginLog)
 		installed, err := monPlugin.IsInstalled(kubecontext)
 		if err != nil {
 			return fmt.Errorf("failed to check monitoring status: %w", err)
@@ -282,8 +313,8 @@ func runUpgradeDryRun(cfg *config.Config, kubecontext string) error {
 
 	// Dashboard
 	if cfg.Plugins.Dashboard != nil && cfg.Plugins.Dashboard.Enabled {
-		dashPlugin := dashboard.New()
-		dashPlugin.Verbose = false
+		pluginLog := newLogger("[dashboard]")
+		dashPlugin := dashboard.New(pluginLog)
 		installed, err := dashPlugin.IsInstalled(kubecontext)
 		if err != nil {
 			return fmt.Errorf("failed to check dashboard status: %w", err)
@@ -297,8 +328,8 @@ func runUpgradeDryRun(cfg *config.Config, kubecontext string) error {
 
 	// Custom Apps
 	if len(cfg.Plugins.CustomApps) > 0 {
-		customPlugin := customapps.New()
-		customPlugin.Verbose = false
+		pluginLog := newLogger("[customApps]")
+		customPlugin := customapps.New(pluginLog)
 		fmt.Println("\n[customApps] Custom apps:")
 		for _, app := range cfg.Plugins.CustomApps {
 			ns := app.Namespace
@@ -323,8 +354,8 @@ func runUpgradeDryRun(cfg *config.Config, kubecontext string) error {
 
 	// ArgoCD
 	if cfg.Plugins.ArgoCD != nil && cfg.Plugins.ArgoCD.Enabled {
-		argoPlugin := argocd.New()
-		argoPlugin.Verbose = false
+		pluginLog := newLogger("[argocd]")
+		argoPlugin := argocd.New(pluginLog)
 
 		namespace := cfg.Plugins.ArgoCD.Namespace
 		if namespace == "" {
@@ -353,5 +384,6 @@ func init() {
 	upgradeCmd.Flags().StringVarP(&upgradeConfigFile, "config", "c", "cluster.yaml", "cluster configuration file")
 	upgradeCmd.Flags().StringVarP(&upgradeEnvFile, "env", "e", ".env", "environment file for secrets")
 	upgradeCmd.Flags().BoolVar(&upgradeDryRun, "dry-run", false, "preview changes without applying them")
+	upgradeCmd.Flags().BoolVar(&upgradeFailFast, "fail-fast", false, "stop at first plugin failure")
 	rootCmd.AddCommand(upgradeCmd)
 }

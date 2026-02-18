@@ -4,28 +4,32 @@ import (
 	"testing"
 
 	"github.com/alepito/deploy-cluster/pkg/config"
+	"github.com/alepito/deploy-cluster/pkg/logger"
 )
 
+func testLogger() *logger.Logger {
+	return logger.New("[storage]", logger.LevelQuiet)
+}
+
 func TestNew(t *testing.T) {
-	p := New()
+	p := New(testLogger())
 	if p == nil {
 		t.Fatal("New() should return non-nil plugin")
 	}
-	if !p.Verbose {
-		t.Error("Verbose should default to true")
+	if p.Log == nil {
+		t.Error("Log should not be nil")
 	}
 }
 
 func TestName(t *testing.T) {
-	p := New()
+	p := New(testLogger())
 	if got := p.Name(); got != "storage" {
 		t.Errorf("Name() = %q, want %q", got, "storage")
 	}
 }
 
 func TestInstall_UnsupportedType(t *testing.T) {
-	p := New()
-	p.Verbose = false
+	p := New(testLogger())
 	cfg := &config.StorageConfig{Enabled: true, Type: "openebs"}
 	err := p.Install(cfg, "fake-context")
 	if err == nil {
@@ -37,8 +41,7 @@ func TestInstall_UnsupportedType(t *testing.T) {
 }
 
 func TestUninstall_UnsupportedType(t *testing.T) {
-	p := New()
-	p.Verbose = false
+	p := New(testLogger())
 	cfg := &config.StorageConfig{Enabled: true, Type: "openebs"}
 	err := p.Uninstall(cfg, "fake-context")
 	if err == nil {
@@ -47,17 +50,4 @@ func TestUninstall_UnsupportedType(t *testing.T) {
 	if got := err.Error(); got != "unsupported storage type: openebs" {
 		t.Errorf("error = %q, want specific message", got)
 	}
-}
-
-func TestLog_Verbose(t *testing.T) {
-	p := New()
-	// Should not panic with Verbose=true
-	p.log("test %s\n", "message")
-}
-
-func TestLog_Silent(t *testing.T) {
-	p := New()
-	p.Verbose = false
-	// Should not panic or output with Verbose=false
-	p.log("test %s\n", "message")
 }

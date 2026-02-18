@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/alepito/deploy-cluster/pkg/config"
+	"github.com/alepito/deploy-cluster/pkg/logger"
+	"github.com/alepito/deploy-cluster/pkg/retry"
 )
 
 const (
@@ -18,21 +20,15 @@ const (
 )
 
 type Plugin struct {
-	Verbose bool
+	Log *logger.Logger
 }
 
-func New() *Plugin {
-	return &Plugin{Verbose: true}
+func New(log *logger.Logger) *Plugin {
+	return &Plugin{Log: log}
 }
 
 func (p *Plugin) Name() string {
 	return "dashboard"
-}
-
-func (p *Plugin) log(format string, args ...any) {
-	if p.Verbose {
-		fmt.Printf(format, args...)
-	}
 }
 
 func (p *Plugin) Install(cfg *config.DashboardConfig, kubecontext string) error {
@@ -71,7 +67,7 @@ func (p *Plugin) chartVersion(cfg *config.DashboardConfig) string {
 
 func (p *Plugin) installHeadlamp(cfg *config.DashboardConfig, kubecontext string) error {
 	version := p.chartVersion(cfg)
-	p.log("[dashboard] Installing Headlamp %s via Helm...\n", version)
+	p.Log.Info("Installing Headlamp %s via Helm...\n", version)
 
 	args := []string{
 		"upgrade", "--install", releaseName, defaultHeadlampChart,
@@ -83,15 +79,18 @@ func (p *Plugin) installHeadlamp(cfg *config.DashboardConfig, kubecontext string
 		"--timeout", (5 * time.Minute).String(),
 	}
 
-	cmd := exec.Command("helm", args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
+	err := retry.Run(3, 5*time.Second, p.Log.Warn, func() error {
+		cmd := exec.Command("helm", args...)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		return cmd.Run()
+	})
+	if err != nil {
 		return fmt.Errorf("failed to install Headlamp: %w", err)
 	}
 
 	// Create ClusterRoleBinding for the headlamp service account
-	p.log("[dashboard] Creating ClusterRoleBinding for Headlamp...\n")
+	p.Log.Debug("Creating ClusterRoleBinding for Headlamp...\n")
 	crbManifest := fmt.Sprintf(`apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -110,10 +109,10 @@ subjects:
 	crbCmd.Stdout = os.Stdout
 	crbCmd.Stderr = os.Stderr
 	if err := crbCmd.Run(); err != nil {
-		p.log("[dashboard] Warning: failed to create ClusterRoleBinding: %v\n", err)
+		p.Log.Warn("Warning: failed to create ClusterRoleBinding: %v\n", err)
 	}
 
-	p.log("[dashboard] ✓ Headlamp installed successfully\n")
+	p.Log.Success("Headlamp installed successfully\n")
 
 	// Configure ingress if enabled
 	if cfg.Ingress != nil && cfg.Ingress.Enabled {
@@ -121,16 +120,16 @@ subjects:
 			return fmt.Errorf("failed to configure Headlamp ingress: %w", err)
 		}
 	} else {
-		p.log("\n[dashboard] To access Headlamp:\n")
-		p.log("  kubectl port-forward svc/headlamp -n %s 4466:80\n", namespace)
-		p.log("  Open: http://localhost:4466\n")
+		p.Log.Info("\nTo access Headlamp:\n")
+		p.Log.Info("  kubectl port-forward svc/headlamp -n %s 4466:80\n", namespace)
+		p.Log.Info("  Open: http://localhost:4466\n")
 	}
 
 	return nil
 }
 
 func (p *Plugin) configureIngress(cfg *config.DashboardIngressConfig, kubecontext string) error {
-	p.log("[dashboard] Configuring ingress for Headlamp...\n")
+	p.Log.Info("Configuring ingress for Headlamp...\n")
 
 	manifest := fmt.Sprintf(`apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -154,20 +153,23 @@ spec:
                 port:
                   number: 80`, namespace, cfg.Host)
 
-	cmd := exec.Command("kubectl", "--context", kubecontext, "apply", "-f", "-")
-	cmd.Stdin = strings.NewReader(manifest)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
+	err := retry.Run(3, 5*time.Second, p.Log.Warn, func() error {
+		cmd := exec.Command("kubectl", "--context", kubecontext, "apply", "-f", "-")
+		cmd.Stdin = strings.NewReader(manifest)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		return cmd.Run()
+	})
+	if err != nil {
 		return fmt.Errorf("failed to apply headlamp ingress: %w", err)
 	}
 
-	p.log("[dashboard] ✓ Headlamp available at: http://%s\n", cfg.Host)
+	p.Log.Success("Headlamp available at: http://%s\n", cfg.Host)
 	return nil
 }
 
 func (p *Plugin) uninstallHeadlamp(kubecontext string) error {
-	p.log("[dashboard] Uninstalling Headlamp...\n")
+	p.Log.Info("Uninstalling Headlamp...\n")
 
 	cmd := exec.Command("helm", "uninstall", releaseName,
 		"--namespace", namespace,
@@ -185,6 +187,6 @@ func (p *Plugin) uninstallHeadlamp(kubecontext string) error {
 	crbCmd.Stderr = os.Stderr
 	_ = crbCmd.Run()
 
-	p.log("[dashboard] ✓ Headlamp uninstalled\n")
+	p.Log.Success("Headlamp uninstalled\n")
 	return nil
 }

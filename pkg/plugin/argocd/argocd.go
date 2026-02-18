@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/alepito/deploy-cluster/pkg/config"
+	"github.com/alepito/deploy-cluster/pkg/logger"
+	"github.com/alepito/deploy-cluster/pkg/retry"
 	"gopkg.in/yaml.v3"
 )
 
@@ -39,21 +41,15 @@ stringData:
 `
 
 type Plugin struct {
-	Verbose bool
+	Log *logger.Logger
 }
 
-func New() *Plugin {
-	return &Plugin{Verbose: true}
+func New(log *logger.Logger) *Plugin {
+	return &Plugin{Log: log}
 }
 
 func (p *Plugin) Name() string {
 	return "argocd"
-}
-
-func (p *Plugin) log(format string, args ...interface{}) {
-	if p.Verbose {
-		fmt.Printf(format, args...)
-	}
 }
 
 func (p *Plugin) Install(cfg *config.ArgoCDConfig, kubecontext string) error {
@@ -68,34 +64,34 @@ func (p *Plugin) Install(cfg *config.ArgoCDConfig, kubecontext string) error {
 		version = "stable"
 	}
 
-	p.log("[argocd] Installing ArgoCD...\n")
-	p.log("[argocd] Namespace: %s\n", namespace)
-	p.log("[argocd] Version: %s\n", version)
+	p.Log.Info("Installing ArgoCD...\n")
+	p.Log.Info("Namespace: %s\n", namespace)
+	p.Log.Info("Version: %s\n", version)
 
 	// Create namespace
-	p.log("[argocd] Creating namespace '%s'...\n", namespace)
+	p.Log.Debug("Creating namespace '%s'...\n", namespace)
 	if err := p.runKubectl(kubecontext, "create", "namespace", namespace); err != nil {
 		// Ignore if already exists
 		if !strings.Contains(err.Error(), "already exists") {
 			return fmt.Errorf("failed to create namespace: %w", err)
 		}
-		p.log("[argocd] Namespace already exists, continuing...\n")
+		p.Log.Debug("Namespace already exists, continuing...\n")
 	}
 
 	// Install ArgoCD
 	manifestURL := fmt.Sprintf("https://raw.githubusercontent.com/argoproj/argo-cd/%s/manifests/install.yaml", version)
-	p.log("[argocd] Applying manifest from %s...\n", manifestURL)
+	p.Log.Info("Applying manifest from %s...\n", manifestURL)
 
 	if err := p.runKubectlApply(kubecontext, namespace, manifestURL); err != nil {
 		return fmt.Errorf("failed to install ArgoCD: %w", err)
 	}
 
 	// Wait for ArgoCD to be ready
-	p.log("[argocd] Waiting for ArgoCD server to be ready...\n")
+	p.Log.Info("Waiting for ArgoCD server to be ready...\n")
 	if err := p.waitForDeployment(kubecontext, namespace, "argocd-server", 5*time.Minute); err != nil {
 		return fmt.Errorf("ArgoCD server not ready: %w", err)
 	}
-	p.log("[argocd] ✓ ArgoCD server is ready\n")
+	p.Log.Success("ArgoCD server is ready\n")
 
 	// Configure ingress if enabled
 	if cfg.Ingress != nil && cfg.Ingress.Enabled {
@@ -106,52 +102,52 @@ func (p *Plugin) Install(cfg *config.ArgoCDConfig, kubecontext string) error {
 
 	// Add repositories
 	if len(cfg.Repos) > 0 {
-		p.log("[argocd] Adding repositories...\n")
+		p.Log.Info("Adding repositories...\n")
 		for _, repo := range cfg.Repos {
 			if err := p.addRepository(repo, kubecontext, namespace); err != nil {
 				return fmt.Errorf("failed to add repository %s: %w", repo.URL, err)
 			}
 		}
-		p.log("[argocd] ✓ Repositories added\n")
+		p.Log.Success("Repositories added\n")
 	}
 
 	// Create applications
 	if len(cfg.Apps) > 0 {
-		p.log("[argocd] Creating applications...\n")
+		p.Log.Info("Creating applications...\n")
 		for _, app := range cfg.Apps {
 			if err := p.createApplication(app, kubecontext, namespace); err != nil {
 				return fmt.Errorf("failed to create application %s: %w", app.Name, err)
 			}
 		}
-		p.log("[argocd] ✓ Applications created\n")
+		p.Log.Success("Applications created\n")
 	}
 
 	// Print access info
-	p.log("\n[argocd] ✓ ArgoCD installed successfully!\n")
+	p.Log.Success("\nArgoCD installed successfully!\n")
 	if cfg.Ingress != nil && cfg.Ingress.Enabled {
-		p.log("\n[argocd] ArgoCD UI available at: http://%s\n", cfg.Ingress.Host)
+		p.Log.Info("\nArgoCD UI available at: http://%s\n", cfg.Ingress.Host)
 	} else {
-		p.log("\n[argocd] To access ArgoCD UI:\n")
-		p.log("  kubectl port-forward svc/argocd-server -n %s 8080:443\n", namespace)
-		p.log("  Open: https://localhost:8080\n")
+		p.Log.Info("\nTo access ArgoCD UI:\n")
+		p.Log.Info("  kubectl port-forward svc/argocd-server -n %s 8080:443\n", namespace)
+		p.Log.Info("  Open: https://localhost:8080\n")
 	}
-	p.log("\n[argocd] Get admin password:\n")
-	p.log("  kubectl -n %s get secret argocd-initial-admin-secret -o jsonpath=\"{.data.password}\" | base64 -d\n", namespace)
+	p.Log.Info("\nGet admin password:\n")
+	p.Log.Info("  kubectl -n %s get secret argocd-initial-admin-secret -o jsonpath=\"{.data.password}\" | base64 -d\n", namespace)
 
 	if len(cfg.Repos) > 0 {
-		p.log("\n[argocd] Configured repositories:\n")
+		p.Log.Info("\nConfigured repositories:\n")
 		for _, repo := range cfg.Repos {
-			p.log("  • %s (%s)\n", repo.URL, repo.Name)
+			p.Log.Info("  - %s (%s)\n", repo.URL, repo.Name)
 		}
 	}
 
 	if len(cfg.Apps) > 0 {
-		p.log("\n[argocd] Configured applications:\n")
+		p.Log.Info("\nConfigured applications:\n")
 		for _, app := range cfg.Apps {
 			if app.Chart != "" {
-				p.log("  • %s (chart: %s@%s → %s)\n", app.Name, app.Chart, app.TargetRevision, app.Namespace)
+				p.Log.Info("  - %s (chart: %s@%s -> %s)\n", app.Name, app.Chart, app.TargetRevision, app.Namespace)
 			} else {
-				p.log("  • %s (path: %s@%s → %s)\n", app.Name, app.Path, app.TargetRevision, app.Namespace)
+				p.Log.Info("  - %s (path: %s@%s -> %s)\n", app.Name, app.Path, app.TargetRevision, app.Namespace)
 			}
 		}
 	}
@@ -175,7 +171,7 @@ func (p *Plugin) addRepository(repo config.ArgoCDRepoConfig, kubecontext string,
 		if sshPrivateKey == "" {
 			return fmt.Errorf("environment variable %s is not set", repo.SSHKeyEnv)
 		}
-		p.log("[argocd] Adding repository: %s (using SSH key from $%s)\n", repo.URL, repo.SSHKeyEnv)
+		p.Log.Debug("Adding repository: %s (using SSH key from $%s)\n", repo.URL, repo.SSHKeyEnv)
 	} else if repo.SSHKeyFile != "" {
 		keyPath := repo.SSHKeyFile
 		if strings.HasPrefix(keyPath, "~/") {
@@ -187,9 +183,9 @@ func (p *Plugin) addRepository(repo config.ArgoCDRepoConfig, kubecontext string,
 			return fmt.Errorf("failed to read SSH key file %s: %w", repo.SSHKeyFile, err)
 		}
 		sshPrivateKey = string(keyData)
-		p.log("[argocd] Adding repository: %s (using SSH key from %s)\n", repo.URL, repo.SSHKeyFile)
+		p.Log.Debug("Adding repository: %s (using SSH key from %s)\n", repo.URL, repo.SSHKeyFile)
 	} else {
-		p.log("[argocd] Adding repository: %s\n", repo.URL)
+		p.Log.Debug("Adding repository: %s\n", repo.URL)
 	}
 
 	// Template functions
@@ -220,7 +216,7 @@ func (p *Plugin) addRepository(repo config.ArgoCDRepoConfig, kubecontext string,
 		insecure = true
 	}
 	if insecure {
-		p.log("[argocd] Using insecure mode (skip TLS verification)\n")
+		p.Log.Debug("Using insecure mode (skip TLS verification)\n")
 	}
 
 	data := struct {
@@ -248,12 +244,15 @@ func (p *Plugin) addRepository(repo config.ArgoCDRepoConfig, kubecontext string,
 		return err
 	}
 
-	// Apply manifest
-	cmd := exec.Command("kubectl", "--context", kubecontext, "apply", "-f", "-")
-	cmd.Stdin = &manifest
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	// Apply manifest with retry
+	manifestStr := manifest.String()
+	return retry.Run(3, 5*time.Second, p.Log.Warn, func() error {
+		cmd := exec.Command("kubectl", "--context", kubecontext, "apply", "-f", "-")
+		cmd.Stdin = strings.NewReader(manifestStr)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		return cmd.Run()
+	})
 }
 
 func (p *Plugin) createApplication(app config.ArgoCDAppConfig, kubecontext string, argoNamespace string) error {
@@ -347,15 +346,17 @@ spec:
     namespace: %s
 %s`, app.Name, argoNamespace, project, sourceYAML, helmSection, destNamespace, syncPolicy)
 
-	p.log("[argocd] Creating application '%s'...\n", app.Name)
-	p.log("[argocd] Application manifest:\n---\n%s---\n", manifest)
+	p.Log.Debug("Creating application '%s'...\n", app.Name)
+	p.Log.Debug("Application manifest:\n---\n%s---\n", manifest)
 
-	// Apply manifest
-	cmd := exec.Command("kubectl", "--context", kubecontext, "apply", "-f", "-")
-	cmd.Stdin = strings.NewReader(manifest)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	// Apply manifest with retry
+	return retry.Run(3, 5*time.Second, p.Log.Warn, func() error {
+		cmd := exec.Command("kubectl", "--context", kubecontext, "apply", "-f", "-")
+		cmd.Stdin = strings.NewReader(manifest)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		return cmd.Run()
+	})
 }
 
 func (p *Plugin) Upgrade(cfg *config.ArgoCDConfig, kubecontext string) error {
@@ -369,20 +370,20 @@ func (p *Plugin) Upgrade(cfg *config.ArgoCDConfig, kubecontext string) error {
 		version = "stable"
 	}
 
-	p.log("[argocd] Upgrading ArgoCD...\n")
+	p.Log.Info("Upgrading ArgoCD...\n")
 
 	// Re-apply ArgoCD manifest (idempotent, updates version if changed)
 	manifestURL := fmt.Sprintf("https://raw.githubusercontent.com/argoproj/argo-cd/%s/manifests/install.yaml", version)
-	p.log("[argocd] Applying manifest from %s...\n", manifestURL)
+	p.Log.Info("Applying manifest from %s...\n", manifestURL)
 	if err := p.runKubectlApply(kubecontext, namespace, manifestURL); err != nil {
 		return fmt.Errorf("failed to apply ArgoCD manifest: %w", err)
 	}
 
-	p.log("[argocd] Waiting for ArgoCD server to be ready...\n")
+	p.Log.Info("Waiting for ArgoCD server to be ready...\n")
 	if err := p.waitForDeployment(kubecontext, namespace, "argocd-server", 5*time.Minute); err != nil {
 		return fmt.Errorf("ArgoCD server not ready: %w", err)
 	}
-	p.log("[argocd] ✓ ArgoCD server is ready\n")
+	p.Log.Success("ArgoCD server is ready\n")
 
 	// Configure ingress if enabled
 	if cfg.Ingress != nil && cfg.Ingress.Enabled {
@@ -409,13 +410,13 @@ func (p *Plugin) Upgrade(cfg *config.ArgoCDConfig, kubecontext string) error {
 			return fmt.Errorf("failed to add/update repository %s: %w", repo.URL, err)
 		}
 	}
-	p.log("[argocd] ✓ Repositories applied (%d)\n", len(cfg.Repos))
+	p.Log.Success("Repositories applied (%d)\n", len(cfg.Repos))
 
 	// Remove repos that are no longer in config
 	removedRepos := 0
 	for _, currentName := range currentRepos {
 		if _, desired := desiredRepos[currentName]; !desired {
-			p.log("[argocd] Removing repository '%s'...\n", currentName)
+			p.Log.Info("Removing repository '%s'...\n", currentName)
 			if err := p.deleteRepo(currentName, kubecontext, namespace); err != nil {
 				return fmt.Errorf("failed to delete repository %s: %w", currentName, err)
 			}
@@ -423,7 +424,7 @@ func (p *Plugin) Upgrade(cfg *config.ArgoCDConfig, kubecontext string) error {
 		}
 	}
 	if removedRepos > 0 {
-		p.log("[argocd] ✓ Removed %d repository(ies)\n", removedRepos)
+		p.Log.Success("Removed %d repository(ies)\n", removedRepos)
 	}
 
 	// --- Apps diff ---
@@ -443,13 +444,13 @@ func (p *Plugin) Upgrade(cfg *config.ArgoCDConfig, kubecontext string) error {
 			return fmt.Errorf("failed to add/update application %s: %w", app.Name, err)
 		}
 	}
-	p.log("[argocd] ✓ Applications applied (%d)\n", len(cfg.Apps))
+	p.Log.Success("Applications applied (%d)\n", len(cfg.Apps))
 
 	// Remove apps that are no longer in config
 	removedApps := 0
 	for _, currentName := range currentApps {
 		if _, desired := desiredApps[currentName]; !desired {
-			p.log("[argocd] Removing application '%s'...\n", currentName)
+			p.Log.Info("Removing application '%s'...\n", currentName)
 			if err := p.deleteApp(currentName, kubecontext, namespace); err != nil {
 				return fmt.Errorf("failed to delete application %s: %w", currentName, err)
 			}
@@ -457,10 +458,10 @@ func (p *Plugin) Upgrade(cfg *config.ArgoCDConfig, kubecontext string) error {
 		}
 	}
 	if removedApps > 0 {
-		p.log("[argocd] ✓ Removed %d application(s)\n", removedApps)
+		p.Log.Success("Removed %d application(s)\n", removedApps)
 	}
 
-	p.log("\n[argocd] ✓ ArgoCD upgrade completed\n")
+	p.Log.Success("\nArgoCD upgrade completed\n")
 	return nil
 }
 
@@ -627,11 +628,11 @@ func (p *Plugin) deleteApp(name, kubecontext, namespace string) error {
 }
 
 func (p *Plugin) configureIngress(cfg *config.ArgoCDIngressConfig, kubecontext string, namespace string) error {
-	p.log("[argocd] Configuring ingress for ArgoCD UI...\n")
+	p.Log.Info("Configuring ingress for ArgoCD UI...\n")
 
 	// Set server.insecure=true in argocd-cmd-params-cm ConfigMap
 	// This disables internal TLS so the ingress controller can proxy HTTP to the backend
-	p.log("[argocd] Configuring argocd-server to disable internal TLS...\n")
+	p.Log.Debug("Configuring argocd-server to disable internal TLS...\n")
 	cmManifest := fmt.Sprintf(`apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -640,16 +641,19 @@ metadata:
 data:
   server.insecure: "true"`, namespace)
 
-	cmd := exec.Command("kubectl", "--context", kubecontext, "apply", "-f", "-")
-	cmd.Stdin = strings.NewReader(cmManifest)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
+	err := retry.Run(3, 5*time.Second, p.Log.Warn, func() error {
+		cmd := exec.Command("kubectl", "--context", kubecontext, "apply", "-f", "-")
+		cmd.Stdin = strings.NewReader(cmManifest)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		return cmd.Run()
+	})
+	if err != nil {
 		return fmt.Errorf("failed to configure argocd-cmd-params-cm: %w", err)
 	}
 
 	// Restart argocd-server to pick up the ConfigMap change
-	p.log("[argocd] Restarting argocd-server...\n")
+	p.Log.Debug("Restarting argocd-server...\n")
 	if err := p.runKubectl(kubecontext, "rollout", "restart", "deployment/argocd-server", "-n", namespace); err != nil {
 		return fmt.Errorf("failed to restart argocd-server: %w", err)
 	}
@@ -694,18 +698,21 @@ spec:
                   number: 80
 %s`, namespace, annotations, cfg.Host, tlsSection)
 
-	p.log("[argocd] Applying Ingress resource for host '%s'...\n", cfg.Host)
-	ingressCmd := exec.Command("kubectl", "--context", kubecontext, "apply", "-f", "-")
-	ingressCmd.Stdin = strings.NewReader(manifest)
-	ingressCmd.Stdout = os.Stdout
-	ingressCmd.Stderr = os.Stderr
-	if err := ingressCmd.Run(); err != nil {
+	p.Log.Debug("Applying Ingress resource for host '%s'...\n", cfg.Host)
+	err = retry.Run(3, 5*time.Second, p.Log.Warn, func() error {
+		ingressCmd := exec.Command("kubectl", "--context", kubecontext, "apply", "-f", "-")
+		ingressCmd.Stdin = strings.NewReader(manifest)
+		ingressCmd.Stdout = os.Stdout
+		ingressCmd.Stderr = os.Stderr
+		return ingressCmd.Run()
+	})
+	if err != nil {
 		return fmt.Errorf("failed to apply ingress: %w", err)
 	}
 
-	p.log("[argocd] ✓ Ingress configured: http://%s\n", cfg.Host)
+	p.Log.Success("Ingress configured: http://%s\n", cfg.Host)
 	if cfg.TLS {
-		p.log("[argocd]   HTTPS: https://%s (TLS via cert-manager)\n", cfg.Host)
+		p.Log.Info("  HTTPS: https://%s (TLS via cert-manager)\n", cfg.Host)
 	}
 
 	return nil
@@ -716,13 +723,13 @@ func (p *Plugin) Uninstall(kubecontext string, namespace string) error {
 		namespace = "argocd"
 	}
 
-	p.log("[argocd] Uninstalling ArgoCD from namespace '%s'...\n", namespace)
+	p.Log.Info("Uninstalling ArgoCD from namespace '%s'...\n", namespace)
 
 	if err := p.runKubectl(kubecontext, "delete", "namespace", namespace); err != nil {
 		return fmt.Errorf("failed to delete namespace: %w", err)
 	}
 
-	p.log("[argocd] ✓ ArgoCD uninstalled\n")
+	p.Log.Success("ArgoCD uninstalled\n")
 	return nil
 }
 
@@ -740,17 +747,21 @@ func (p *Plugin) IsInstalled(kubecontext string, namespace string) (bool, error)
 
 func (p *Plugin) runKubectl(kubecontext string, args ...string) error {
 	fullArgs := append([]string{"--context", kubecontext}, args...)
-	cmd := exec.Command("kubectl", fullArgs...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	return retry.Run(3, 5*time.Second, p.Log.Warn, func() error {
+		cmd := exec.Command("kubectl", fullArgs...)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		return cmd.Run()
+	})
 }
 
 func (p *Plugin) runKubectlApply(kubecontext string, namespace string, url string) error {
-	cmd := exec.Command("kubectl", "--context", kubecontext, "apply", "-n", namespace, "-f", url, "--server-side", "--force-conflicts")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	return retry.Run(3, 5*time.Second, p.Log.Warn, func() error {
+		cmd := exec.Command("kubectl", "--context", kubecontext, "apply", "-n", namespace, "-f", url, "--server-side", "--force-conflicts")
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		return cmd.Run()
+	})
 }
 
 func (p *Plugin) waitForDeployment(kubecontext string, namespace string, name string, timeout time.Duration) error {

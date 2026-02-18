@@ -5,27 +5,32 @@ import (
 	"testing"
 
 	"github.com/alepito/deploy-cluster/pkg/config"
+	"github.com/alepito/deploy-cluster/pkg/logger"
 )
 
+func testLogger() *logger.Logger {
+	return logger.New("[customApps]", logger.LevelQuiet)
+}
+
 func TestNew(t *testing.T) {
-	p := New()
+	p := New(testLogger())
 	if p == nil {
 		t.Fatal("New() should return non-nil plugin")
 	}
-	if !p.Verbose {
-		t.Error("Verbose should default to true")
+	if p.Log == nil {
+		t.Error("Log should not be nil")
 	}
 }
 
 func TestName(t *testing.T) {
-	p := New()
+	p := New(testLogger())
 	if got := p.Name(); got != "customApps" {
 		t.Errorf("Name() = %q, want %q", got, "customApps")
 	}
 }
 
 func TestResolveValues_Empty(t *testing.T) {
-	p := New()
+	p := New(testLogger())
 	app := config.CustomAppConfig{Name: "test", Chart: "test/chart"}
 
 	path, cleanup, err := p.resolveValues(app)
@@ -41,7 +46,7 @@ func TestResolveValues_Empty(t *testing.T) {
 }
 
 func TestResolveValues_Inline(t *testing.T) {
-	p := New()
+	p := New(testLogger())
 	app := config.CustomAppConfig{
 		Name:  "test",
 		Chart: "test/chart",
@@ -76,7 +81,7 @@ func TestResolveValues_Inline(t *testing.T) {
 }
 
 func TestResolveValues_ValuesFile(t *testing.T) {
-	p := New()
+	p := New(testLogger())
 
 	// Create a temp values file
 	tmpFile, err := os.CreateTemp("", "test-values-*.yaml")
@@ -106,7 +111,7 @@ func TestResolveValues_ValuesFile(t *testing.T) {
 }
 
 func TestResolveValues_ValuesFileTakesPrecedence(t *testing.T) {
-	p := New()
+	p := New(testLogger())
 
 	tmpFile, err := os.CreateTemp("", "test-values-*.yaml")
 	if err != nil {
@@ -130,10 +135,4 @@ func TestResolveValues_ValuesFileTakesPrecedence(t *testing.T) {
 	if path != tmpFile.Name() {
 		t.Errorf("path = %q, want %q (valuesFile should take precedence)", path, tmpFile.Name())
 	}
-}
-
-func TestLog_Silent(t *testing.T) {
-	p := New()
-	p.Verbose = false
-	p.log("test %s\n", "message")
 }
