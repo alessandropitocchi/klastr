@@ -100,7 +100,7 @@ func TestResolveValues_ValuesFile(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer os.Remove(tmpFile.Name())
-	tmpFile.WriteString("replicaCount: 5\n")
+	_, _ = tmpFile.WriteString("replicaCount: 5\n")
 	tmpFile.Close()
 
 	app := config.CustomAppConfig{

@@ -73,7 +73,7 @@ func TestRun_LogFnCalled(t *testing.T) {
 	logFn := func(format string, args ...any) {
 		logCalls++
 	}
-	Run(3, time.Millisecond, logFn, func() error {
+	_ = Run(3, time.Millisecond, logFn, func() error {
 		return errors.New("connection refused")
 	})
 	// logFn should be called for attempts 1 and 2 (not the last one)
