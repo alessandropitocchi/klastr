@@ -1,8 +1,8 @@
 # Plugin: Custom Apps
 
-Permette di installare qualsiasi chart Helm senza dover creare un plugin dedicato. Ogni entry nella lista diventa un `helm upgrade --install`.
+Allows installing any Helm chart without creating a dedicated plugin. Each entry in the list becomes a `helm upgrade --install`.
 
-## Configurazione
+## Configuration
 
 ```yaml
 plugins:
@@ -17,29 +17,29 @@ plugins:
           enabled: false
 ```
 
-| Campo | Tipo | Default | Obbligatorio | Descrizione |
+| Field | Type | Default | Required | Description |
 |-------|------|---------|:---:|-------------|
-| `name` | string | - | si | Nome della release Helm |
-| `chart` | string | - | si | Riferimento al chart (OCI, URL, path locale) |
-| `version` | string | latest | no | Versione del chart |
-| `namespace` | string | uguale a `name` | no | Namespace di installazione |
-| `values` | map | - | no | Valori Helm inline |
-| `valuesFile` | string | - | no | Path a un file di values esterno |
-| `ingress.enabled` | bool | `false` | no | Crea un Ingress per l'app |
-| `ingress.host` | string | - | se ingress enabled | Hostname |
-| `ingress.serviceName` | string | uguale a `name` | no | Nome del service backend |
-| `ingress.servicePort` | int | `80` | no | Porta del service backend |
+| `name` | string | - | yes | Helm release name |
+| `chart` | string | - | yes | Chart reference (OCI, URL, local path) |
+| `version` | string | latest | no | Chart version |
+| `namespace` | string | same as `name` | no | Installation namespace |
+| `values` | map | - | no | Inline Helm values |
+| `valuesFile` | string | - | no | Path to an external values file |
+| `ingress.enabled` | bool | `false` | no | Create an Ingress for the app |
+| `ingress.host` | string | - | if ingress enabled | Hostname |
+| `ingress.serviceName` | string | same as `name` | no | Backend service name |
+| `ingress.servicePort` | int | `80` | no | Backend service port |
 
-## Formati chart supportati
+## Supported Chart Formats
 
-### Chart OCI (consigliato)
+### OCI Chart (recommended)
 
 ```yaml
 chart: oci://registry-1.docker.io/bitnamicharts/redis
 chart: oci://ghcr.io/prometheus-community/charts/kube-prometheus-stack
 ```
 
-### Chart da repository Helm
+### Helm Repository Chart
 
 ```yaml
 chart: https://charts.bitnami.com/bitnami/redis
@@ -49,7 +49,7 @@ chart: https://charts.bitnami.com/bitnami/redis
 
 ### Inline
 
-Valori scritti direttamente nel config:
+Values written directly in the config:
 
 ```yaml
 customApps:
@@ -63,9 +63,9 @@ customApps:
         replicaCount: 0
 ```
 
-### Da file esterno
+### From External File
 
-Path a un file YAML con i values:
+Path to a YAML file with values:
 
 ```yaml
 customApps:
@@ -74,11 +74,11 @@ customApps:
     valuesFile: ./redis-values.yaml
 ```
 
-Se entrambi sono specificati, `valuesFile` ha la **precedenza**.
+If both are specified, `valuesFile` takes **precedence**.
 
 ## Ingress
 
-Se il plugin ingress e abilitato nel cluster, puoi esporre le app via hostname:
+If the ingress plugin is enabled in the cluster, you can expose apps via hostname:
 
 ```yaml
 customApps:
@@ -89,19 +89,19 @@ customApps:
     ingress:
       enabled: true
       host: rabbitmq.localhost
-      serviceName: rabbitmq        # nome del Service Kubernetes
-      servicePort: 15672           # porta della management UI
+      serviceName: rabbitmq        # Kubernetes Service name
+      servicePort: 15672           # management UI port
 ```
 
-| Campo Ingress | Default | Descrizione |
+| Ingress Field | Default | Description |
 |---------------|---------|-------------|
-| `host` | obbligatorio | Hostname per l'Ingress |
-| `serviceName` | nome della release | Service backend. Cambialo se il chart crea un servizio con nome diverso dalla release |
-| `servicePort` | `80` | Porta del service. Controlla la documentazione del chart per la porta corretta |
+| `host` | required | Hostname for the Ingress |
+| `serviceName` | release name | Backend service. Change it if the chart creates a service with a different name than the release |
+| `servicePort` | `80` | Service port. Check the chart documentation for the correct port |
 
-## Esempi
+## Examples
 
-### Redis standalone
+### Standalone Redis
 
 ```yaml
 - name: redis
@@ -114,7 +114,7 @@ customApps:
       enabled: false
 ```
 
-### RabbitMQ con management UI
+### RabbitMQ with Management UI
 
 ```yaml
 - name: rabbitmq
@@ -145,7 +145,7 @@ customApps:
       database: myapp
 ```
 
-### MinIO (object storage)
+### MinIO (Object Storage)
 
 ```yaml
 - name: minio
@@ -165,9 +165,9 @@ customApps:
 
 ## Upgrade
 
-Il comando `upgrade` esegue `helm upgrade --install` per ogni app nella lista. E idempotente:
-- Se la release non esiste, viene installata
-- Se esiste, viene aggiornata con i nuovi values/versione
+The `upgrade` command runs `helm upgrade --install` for each app in the list. It is idempotent:
+- If the release doesn't exist, it is installed
+- If it exists, it is updated with the new values/version
 
 ## Dry-run
 
@@ -195,15 +195,15 @@ Custom Apps (2 configured):
   - rabbitmq: not installed
 ```
 
-## Verifica
+## Verification
 
 ```bash
-# Release Helm
+# Helm releases
 helm list --all-namespaces
 
-# Pod di una specifica app
+# Pods for a specific app
 kubectl get pods -n redis
 
-# Servizi
+# Services
 kubectl get svc -n redis
 ```

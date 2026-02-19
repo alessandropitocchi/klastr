@@ -1,31 +1,31 @@
 # Plugin: Monitoring
 
-Installa lo stack [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack) via Helm, che include Prometheus, Grafana, Alertmanager, node-exporter e kube-state-metrics.
+Installs the [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack) via Helm, which includes Prometheus, Grafana, Alertmanager, node-exporter, and kube-state-metrics.
 
-## Configurazione
+## Configuration
 
 ```yaml
 plugins:
   monitoring:
     enabled: true
     type: prometheus
-    version: "72.6.2"          # opzionale
+    version: "72.6.2"          # optional
     ingress:
       enabled: true
       host: grafana.localhost
 ```
 
-| Campo | Tipo | Default | Obbligatorio | Descrizione |
+| Field | Type | Default | Required | Description |
 |-------|------|---------|:---:|-------------|
-| `enabled` | bool | `false` | si | Abilita il plugin |
-| `type` | string | - | si | Tipo di stack. Valori: `prometheus` |
-| `version` | string | `72.6.2` | no | Versione del chart Helm |
-| `ingress.enabled` | bool | `false` | no | Crea un Ingress per Grafana |
-| `ingress.host` | string | - | se ingress enabled | Hostname per Grafana |
+| `enabled` | bool | `false` | yes | Enable the plugin |
+| `type` | string | - | yes | Stack type. Values: `prometheus` |
+| `version` | string | `72.6.2` | no | Helm chart version |
+| `ingress.enabled` | bool | `false` | no | Create an Ingress for Grafana |
+| `ingress.host` | string | - | if ingress enabled | Hostname for Grafana |
 
-## Come funziona
+## How It Works
 
-Il plugin usa Helm per installare il chart OCI:
+The plugin uses Helm to install the OCI chart:
 
 ```
 oci://ghcr.io/prometheus-community/charts/kube-prometheus-stack
@@ -33,55 +33,55 @@ oci://ghcr.io/prometheus-community/charts/kube-prometheus-stack
 
 - Namespace: `monitoring`
 - Release name: `kube-prometheus-stack`
-- Flag `--wait` per attendere che tutti i pod siano pronti
+- `--wait` flag to wait for all pods to be ready
 
-## Accesso a Grafana
+## Accessing Grafana
 
-### Con ingress
+### With ingress
 
-Se `ingress.enabled: true`, Grafana e accessibile direttamente:
+If `ingress.enabled: true`, Grafana is directly accessible:
 
 ```
 http://grafana.localhost
 ```
 
-Credenziali: `admin` / `prom-operator`
+Credentials: `admin` / `prom-operator`
 
-### Senza ingress (port-forward)
+### Without ingress (port-forward)
 
 ```bash
 kubectl port-forward svc/kube-prometheus-stack-grafana -n monitoring 3000:80
 # http://localhost:3000
 ```
 
-## Accesso a Prometheus
+## Accessing Prometheus
 
 ```bash
 kubectl port-forward svc/kube-prometheus-stack-prometheus -n monitoring 9090:9090
 # http://localhost:9090
 ```
 
-## Accesso ad Alertmanager
+## Accessing Alertmanager
 
 ```bash
 kubectl port-forward svc/kube-prometheus-stack-alertmanager -n monitoring 9093:9093
 # http://localhost:9093
 ```
 
-## Componenti installati
+## Installed Components
 
-| Componente | Descrizione |
-|------------|-------------|
-| Prometheus Operator | Gestisce le risorse Prometheus/ServiceMonitor/AlertmanagerConfig |
-| Prometheus | Raccolta metriche e query PromQL |
-| Grafana | Dashboard e visualizzazione (con dashboard preconfigurate) |
-| Alertmanager | Gestione e routing degli alert |
-| node-exporter | Metriche del sistema operativo dei nodi |
-| kube-state-metrics | Metriche sullo stato degli oggetti Kubernetes |
+| Component | Description |
+|-----------|-------------|
+| Prometheus Operator | Manages Prometheus/ServiceMonitor/AlertmanagerConfig resources |
+| Prometheus | Metrics collection and PromQL queries |
+| Grafana | Dashboards and visualization (with preconfigured dashboards) |
+| Alertmanager | Alert management and routing |
+| node-exporter | OS-level node metrics |
+| kube-state-metrics | Kubernetes object state metrics |
 
-## Dashboard Grafana preconfigurate
+## Preconfigured Grafana Dashboards
 
-Il chart include dashboard per:
+The chart includes dashboards for:
 - Kubernetes cluster overview
 - Node metrics
 - Pod metrics
@@ -93,18 +93,18 @@ Il chart include dashboard per:
 
 ## Upgrade
 
-L'upgrade usa `helm upgrade` che aggiorna la release esistente. Cambiare `version` nel config e lanciare `upgrade` aggiorna lo stack.
+Upgrade uses `helm upgrade` which updates the existing release. Change `version` in the config and run `upgrade` to update the stack.
 
-## Verifica
+## Verification
 
 ```bash
-# Pod
+# Pods
 kubectl get pods -n monitoring
 
-# Servizi
+# Services
 kubectl get svc -n monitoring
 
-# ServiceMonitor
+# ServiceMonitors
 kubectl get servicemonitors -n monitoring
 
 # Helm release

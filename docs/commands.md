@@ -1,121 +1,124 @@
-# Comandi CLI
+# CLI Commands
 
-## Panoramica
+## Overview
 
-| Comando | Descrizione |
+| Command | Description |
 |---------|-------------|
-| [`init`](#init) | Genera un file `cluster.yaml` tramite wizard interattivo |
-| [`create`](#create) | Crea il cluster e installa i plugin configurati |
-| [`upgrade`](#upgrade) | Aggiorna i plugin di un cluster esistente |
-| [`status`](#status) | Mostra lo stato del cluster e dei plugin |
-| [`destroy`](#destroy) | Distrugge il cluster |
-| [`get`](#get) | Sottcomandi per ottenere informazioni sui cluster |
+| [`init`](#init) | Generate a `cluster.yaml` file via interactive wizard |
+| [`create`](#create) | Create the cluster and install configured plugins |
+| [`upgrade`](#upgrade) | Update plugins on an existing cluster |
+| [`status`](#status) | Show cluster and plugin status |
+| [`destroy`](#destroy) | Destroy the cluster |
+| [`get`](#get) | Subcommands for retrieving cluster information |
 
 ---
 
 ## `init`
 
-Genera un file di configurazione `cluster.yaml` tramite un wizard interattivo che guida nella scelta dei plugin e delle opzioni.
+Generates a `cluster.yaml` configuration file via an interactive wizard that guides you through plugin and option selection.
 
 ```bash
 deploy-cluster init [flags]
 ```
 
-### Flag
+### Flags
 
-| Flag | Default | Descrizione |
+| Flag | Default | Description |
 |------|---------|-------------|
-| `-o, --output` | `cluster.yaml` | Path del file di output |
+| `-o, --output` | `cluster.yaml` | Output file path |
 
-### Esempio
+### Example
 
 ```bash
-# Genera cluster.yaml nella directory corrente
+# Generate cluster.yaml in the current directory
 deploy-cluster init
 
-# Genera con nome custom
+# Generate with custom name
 deploy-cluster init -o my-cluster.yaml
 ```
 
-Il wizard chiede in sequenza:
-1. **Cluster** — nome, versione Kubernetes, numero di control planes e workers
-2. **Plugin** — selezione multipla dei plugin da abilitare
-3. **Ingress** — hostname per ogni servizio con UI (se ingress abilitato)
-4. **ArgoCD** — namespace e versione (se ArgoCD abilitato)
+The wizard asks in sequence:
+1. **Cluster** — name, Kubernetes version, number of control planes and workers
+2. **Plugins** — multi-select plugins to enable
+3. **Ingress** — hostname for each service with a UI (if ingress enabled)
+4. **ArgoCD** — namespace and version (if ArgoCD enabled)
 
 ---
 
 ## `create`
 
-Crea un nuovo cluster Kubernetes e installa tutti i plugin abilitati nella configurazione.
+Creates a new Kubernetes cluster and installs all plugins enabled in the configuration.
 
 ```bash
 deploy-cluster create [flags]
 ```
 
-### Flag
+### Flags
 
-| Flag | Default | Descrizione |
+| Flag | Default | Description |
 |------|---------|-------------|
-| `-c, --config` | `cluster.yaml` | File di configurazione |
-| `-e, --env` | `.env` | File con variabili d'ambiente per i secret |
+| `-c, --config` | `cluster.yaml` | Configuration file |
+| `-e, --env` | `.env` | File with environment variables for secrets |
+| `--timeout` | `5m` | Timeout for plugin operations (kubectl/helm) |
 
-### Ordine di installazione
+### Installation Order
 
-I plugin vengono installati in quest'ordine:
+Plugins are installed in this order:
 
-1. **Storage** — per rendere disponibili i PVC
-2. **Ingress** — per esporre i servizi via hostname
-3. **Cert-Manager** — per i certificati TLS
+1. **Storage** — to make PVCs available
+2. **Ingress** — to expose services via hostname
+3. **Cert-Manager** — for TLS certificates
 4. **Monitoring** — Prometheus + Grafana
 5. **Dashboard** — Headlamp
-6. **Custom Apps** — chart Helm personalizzati
-7. **ArgoCD** — GitOps (per ultimo, potrebbe dipendere dagli altri)
+6. **Custom Apps** — custom Helm charts
+7. **ArgoCD** — GitOps (last, as it may depend on others)
 
-### Esempio
+### Example
 
 ```bash
 deploy-cluster create --config cluster.yaml
 deploy-cluster create --config cluster.yaml --env production.env
+deploy-cluster create --config cluster.yaml --timeout 10m
 ```
 
 ---
 
 ## `upgrade`
 
-Aggiorna un cluster esistente applicando solo le differenze rispetto alla configurazione attuale. Il cluster non viene ricreato.
+Updates an existing cluster by applying only the differences from the current configuration. The cluster is not recreated.
 
 ```bash
 deploy-cluster upgrade [flags]
 ```
 
-### Flag
+### Flags
 
-| Flag | Default | Descrizione |
+| Flag | Default | Description |
 |------|---------|-------------|
-| `-c, --config` | `cluster.yaml` | File di configurazione |
-| `-e, --env` | `.env` | File con variabili d'ambiente per i secret |
-| `--dry-run` | `false` | Mostra le modifiche senza applicarle |
+| `-c, --config` | `cluster.yaml` | Configuration file |
+| `-e, --env` | `.env` | File with environment variables for secrets |
+| `--dry-run` | `false` | Show changes without applying them |
+| `--timeout` | `5m` | Timeout for plugin operations (kubectl/helm) |
 
-### Comportamento per plugin
+### Per-plugin Behavior
 
-| Plugin | Comportamento |
-|--------|--------------|
-| Storage | Re-apply manifest (idempotente) |
-| Ingress | Re-apply manifest (idempotente) |
-| Cert-Manager | Re-apply manifest (aggiorna versione se cambiata) |
-| Monitoring | `helm upgrade` (idempotente) |
-| Dashboard | `helm upgrade` (idempotente) |
-| Custom Apps | `helm upgrade --install` per ogni app |
-| ArgoCD | Re-apply manifest + diff repos/apps (aggiunge nuovi, rimuove rimossi dal config) |
+| Plugin | Behavior |
+|--------|----------|
+| Storage | Re-apply manifest (idempotent) |
+| Ingress | Re-apply manifest (idempotent) |
+| Cert-Manager | Re-apply manifest (updates version if changed) |
+| Monitoring | `helm upgrade` (idempotent) |
+| Dashboard | `helm upgrade` (idempotent) |
+| Custom Apps | `helm upgrade --install` for each app |
+| ArgoCD | Re-apply manifest + diff repos/apps (adds new, removes those deleted from config) |
 
-### Esempio
+### Example
 
 ```bash
 # Preview
 deploy-cluster upgrade --config cluster.yaml --dry-run
 
-# Applica
+# Apply
 deploy-cluster upgrade --config cluster.yaml
 ```
 
@@ -123,19 +126,19 @@ deploy-cluster upgrade --config cluster.yaml
 
 ## `status`
 
-Mostra lo stato corrente del cluster: esistenza, plugin installati, repository e applicazioni ArgoCD.
+Shows the current cluster status: existence, installed plugins, ArgoCD repositories and applications.
 
 ```bash
 deploy-cluster status [flags]
 ```
 
-### Flag
+### Flags
 
-| Flag | Default | Descrizione |
+| Flag | Default | Description |
 |------|---------|-------------|
-| `-c, --config` | `cluster.yaml` | File di configurazione |
+| `-c, --config` | `cluster.yaml` | Configuration file |
 
-### Esempio
+### Example
 
 ```bash
 deploy-cluster status --config cluster.yaml
@@ -145,20 +148,20 @@ deploy-cluster status --config cluster.yaml
 
 ## `destroy`
 
-Distrugge il cluster. Elimina tutti i container Docker associati.
+Destroys the cluster. Deletes all associated Docker containers.
 
 ```bash
 deploy-cluster destroy [flags]
 ```
 
-### Flag
+### Flags
 
-| Flag | Default | Descrizione |
+| Flag | Default | Description |
 |------|---------|-------------|
-| `-c, --config` | `cluster.yaml` | File di configurazione |
-| `-n, --name` | - | Nome del cluster (override del config) |
+| `-c, --config` | `cluster.yaml` | Configuration file |
+| `-n, --name` | - | Cluster name (overrides config) |
 
-### Esempio
+### Example
 
 ```bash
 deploy-cluster destroy --config cluster.yaml
@@ -169,31 +172,31 @@ deploy-cluster destroy --name my-cluster
 
 ## `get`
 
-Sottocomandi per ottenere informazioni sui cluster.
+Subcommands for retrieving cluster information.
 
 ### `get clusters`
 
-Lista tutti i cluster kind esistenti.
+List all existing kind clusters.
 
 ```bash
 deploy-cluster get clusters
 ```
 
-### `get nodes <nome>`
+### `get nodes <name>`
 
-Lista i nodi di un cluster specifico.
+List nodes of a specific cluster.
 
 ```bash
 deploy-cluster get nodes my-cluster
 ```
 
-### `get kubeconfig <nome>`
+### `get kubeconfig <name>`
 
-Stampa il kubeconfig di un cluster.
+Print the kubeconfig of a cluster.
 
 ```bash
 deploy-cluster get kubeconfig my-cluster
 
-# Salva su file
+# Save to file
 deploy-cluster get kubeconfig my-cluster > kubeconfig.yaml
 ```

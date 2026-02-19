@@ -1,16 +1,16 @@
 # Getting Started
 
-## Requisiti
+## Requirements
 
-| Strumento | Versione | Note |
-|-----------|----------|------|
-| [Go](https://go.dev/) | 1.21+ | Per compilare il binario |
-| [Docker](https://www.docker.com/) | - | Runtime per kind |
-| [kind](https://kind.sigs.k8s.io/) | - | Provider Kubernetes locale |
-| [kubectl](https://kubernetes.io/docs/tasks/tools/) | - | Interazione con il cluster |
-| [Helm](https://helm.sh/) | 3.x | Per monitoring, dashboard e customApps |
+| Tool | Version | Notes |
+|------|---------|-------|
+| [Go](https://go.dev/) | 1.21+ | To build the binary |
+| [Docker](https://www.docker.com/) | - | Runtime for kind |
+| [kind](https://kind.sigs.k8s.io/) | - | Local Kubernetes provider |
+| [kubectl](https://kubernetes.io/docs/tasks/tools/) | - | Cluster interaction |
+| [Helm](https://helm.sh/) | 3.x | For monitoring, dashboard, and customApps |
 
-## Installazione
+## Installation
 
 ```bash
 git clone https://github.com/alepito/deploy-cluster.git
@@ -20,35 +20,35 @@ go build -o deploy-cluster ./cmd/deploycluster
 
 ## Quick Start
 
-### 1. Genera la configurazione
+### 1. Generate the configuration
 
 ```bash
 ./deploy-cluster init
 ```
 
-Il wizard interattivo ti guida nella scelta di:
-- Nome del cluster e topologia (control planes, workers, versione K8s)
-- Plugin da abilitare (storage, ingress, cert-manager, monitoring, dashboard, ArgoCD)
-- Hostname per gli ingress (se ingress è abilitato)
-- Configurazione ArgoCD (namespace, versione)
+The interactive wizard guides you through:
+- Cluster name and topology (control planes, workers, K8s version)
+- Plugins to enable (storage, ingress, cert-manager, monitoring, dashboard, ArgoCD)
+- Hostnames for ingresses (if ingress is enabled)
+- ArgoCD configuration (namespace, version)
 
-Il risultato è un file `cluster.yaml` pronto all'uso.
+The result is a ready-to-use `cluster.yaml` file.
 
-### 2. Crea il cluster
+### 2. Create the cluster
 
 ```bash
 ./deploy-cluster create --config cluster.yaml
 ```
 
-Il tool crea il cluster kind e installa automaticamente tutti i plugin configurati nell'ordine corretto.
+The tool creates the kind cluster and automatically installs all configured plugins in the correct order.
 
-### 3. Verifica lo stato
+### 3. Check status
 
 ```bash
 ./deploy-cluster status --config cluster.yaml
 ```
 
-Output di esempio:
+Example output:
 
 ```
 Cluster: my-cluster
@@ -75,27 +75,27 @@ ArgoCD: installed (namespace: argocd)
     - nginx
 ```
 
-### 4. Aggiorna la configurazione
+### 4. Update the configuration
 
-Modifica `cluster.yaml` e applica le modifiche senza ricreare il cluster:
+Edit `cluster.yaml` and apply changes without recreating the cluster:
 
 ```bash
-# Preview delle modifiche
+# Preview changes
 ./deploy-cluster upgrade --config cluster.yaml --dry-run
 
-# Applica
+# Apply
 ./deploy-cluster upgrade --config cluster.yaml
 ```
 
-### 5. Distruggi il cluster
+### 5. Destroy the cluster
 
 ```bash
 ./deploy-cluster destroy --config cluster.yaml
 ```
 
-## Prossimi passi
+## Next Steps
 
-- [Comandi CLI](commands.md) — riferimento completo dei comandi
-- [Configurazione](configuration.md) — struttura del file `cluster.yaml`
-- [Provider](providers/kind.md) — dettagli sul provider kind
-- [Plugin](plugins/) — documentazione di ogni plugin
+- [CLI Commands](commands.md) — complete command reference
+- [Configuration](configuration.md) — `cluster.yaml` file structure
+- [Provider](providers/kind.md) — kind provider details
+- [Plugins](plugins/) — documentation for each plugin

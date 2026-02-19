@@ -1,8 +1,8 @@
 # Plugin: Storage
 
-Installa un provisioner per StorageClass nel cluster, in modo che i PersistentVolumeClaim (PVC) vengano soddisfatti automaticamente.
+Installs a StorageClass provisioner in the cluster so that PersistentVolumeClaims (PVCs) are fulfilled automatically.
 
-## Configurazione
+## Configuration
 
 ```yaml
 plugins:
@@ -11,23 +11,23 @@ plugins:
     type: local-path
 ```
 
-| Campo | Tipo | Default | Obbligatorio | Descrizione |
+| Field | Type | Default | Required | Description |
 |-------|------|---------|:---:|-------------|
-| `enabled` | bool | `false` | si | Abilita il plugin |
-| `type` | string | - | si | Tipo di provisioner |
+| `enabled` | bool | `false` | yes | Enable the plugin |
+| `type` | string | - | yes | Provisioner type |
 
-## Tipi supportati
+## Supported Types
 
 ### `local-path`
 
-[Rancher local-path-provisioner](https://github.com/rancher/local-path-provisioner) — crea volumi sul filesystem del nodo. Ideale per cluster locali di sviluppo.
+[Rancher local-path-provisioner](https://github.com/rancher/local-path-provisioner) — creates volumes on the node filesystem. Ideal for local development clusters.
 
-Cosa fa:
-- Installa il provisioner nel namespace `local-path-storage`
-- Imposta `local-path` come StorageClass di **default** del cluster
-- Rimuove il flag default dalla StorageClass `standard` di kind
+What it does:
+- Installs the provisioner in the `local-path-storage` namespace
+- Sets `local-path` as the cluster's **default** StorageClass
+- Removes the default flag from kind's `standard` StorageClass
 
-## Verifica
+## Verification
 
 ```bash
 kubectl get storageclass
@@ -36,13 +36,13 @@ kubectl get storageclass
 # standard               rancher.io/local-path   Delete          No
 ```
 
-Qualsiasi PVC senza `storageClassName` esplicito usera automaticamente `local-path`.
+Any PVC without an explicit `storageClassName` will automatically use `local-path`.
 
-## Ordine di installazione
+## Installation Order
 
-Storage viene installato **per primo** tra tutti i plugin, in modo che i PVC richiesti da monitoring, dashboard o altri componenti siano gia disponibili.
+Storage is installed **first** among all plugins, so that PVCs required by monitoring, dashboard, or other components are already available.
 
-## Note
+## Notes
 
-- Il provisioner crea i volumi come directory sul nodo Docker. I dati non sopravvivono alla distruzione del cluster.
-- Non adatto per ambienti di produzione — progettato per sviluppo locale.
+- The provisioner creates volumes as directories on the Docker node. Data does not survive cluster destruction.
+- Not suitable for production environments — designed for local development.

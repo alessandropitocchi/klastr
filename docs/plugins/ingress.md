@@ -1,8 +1,8 @@
 # Plugin: Ingress
 
-Installa un ingress controller nel cluster per esporre i servizi via HTTP/HTTPS attraverso hostname.
+Installs an ingress controller in the cluster to expose services via HTTP/HTTPS through hostnames.
 
-## Configurazione
+## Configuration
 
 ```yaml
 plugins:
@@ -11,37 +11,37 @@ plugins:
     type: nginx
 ```
 
-| Campo | Tipo | Default | Obbligatorio | Descrizione |
+| Field | Type | Default | Required | Description |
 |-------|------|---------|:---:|-------------|
-| `enabled` | bool | `false` | si | Abilita il plugin |
-| `type` | string | - | si | Tipo di controller |
+| `enabled` | bool | `false` | yes | Enable the plugin |
+| `type` | string | - | yes | Controller type |
 
-## Tipi supportati
+## Supported Types
 
 ### `nginx`
 
-[ingress-nginx](https://kubernetes.github.io/ingress-nginx/) — controller ufficiale NGINX per Kubernetes.
+[ingress-nginx](https://kubernetes.github.io/ingress-nginx/) — official NGINX controller for Kubernetes.
 
-Usa il manifest specifico per kind (`deploy/static/provider/kind/deploy.yaml`) che:
-- Configura il controller come `DaemonSet` con `hostPort`
-- Usa `nodeSelector` con label `ingress-ready=true`
-- Si integra con i port mapping del nodo kind
+Uses the kind-specific manifest (`deploy/static/provider/kind/deploy.yaml`) which:
+- Configures the controller as a `DaemonSet` with `hostPort`
+- Uses `nodeSelector` with the `ingress-ready=true` label
+- Integrates with kind node port mappings
 
-## Prerequisiti
+## Prerequisites
 
-Il provider kind configura automaticamente il nodo control-plane con:
+The kind provider automatically configures the control-plane node with:
 - Label `ingress-ready=true`
-- Port mapping `80:80` e `443:443`
+- Port mapping `80:80` and `443:443`
 
-Questo avviene solo alla creazione del cluster. Se aggiungi ingress dopo, serve la label manuale:
+This only happens at cluster creation. If you add ingress afterwards, you need the label manually:
 
 ```bash
 kubectl label node <cluster>-control-plane ingress-ready=true
 ```
 
-## Come funziona
+## How It Works
 
-Dopo l'installazione, crei risorse `Ingress` per esporre i servizi:
+After installation, create `Ingress` resources to expose services:
 
 ```yaml
 apiVersion: networking.k8s.io/v1
@@ -63,35 +63,35 @@ spec:
                   number: 80
 ```
 
-Il servizio diventa raggiungibile su `http://myapp.localhost`.
+The service becomes reachable at `http://myapp.localhost`.
 
-## Integrazione con altri plugin
+## Integration with Other Plugins
 
-Quando ingress e abilitato, diversi plugin possono creare automaticamente un Ingress per la propria UI:
+When ingress is enabled, several plugins can automatically create an Ingress for their UI:
 
-| Plugin | Hostname di default | Configurazione |
-|--------|-------------------|----------------|
+| Plugin | Default Hostname | Configuration |
+|--------|-----------------|---------------|
 | Monitoring (Grafana) | `grafana.localhost` | `monitoring.ingress.host` |
 | Dashboard (Headlamp) | `headlamp.localhost` | `dashboard.ingress.host` |
 | ArgoCD | `argocd.localhost` | `argocd.ingress.host` |
-| Custom Apps | configurabile | `customApps[].ingress.host` |
+| Custom Apps | configurable | `customApps[].ingress.host` |
 
-## Verifica
+## Verification
 
 ```bash
 # Controller
 kubectl get pods -n ingress-nginx
 kubectl get svc -n ingress-nginx
 
-# Ingress creati
+# Created ingresses
 kubectl get ingress --all-namespaces
 
 # Test
 curl http://argocd.localhost
 ```
 
-## Note
+## Notes
 
-- Le porte 80 e 443 dell'host devono essere libere
-- Su macOS/Linux, `*.localhost` risolve automaticamente a `127.0.0.1`
-- Per hostname custom, aggiungi l'entry in `/etc/hosts`
+- Host ports 80 and 443 must be free
+- On macOS/Linux, `*.localhost` resolves automatically to `127.0.0.1`
+- For custom hostnames, add an entry to `/etc/hosts`

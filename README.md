@@ -1,14 +1,14 @@
 # deploy-cluster
 
-CLI tool per il deploy di cluster Kubernetes locali con supporto plugin.
+CLI tool for deploying local Kubernetes clusters with plugin support.
 
-Permette di creare cluster con topologia configurabile e installare automaticamente componenti come storage, ingress, cert-manager, monitoring, dashboard, ArgoCD e applicazioni custom via Helm, definendo tutto da un singolo file di configurazione.
+Create clusters with configurable topology and automatically install components like storage, ingress, cert-manager, monitoring, dashboard, ArgoCD and custom Helm apps — all defined in a single configuration file.
 
-## Requisiti
+## Requirements
 
 - Go 1.21+ | Docker | [kind](https://kind.sigs.k8s.io/) | kubectl | [Helm](https://helm.sh/) 3.x
 
-## Installazione
+## Installation
 
 ```bash
 go build -o deploy-cluster ./cmd/deploycluster
@@ -17,23 +17,23 @@ go build -o deploy-cluster ./cmd/deploycluster
 ## Quick Start
 
 ```bash
-# Wizard interattivo per generare la configurazione
+# Interactive wizard to generate the configuration
 ./deploy-cluster init
 
-# Crea il cluster con tutti i plugin configurati
+# Create the cluster with all configured plugins
 ./deploy-cluster create --config cluster.yaml
 
-# Verifica lo stato
+# Check status
 ./deploy-cluster status --config cluster.yaml
 
-# Aggiorna i plugin senza ricreare il cluster
+# Update plugins without recreating the cluster
 ./deploy-cluster upgrade --config cluster.yaml
 
-# Distruggi il cluster
+# Destroy the cluster
 ./deploy-cluster destroy --config cluster.yaml
 ```
 
-## Esempio configurazione
+## Configuration Example
 
 ```yaml
 name: my-cluster
@@ -78,34 +78,34 @@ plugins:
       host: argocd.localhost
 ```
 
-## Plugin disponibili
+## Available Plugins
 
-| Plugin | Descrizione | Installazione |
-|--------|-------------|---------------|
+| Plugin | Description | Installation |
+|--------|-------------|--------------|
 | [Storage](docs/plugins/storage.md) | StorageClass provisioner (local-path) | kubectl apply |
-| [Ingress](docs/plugins/ingress.md) | Controller NGINX per kind | kubectl apply |
-| [Cert-Manager](docs/plugins/cert-manager.md) | Gestione certificati TLS | kubectl apply |
+| [Ingress](docs/plugins/ingress.md) | NGINX controller for kind | kubectl apply |
+| [Cert-Manager](docs/plugins/cert-manager.md) | TLS certificate management | kubectl apply |
 | [Monitoring](docs/plugins/monitoring.md) | Prometheus + Grafana | Helm |
 | [Dashboard](docs/plugins/dashboard.md) | Headlamp | Helm |
-| [Custom Apps](docs/plugins/custom-apps.md) | Chart Helm personalizzati | Helm |
+| [Custom Apps](docs/plugins/custom-apps.md) | Custom Helm charts | Helm |
 | [ArgoCD](docs/plugins/argocd.md) | GitOps | kubectl apply |
 
-## Accesso alle UI
+## UI Access
 
-Con ingress abilitato:
+With ingress enabled:
 
-| Servizio | URL | Credenziali |
-|----------|-----|-------------|
+| Service | URL | Credentials |
+|---------|-----|-------------|
 | Grafana | `http://grafana.localhost` | admin / prom-operator |
 | Headlamp | `http://headlamp.localhost` | `kubectl create token headlamp -n headlamp` |
 | ArgoCD | `http://argocd.localhost` | admin / `kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" \| base64 -d` |
 
-## Documentazione
+## Documentation
 
-| Sezione | Descrizione |
+| Section | Description |
 |---------|-------------|
-| [Getting Started](docs/getting-started.md) | Installazione e primo utilizzo |
-| [Comandi CLI](docs/commands.md) | Riferimento completo dei comandi |
-| [Configurazione](docs/configuration.md) | Struttura del file `cluster.yaml` |
-| [Provider: kind](docs/providers/kind.md) | Dettagli sul provider kind |
-| [Plugin](docs/plugins/) | Documentazione di ogni plugin |
+| [Getting Started](docs/getting-started.md) | Installation and first use |
+| [CLI Commands](docs/commands.md) | Complete command reference |
+| [Configuration](docs/configuration.md) | `cluster.yaml` file structure |
+| [Provider: kind](docs/providers/kind.md) | kind provider details |
+| [Plugins](docs/plugins/) | Documentation for each plugin |

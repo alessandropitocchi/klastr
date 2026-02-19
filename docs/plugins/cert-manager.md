@@ -1,8 +1,8 @@
 # Plugin: Cert-Manager
 
-Installa [cert-manager](https://cert-manager.io/) per la gestione automatica dei certificati TLS nel cluster.
+Installs [cert-manager](https://cert-manager.io/) for automatic TLS certificate management in the cluster.
 
-## Configurazione
+## Configuration
 
 ```yaml
 plugins:
@@ -11,22 +11,22 @@ plugins:
     version: v1.16.3
 ```
 
-| Campo | Tipo | Default | Obbligatorio | Descrizione |
+| Field | Type | Default | Required | Description |
 |-------|------|---------|:---:|-------------|
-| `enabled` | bool | `false` | si | Abilita il plugin |
-| `version` | string | `v1.16.3` | no | Versione di cert-manager |
+| `enabled` | bool | `false` | yes | Enable the plugin |
+| `version` | string | `v1.16.3` | no | cert-manager version |
 
-## Come funziona
+## How It Works
 
-Il plugin:
-1. Applica il manifest ufficiale cert-manager dalla release GitHub
-2. Attende che i deployment `cert-manager-webhook` e `cert-manager` siano pronti
+The plugin:
+1. Applies the official cert-manager manifest from the GitHub release
+2. Waits for the `cert-manager-webhook` and `cert-manager` deployments to be ready
 
-## Utilizzo
+## Usage
 
-Dopo l'installazione puoi creare risorse per ottenere certificati TLS automatici.
+After installation, you can create resources to obtain automatic TLS certificates.
 
-### ClusterIssuer self-signed (sviluppo)
+### Self-signed ClusterIssuer (development)
 
 ```yaml
 apiVersion: cert-manager.io/v1
@@ -37,7 +37,7 @@ spec:
   selfSigned: {}
 ```
 
-### ClusterIssuer Let's Encrypt (produzione)
+### Let's Encrypt ClusterIssuer (production)
 
 ```yaml
 apiVersion: cert-manager.io/v1
@@ -56,7 +56,7 @@ spec:
             class: nginx
 ```
 
-### Certificato su Ingress
+### TLS on Ingress
 
 ```yaml
 apiVersion: networking.k8s.io/v1
@@ -84,19 +84,19 @@ spec:
                   number: 80
 ```
 
-## Integrazione con ArgoCD
+## Integration with ArgoCD
 
-Se l'ingress ArgoCD ha `tls: true`, il plugin aggiunge automaticamente le annotation per cert-manager:
+If the ArgoCD ingress has `tls: true`, the plugin automatically adds cert-manager annotations:
 
 ```yaml
 argocd:
   ingress:
     enabled: true
     host: argocd.example.com
-    tls: true   # Aggiunge annotation cert-manager.io/cluster-issuer
+    tls: true   # Adds cert-manager.io/cluster-issuer annotation
 ```
 
-## Verifica
+## Verification
 
 ```bash
 kubectl get pods -n cert-manager

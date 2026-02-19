@@ -1,8 +1,8 @@
 # Plugin: ArgoCD
 
-Installa [ArgoCD](https://argo-cd.readthedocs.io/) per il GitOps — sincronizzazione automatica delle applicazioni da repository Git.
+Installs [ArgoCD](https://argo-cd.readthedocs.io/) for GitOps — automatic application synchronization from Git repositories.
 
-## Configurazione
+## Configuration
 
 ```yaml
 plugins:
@@ -28,43 +28,43 @@ plugins:
           replicaCount: 2
 ```
 
-## Campi base
+## Base Fields
 
-| Campo | Tipo | Default | Obbligatorio | Descrizione |
+| Field | Type | Default | Required | Description |
 |-------|------|---------|:---:|-------------|
-| `enabled` | bool | `false` | si | Abilita il plugin |
-| `namespace` | string | `argocd` | no | Namespace di installazione |
-| `version` | string | `stable` | no | Versione di ArgoCD |
+| `enabled` | bool | `false` | yes | Enable the plugin |
+| `namespace` | string | `argocd` | no | Installation namespace |
+| `version` | string | `stable` | no | ArgoCD version |
 
 ## Ingress
 
-| Campo | Tipo | Default | Descrizione |
+| Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `ingress.enabled` | bool | `false` | Crea un Ingress per la UI |
-| `ingress.host` | string | - | Hostname (es. `argocd.localhost`) |
-| `ingress.tls` | bool | `false` | Abilita TLS via cert-manager |
+| `ingress.enabled` | bool | `false` | Create an Ingress for the UI |
+| `ingress.host` | string | - | Hostname (e.g., `argocd.localhost`) |
+| `ingress.tls` | bool | `false` | Enable TLS via cert-manager |
 
-Quando l'ingress e abilitato, il plugin:
-1. Configura `server.insecure: "true"` nella ConfigMap `argocd-cmd-params-cm` (disabilita TLS interno)
-2. Esegue `rollout restart` di `argocd-server` per applicare la modifica
-3. Crea una risorsa Ingress con `ingressClassName: nginx`
+When ingress is enabled, the plugin:
+1. Configures `server.insecure: "true"` in the `argocd-cmd-params-cm` ConfigMap (disables internal TLS)
+2. Runs `rollout restart` on `argocd-server` to apply the change
+3. Creates an Ingress resource with `ingressClassName: nginx`
 
-## Accesso alla UI
+## UI Access
 
-### Con ingress
+### With ingress
 
 ```
 http://argocd.localhost
 ```
 
-### Senza ingress (port-forward)
+### Without ingress (port-forward)
 
 ```bash
 kubectl port-forward svc/argocd-server -n argocd 8080:443
 # https://localhost:8080
 ```
 
-### Password admin
+### Admin password
 
 ```bash
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
@@ -72,22 +72,22 @@ kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.pas
 
 ---
 
-## Repository (`repos`)
+## Repositories (`repos`)
 
-I repository vengono configurati come Secret Kubernetes con label `argocd.argoproj.io/secret-type: repository`.
+Repositories are configured as Kubernetes Secrets with the label `argocd.argoproj.io/secret-type: repository`.
 
-| Campo | Tipo | Default | Obbligatorio | Descrizione |
+| Field | Type | Default | Required | Description |
 |-------|------|---------|:---:|-------------|
-| `name` | string | auto-generato dall'URL | no | Nome della repository |
-| `url` | string | - | si | URL della repository |
-| `type` | string | `git` | no | Tipo: `git` o `helm` |
-| `insecure` | bool | auto | no | Salta verifica TLS. Auto: `true` per URL non HTTPS |
-| `username` | string | - | no | Username per repo HTTPS |
-| `password` | string | - | no | Password/token per repo HTTPS |
-| `sshKeyEnv` | string | - | no | Nome variabile d'ambiente con chiave SSH |
-| `sshKeyFile` | string | - | no | Path al file della chiave SSH |
+| `name` | string | auto-generated from URL | no | Repository name |
+| `url` | string | - | yes | Repository URL |
+| `type` | string | `git` | no | Type: `git` or `helm` |
+| `insecure` | bool | auto | no | Skip TLS verification. Auto: `true` for non-HTTPS URLs |
+| `username` | string | - | no | Username for HTTPS repos |
+| `password` | string | - | no | Password/token for HTTPS repos |
+| `sshKeyEnv` | string | - | no | Environment variable name containing the SSH key |
+| `sshKeyFile` | string | - | no | Path to the SSH key file |
 
-### Autenticazione SSH da file
+### SSH Authentication from File
 
 ```yaml
 repos:
@@ -96,9 +96,9 @@ repos:
     sshKeyFile: ~/.ssh/id_ed25519
 ```
 
-### Autenticazione SSH da variabile d'ambiente
+### SSH Authentication from Environment Variable
 
-File `.env`:
+`.env` file:
 
 ```bash
 ARGOCD_SSH_KEY="-----BEGIN OPENSSH PRIVATE KEY-----
@@ -115,13 +115,13 @@ repos:
     sshKeyEnv: ARGOCD_SSH_KEY
 ```
 
-Lancia con `--env .env`:
+Run with `--env .env`:
 
 ```bash
 deploy-cluster create --config cluster.yaml --env .env
 ```
 
-### Autenticazione HTTPS con token
+### HTTPS Authentication with Token
 
 ```yaml
 repos:
@@ -131,7 +131,7 @@ repos:
     password: ghp_xxxxxxxxxxxxx
 ```
 
-### Repository Helm
+### Helm Repository
 
 ```yaml
 repos:
@@ -142,24 +142,24 @@ repos:
 
 ---
 
-## Applicazioni (`apps`)
+## Applications (`apps`)
 
-Le applicazioni vengono create come risorse ArgoCD `Application`.
+Applications are created as ArgoCD `Application` resources.
 
-| Campo | Tipo | Default | Obbligatorio | Descrizione |
+| Field | Type | Default | Required | Description |
 |-------|------|---------|:---:|-------------|
-| `name` | string | - | si | Nome dell'Application |
-| `namespace` | string | `default` | no | Namespace di destinazione |
-| `project` | string | `default` | no | Progetto ArgoCD |
-| `repoURL` | string | - | si | URL del chart repo o del repo Git |
-| `chart` | string | - | no | Nome del chart Helm (per Helm repo) |
-| `path` | string | `.` | no | Path nel repo Git (per sorgenti Git) |
-| `targetRevision` | string | `HEAD` | no | Versione del chart o branch/tag |
-| `values` | map | - | no | Valori Helm inline |
-| `valuesFile` | string | - | no | Path a un file di values esterno |
-| `autoSync` | bool | `true` | no | Abilita sync automatico con prune e selfHeal |
+| `name` | string | - | yes | Application name |
+| `namespace` | string | `default` | no | Destination namespace |
+| `project` | string | `default` | no | ArgoCD project |
+| `repoURL` | string | - | yes | Chart repo URL or Git repo URL |
+| `chart` | string | - | no | Helm chart name (for Helm repos) |
+| `path` | string | `.` | no | Path in the Git repo (for Git sources) |
+| `targetRevision` | string | `HEAD` | no | Chart version or branch/tag |
+| `values` | map | - | no | Inline Helm values |
+| `valuesFile` | string | - | no | Path to an external values file |
+| `autoSync` | bool | `true` | no | Enable automatic sync with prune and selfHeal |
 
-### Helm chart da repository pubblica
+### Helm Chart from Public Repository
 
 ```yaml
 apps:
@@ -172,7 +172,7 @@ apps:
       replicaCount: 3
 ```
 
-### Helm chart con values da file
+### Helm Chart with Values from File
 
 ```yaml
 apps:
@@ -184,7 +184,7 @@ apps:
     valuesFile: ./nginx-values.yaml
 ```
 
-### Manifesti da Git repo
+### Manifests from Git Repo
 
 ```yaml
 apps:
@@ -195,7 +195,7 @@ apps:
     targetRevision: main
 ```
 
-### Sync manuale
+### Manual Sync
 
 ```yaml
 apps:
@@ -204,19 +204,19 @@ apps:
     repoURL: git@github.com:user/gitops-repo.git
     path: environments/prod
     targetRevision: main
-    autoSync: false    # Richiede sync manuale dalla UI o CLI
+    autoSync: false    # Requires manual sync from UI or CLI
 ```
 
 ---
 
 ## Upgrade (diff-based)
 
-Il comando `upgrade` per ArgoCD e intelligente:
+The `upgrade` command for ArgoCD is intelligent:
 
-1. **Manifest ArgoCD**: ri-applica il manifest (aggiorna la versione se cambiata)
-2. **Ingress**: ri-configura se abilitato
-3. **Repository**: applica tutti quelli desiderati (idempotente). Rimuove quelli non piu presenti nel config
-4. **Applicazioni**: applica tutte quelle desiderate (idempotente). Rimuove quelle non piu presenti nel config
+1. **ArgoCD manifest**: re-applies the manifest (updates version if changed)
+2. **Ingress**: re-configures if enabled
+3. **Repositories**: applies all desired ones (idempotent). Removes those no longer present in config
+4. **Applications**: applies all desired ones (idempotent). Removes those no longer present in config
 
 ### Dry-run
 
@@ -238,27 +238,27 @@ deploy-cluster upgrade --config cluster.yaml --dry-run
     - deprecated-app (remove)
 ```
 
-### Disabilitazione
+### Disabling
 
-Se ArgoCD e disabilitato nel config ma ancora installato nel cluster, il tool mostra un warning senza disinstallarlo automaticamente:
+If ArgoCD is disabled in the config but still installed in the cluster, the tool shows a warning without automatically uninstalling it:
 
 ```
 [argocd] WARNING: ArgoCD is installed but disabled in config. It will NOT be automatically uninstalled.
 [argocd] To uninstall manually: kubectl delete namespace argocd --context kind-my-cluster
 ```
 
-## Verifica
+## Verification
 
 ```bash
-# Pod ArgoCD
+# ArgoCD pods
 kubectl get pods -n argocd
 
-# Repository configurati
+# Configured repositories
 kubectl get secrets -n argocd -l argocd.argoproj.io/secret-type=repository
 
-# Applicazioni
+# Applications
 kubectl get applications -n argocd
 
-# Stato sync di un'app
+# Sync status of an app
 kubectl get application nginx -n argocd -o jsonpath='{.status.sync.status}'
 ```

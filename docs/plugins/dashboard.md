@@ -1,65 +1,65 @@
 # Plugin: Dashboard
 
-Installa [Headlamp](https://headlamp.dev/) come dashboard web per Kubernetes, via Helm.
+Installs [Headlamp](https://headlamp.dev/) as a web dashboard for Kubernetes, via Helm.
 
-## Configurazione
+## Configuration
 
 ```yaml
 plugins:
   dashboard:
     enabled: true
     type: headlamp
-    version: "0.25.0"          # opzionale
+    version: "0.25.0"          # optional
     ingress:
       enabled: true
       host: headlamp.localhost
 ```
 
-| Campo | Tipo | Default | Obbligatorio | Descrizione |
+| Field | Type | Default | Required | Description |
 |-------|------|---------|:---:|-------------|
-| `enabled` | bool | `false` | si | Abilita il plugin |
-| `type` | string | - | si | Tipo di dashboard. Valori: `headlamp` |
-| `version` | string | `0.25.0` | no | Versione del chart Helm |
-| `ingress.enabled` | bool | `false` | no | Crea un Ingress per Headlamp |
-| `ingress.host` | string | - | se ingress enabled | Hostname per Headlamp |
+| `enabled` | bool | `false` | yes | Enable the plugin |
+| `type` | string | - | yes | Dashboard type. Values: `headlamp` |
+| `version` | string | `0.25.0` | no | Helm chart version |
+| `ingress.enabled` | bool | `false` | no | Create an Ingress for Headlamp |
+| `ingress.host` | string | - | if ingress enabled | Hostname for Headlamp |
 
-## Come funziona
+## How It Works
 
-Il plugin:
-1. Installa Headlamp via Helm dal chart OCI `oci://ghcr.io/headlamp-k8s/charts/headlamp`
-2. Crea un `ClusterRoleBinding` che assegna `cluster-admin` al service account `headlamp`
-3. Se ingress abilitato, crea una risorsa Ingress
+The plugin:
+1. Installs Headlamp via Helm from the OCI chart `oci://ghcr.io/headlamp-k8s/charts/headlamp`
+2. Creates a `ClusterRoleBinding` that assigns `cluster-admin` to the `headlamp` service account
+3. If ingress is enabled, creates an Ingress resource
 
 - Namespace: `headlamp`
 - Release name: `headlamp`
 
-## Accesso
+## Access
 
-### Con ingress
+### With ingress
 
 ```
 http://headlamp.localhost
 ```
 
-### Senza ingress (port-forward)
+### Without ingress (port-forward)
 
 ```bash
 kubectl port-forward svc/headlamp -n headlamp 4466:80
 # http://localhost:4466
 ```
 
-## Autenticazione
+## Authentication
 
-Headlamp richiede un token per il login. Il plugin crea un ClusterRoleBinding con `cluster-admin`, quindi puoi usare il token del service account:
+Headlamp requires a token for login. The plugin creates a ClusterRoleBinding with `cluster-admin`, so you can use the service account token:
 
 ```bash
-# Crea un token per il service account headlamp
+# Create a token for the headlamp service account
 kubectl create token headlamp -n headlamp
 ```
 
-Copia il token e incollalo nella schermata di login di Headlamp.
+Copy the token and paste it into the Headlamp login screen.
 
-Per un token di lunga durata:
+For a long-lived token:
 
 ```bash
 kubectl apply -f - <<EOF
@@ -73,21 +73,21 @@ metadata:
 type: kubernetes.io/service-account-token
 EOF
 
-# Recupera il token
+# Retrieve the token
 kubectl get secret headlamp-token -n headlamp -o jsonpath="{.data.token}" | base64 -d
 ```
 
-## Funzionalita
+## Features
 
-Headlamp offre:
-- Vista su cluster, namespace, workload, servizi, storage
-- Log dei pod in tempo reale
-- Exec nei container
-- Editor YAML integrato
-- Supporto multi-cluster
-- Sistema di plugin estensibile
+Headlamp offers:
+- Cluster, namespace, workload, service, and storage views
+- Real-time pod logs
+- Container exec
+- Built-in YAML editor
+- Multi-cluster support
+- Extensible plugin system
 
-## Verifica
+## Verification
 
 ```bash
 kubectl get pods -n headlamp
