@@ -10,6 +10,8 @@
 | [`status`](#status) | Show cluster and plugin status |
 | [`destroy`](#destroy) | Destroy the cluster |
 | [`get`](#get) | Subcommands for retrieving cluster information |
+| [`check`](#check) | Verify that all prerequisites are installed |
+| [`switch`](#switch) | Switch kubectl context between clusters |
 
 ---
 
@@ -199,4 +201,64 @@ deploy-cluster get kubeconfig my-cluster
 
 # Save to file
 deploy-cluster get kubeconfig my-cluster > kubeconfig.yaml
+```
+
+---
+
+## `check`
+
+Verifies that all required tools are installed and shows their versions.
+
+```bash
+deploy-cluster check
+```
+
+### Example
+
+```bash
+$ deploy-cluster check
+
+Prerequisites
+─────────────
+✓ docker     27.5.1
+✓ kind       v0.25.0
+✓ kubectl    v1.31.4
+✓ helm       v3.16.3
+
+All prerequisites satisfied!
+```
+
+If a tool is missing:
+
+```
+✗ kind       not found → https://kind.sigs.k8s.io/
+```
+
+The command exits with an error if any prerequisite is missing.
+
+---
+
+## `switch`
+
+Switches the active kubectl context to a kind cluster. Without arguments, lists all clusters and highlights the current context.
+
+```bash
+deploy-cluster switch [cluster-name]
+```
+
+### Example
+
+```bash
+# List clusters with current context marker
+$ deploy-cluster switch
+
+KIND CLUSTERS
+─────────────
+  my-cluster
+● dev-cluster (current)
+  staging
+
+# Switch to a specific cluster
+$ deploy-cluster switch my-cluster
+Switched to context 'kind-my-cluster'
 ```

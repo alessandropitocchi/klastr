@@ -17,6 +17,9 @@ go build -o deploy-cluster ./cmd/deploycluster
 ## Quick Start
 
 ```bash
+# Check prerequisites
+./deploy-cluster check
+
 # Interactive wizard to generate the configuration
 ./deploy-cluster init
 
@@ -28,6 +31,9 @@ go build -o deploy-cluster ./cmd/deploycluster
 
 # Update plugins without recreating the cluster
 ./deploy-cluster upgrade --config cluster.yaml
+
+# Switch kubectl context between clusters
+./deploy-cluster switch my-cluster
 
 # Destroy the cluster
 ./deploy-cluster destroy --config cluster.yaml
