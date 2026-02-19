@@ -85,8 +85,8 @@ func (p *Plugin) installHeadlamp(cfg *template.DashboardTemplate, kubecontext st
 	}
 
 	err := retry.Run(3, 5*time.Second, p.Log.Warn, func() error {
-		execCommand("helm", "repo", "add", releaseName, defaultHeadlampChart).Run()
-		execCommand("helm", "repo", "update").Run()
+		_ = execCommand("helm", "repo", "add", releaseName, defaultHeadlampChart).Run()
+		_ = execCommand("helm", "repo", "update").Run()
 		cmd := execCommand("helm", args...)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr

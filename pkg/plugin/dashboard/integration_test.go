@@ -40,11 +40,12 @@ func TestInstallHeadlamp_HelmArgs(t *testing.T) {
 		t.Fatalf("Install() error = %v", err)
 	}
 
-	if len(*cmds) < 1 {
-		t.Fatal("expected at least 1 command")
+	if len(*cmds) < 3 {
+		t.Fatal("expected at least 3 commands (repo add, repo update, upgrade)")
 	}
 
-	helm := (*cmds)[0]
+	// cmds[0] = repo add, cmds[1] = repo update, cmds[2] = upgrade --install
+	helm := (*cmds)[2]
 	if helm.name != "helm" {
 		t.Errorf("cmd name = %q, want helm", helm.name)
 	}
@@ -68,7 +69,8 @@ func TestInstallHeadlamp_CustomTimeout(t *testing.T) {
 		t.Fatalf("Install() error = %v", err)
 	}
 
-	assertContains(t, (*cmds)[0].args, "3m0s", "should use custom timeout 3m")
+	// cmds[0] = repo add, cmds[1] = repo update, cmds[2] = upgrade --install
+	assertContains(t, (*cmds)[2].args, "3m0s", "should use custom timeout 3m")
 }
 
 func TestInstallHeadlamp_WithIngress(t *testing.T) {
