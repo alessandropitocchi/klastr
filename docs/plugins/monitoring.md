@@ -93,7 +93,7 @@ The chart includes dashboards for:
 
 ## Upgrade
 
-Upgrade uses `helm upgrade` which updates the existing release. Change `version` in the config and run `upgrade` to update the stack.
+Upgrade uses `helm upgrade` which updates the existing release. Change `version` in the template and run `upgrade` to update the stack.
 
 ## Verification
 

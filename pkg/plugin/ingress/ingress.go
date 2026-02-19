@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/alepito/deploy-cluster/pkg/config"
+	"github.com/alepito/deploy-cluster/pkg/template"
 	"github.com/alepito/deploy-cluster/pkg/logger"
 	"github.com/alepito/deploy-cluster/pkg/retry"
 )
@@ -31,7 +31,7 @@ func (p *Plugin) Name() string {
 	return "ingress"
 }
 
-func (p *Plugin) Install(cfg *config.IngressConfig, kubecontext string) error {
+func (p *Plugin) Install(cfg *template.IngressTemplate, kubecontext string) error {
 	switch cfg.Type {
 	case "nginx":
 		return p.installNginx(kubecontext)
@@ -40,7 +40,7 @@ func (p *Plugin) Install(cfg *config.IngressConfig, kubecontext string) error {
 	}
 }
 
-func (p *Plugin) Uninstall(cfg *config.IngressConfig, kubecontext string) error {
+func (p *Plugin) Uninstall(cfg *template.IngressTemplate, kubecontext string) error {
 	switch cfg.Type {
 	case "nginx":
 		return p.uninstallNginx(kubecontext)

@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 
-	"github.com/alepito/deploy-cluster/pkg/config"
 	"github.com/alepito/deploy-cluster/pkg/plugin/argocd"
 	"github.com/alepito/deploy-cluster/pkg/plugin/certmanager"
 	"github.com/alepito/deploy-cluster/pkg/plugin/customapps"
@@ -11,19 +10,20 @@ import (
 	"github.com/alepito/deploy-cluster/pkg/plugin/ingress"
 	"github.com/alepito/deploy-cluster/pkg/plugin/monitoring"
 	"github.com/alepito/deploy-cluster/pkg/plugin/storage"
+	"github.com/alepito/deploy-cluster/pkg/template"
 	"github.com/spf13/cobra"
 )
 
 var (
-	upgradeConfigFile string
-	upgradeEnvFile    string
-	upgradeDryRun     bool
-	upgradeFailFast   bool
+	upgradeTemplateFile string
+	upgradeEnvFile      string
+	upgradeDryRun       bool
+	upgradeFailFast     bool
 )
 
 var upgradeCmd = &cobra.Command{
 	Use:   "upgrade",
-	Short: "Upgrade an existing cluster applying configuration changes",
+	Short: "Upgrade an existing cluster applying template changes",
 	Long: `Upgrade an existing Kubernetes cluster by applying only the differences
 compared to the current state. The cluster is not recreated, but plugins
 (ArgoCD repos/apps) are updated: additions, modifications and removals.
@@ -33,15 +33,15 @@ Use --dry-run to preview changes without applying them.`,
 		log := newLogger("")
 
 		// Load .env file
-		if err := config.LoadEnvFile(upgradeEnvFile); err != nil {
+		if err := template.LoadEnvFile(upgradeEnvFile); err != nil {
 			return fmt.Errorf("failed to load env file: %w", err)
 		}
 
 		// Load config
-		log.Info("Loading configuration from %s...\n", upgradeConfigFile)
-		cfg, err := config.Load(upgradeConfigFile)
+		log.Info("Loading template from %s...\n", upgradeTemplateFile)
+		cfg, err := template.Load(upgradeTemplateFile)
 		if err != nil {
-			return fmt.Errorf("failed to load config: %w", err)
+			return fmt.Errorf("failed to load template: %w", err)
 		}
 
 		// Get provider and check cluster exists
@@ -225,7 +225,7 @@ Use --dry-run to preview changes without applying them.`,
 			}
 			installed, err := argoPlugin.IsInstalled(kubecontext, namespace)
 			if err == nil && installed {
-				log.Warn("[argocd] WARNING: ArgoCD is installed but disabled in config. It will NOT be automatically uninstalled.\n")
+				log.Warn("[argocd] WARNING: ArgoCD is installed but disabled in template. It will NOT be automatically uninstalled.\n")
 				log.Warn("[argocd] To uninstall manually: kubectl delete namespace %s --context %s\n", namespace, kubecontext)
 			}
 		}
@@ -244,7 +244,7 @@ Use --dry-run to preview changes without applying them.`,
 	},
 }
 
-func runUpgradeDryRun(cfg *config.Config, kubecontext string) error {
+func runUpgradeDryRun(cfg *template.Template, kubecontext string) error {
 	fmt.Printf("Dry-run for cluster '%s':\n", cfg.Name)
 
 	// Storage
@@ -345,9 +345,9 @@ func runUpgradeDryRun(cfg *config.Config, kubecontext string) error {
 				version = "latest"
 			}
 			if installed {
-				fmt.Printf("  ~ %s (%s@%s) (update)\n", app.Name, app.Chart, version)
+				fmt.Printf("  ~ %s (%s@%s) (update)\n", app.Name, app.ChartName, version)
 			} else {
-				fmt.Printf("  + %s (%s@%s) (install)\n", app.Name, app.Chart, version)
+				fmt.Printf("  + %s (%s@%s) (install)\n", app.Name, app.ChartName, version)
 			}
 		}
 	}
@@ -381,7 +381,7 @@ func runUpgradeDryRun(cfg *config.Config, kubecontext string) error {
 }
 
 func init() {
-	upgradeCmd.Flags().StringVarP(&upgradeConfigFile, "config", "c", "cluster.yaml", "cluster configuration file")
+	upgradeCmd.Flags().StringVarP(&upgradeTemplateFile, "template", "t", "template.yaml", "cluster template file")
 	upgradeCmd.Flags().StringVarP(&upgradeEnvFile, "env", "e", ".env", "environment file for secrets")
 	upgradeCmd.Flags().BoolVar(&upgradeDryRun, "dry-run", false, "preview changes without applying them")
 	upgradeCmd.Flags().BoolVar(&upgradeFailFast, "fail-fast", false, "stop at first plugin failure")

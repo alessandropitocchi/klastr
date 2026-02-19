@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/alepito/deploy-cluster/pkg/config"
 	"github.com/alepito/deploy-cluster/pkg/logger"
 	"github.com/alepito/deploy-cluster/pkg/retry"
+	"github.com/alepito/deploy-cluster/pkg/template"
 	"gopkg.in/yaml.v3"
 )
 
@@ -30,7 +30,7 @@ func (p *Plugin) Name() string {
 }
 
 // InstallAll installs all custom apps from the config.
-func (p *Plugin) InstallAll(apps []config.CustomAppConfig, kubecontext string) error {
+func (p *Plugin) InstallAll(apps []template.CustomAppTemplate, kubecontext string) error {
 	for _, app := range apps {
 		if err := p.Install(app, kubecontext); err != nil {
 			return fmt.Errorf("failed to install custom app %q: %w", app.Name, err)
@@ -40,16 +40,17 @@ func (p *Plugin) InstallAll(apps []config.CustomAppConfig, kubecontext string) e
 }
 
 // Install installs a single custom app via Helm.
-func (p *Plugin) Install(app config.CustomAppConfig, kubecontext string) error {
+func (p *Plugin) Install(app template.CustomAppTemplate, kubecontext string) error {
 	namespace := app.Namespace
 	if namespace == "" {
 		namespace = app.Name
 	}
 
-	p.Log.Info("Installing %s (%s)...\n", app.Name, app.Chart)
+	p.Log.Info("Installing %s (%s)...\n", app.Name, app.ChartName)
 
 	args := []string{
-		"upgrade", "--install", app.Name, app.Chart,
+		"upgrade", "--install", app.Name, app.ChartName,
+		"--repo", app.ChartRepo,
 		"--namespace", namespace,
 		"--create-namespace",
 		"--kube-context", kubecontext,
@@ -130,7 +131,7 @@ func (p *Plugin) IsInstalled(name, namespace, kubecontext string) (bool, error) 
 }
 
 // ListInstalled returns the names of all helm releases that match the given custom app names.
-func (p *Plugin) ListInstalled(apps []config.CustomAppConfig, kubecontext string) ([]string, error) {
+func (p *Plugin) ListInstalled(apps []template.CustomAppTemplate, kubecontext string) ([]string, error) {
 	var installed []string
 	for _, app := range apps {
 		ns := app.Namespace
@@ -151,7 +152,7 @@ func (p *Plugin) ListInstalled(apps []config.CustomAppConfig, kubecontext string
 // resolveValues returns a path to a values file (either the user-provided one
 // or a temp file with inline values marshalled to YAML). The cleanup function
 // should be deferred to remove temp files.
-func (p *Plugin) resolveValues(app config.CustomAppConfig) (string, func(), error) {
+func (p *Plugin) resolveValues(app template.CustomAppTemplate) (string, func(), error) {
 	// ValuesFile takes precedence
 	if app.ValuesFile != "" {
 		path := app.ValuesFile
@@ -190,7 +191,7 @@ func (p *Plugin) resolveValues(app config.CustomAppConfig) (string, func(), erro
 	return "", nil, nil
 }
 
-func (p *Plugin) configureIngress(app config.CustomAppConfig, kubecontext string) error {
+func (p *Plugin) configureIngress(app template.CustomAppTemplate, kubecontext string) error {
 	ing := app.Ingress
 	namespace := app.Namespace
 	if namespace == "" {

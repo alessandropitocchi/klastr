@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/alepito/deploy-cluster/pkg/config"
+	"github.com/alepito/deploy-cluster/pkg/template"
 	"github.com/alepito/deploy-cluster/pkg/logger"
 )
 
@@ -34,7 +34,7 @@ func TestNew_CustomTimeout(t *testing.T) {
 
 func TestRepoName_ExplicitName(t *testing.T) {
 	p := New(testLogger(), 5*time.Minute)
-	repo := config.ArgoCDRepoConfig{
+	repo := template.ArgoCDRepoTemplate{
 		Name: "my-repo",
 		URL:  "https://github.com/user/repo.git",
 	}
@@ -46,7 +46,7 @@ func TestRepoName_ExplicitName(t *testing.T) {
 
 func TestRepoName_GeneratedFromHTTPS(t *testing.T) {
 	p := New(testLogger(), 5*time.Minute)
-	repo := config.ArgoCDRepoConfig{
+	repo := template.ArgoCDRepoTemplate{
 		URL: "https://github.com/user/repo.git",
 	}
 	got := p.repoName(repo)
@@ -58,7 +58,7 @@ func TestRepoName_GeneratedFromHTTPS(t *testing.T) {
 
 func TestRepoName_GeneratedFromSSH(t *testing.T) {
 	p := New(testLogger(), 5*time.Minute)
-	repo := config.ArgoCDRepoConfig{
+	repo := template.ArgoCDRepoTemplate{
 		URL: "git@github.com:user/repo.git",
 	}
 	got := p.repoName(repo)
@@ -70,7 +70,7 @@ func TestRepoName_GeneratedFromSSH(t *testing.T) {
 
 func TestRepoName_TrimsGitSuffix(t *testing.T) {
 	p := New(testLogger(), 5*time.Minute)
-	repo := config.ArgoCDRepoConfig{
+	repo := template.ArgoCDRepoTemplate{
 		URL: "https://github.com/user/myapp.git",
 	}
 	got := p.repoName(repo)
@@ -84,14 +84,14 @@ func TestRepoName_TrimsGitSuffix(t *testing.T) {
 func TestDiffRepos_AddAndRemove(t *testing.T) {
 	p := New(testLogger(), 5*time.Minute)
 
-	desiredRepos := []config.ArgoCDRepoConfig{
+	desiredRepos := []template.ArgoCDRepoTemplate{
 		{Name: "repo-a", URL: "https://a.com"},
 		{Name: "repo-b", URL: "https://b.com"},
 	}
 	currentRepoNames := []string{"repo-a", "repo-c"}
 
 	// Build desired map
-	desiredMap := make(map[string]config.ArgoCDRepoConfig)
+	desiredMap := make(map[string]template.ArgoCDRepoTemplate)
 	for _, repo := range desiredRepos {
 		desiredMap[p.repoName(repo)] = repo
 	}
@@ -110,13 +110,13 @@ func TestDiffRepos_AddAndRemove(t *testing.T) {
 }
 
 func TestDiffApps_AddAndRemove(t *testing.T) {
-	desiredApps := []config.ArgoCDAppConfig{
+	desiredApps := []template.ArgoCDAppTemplate{
 		{Name: "app-x"},
 		{Name: "app-y"},
 	}
 	currentAppNames := []string{"app-x", "app-z"}
 
-	desiredMap := make(map[string]config.ArgoCDAppConfig)
+	desiredMap := make(map[string]template.ArgoCDAppTemplate)
 	for _, app := range desiredApps {
 		desiredMap[app.Name] = app
 	}
@@ -136,12 +136,12 @@ func TestDiffApps_AddAndRemove(t *testing.T) {
 func TestDiffRepos_AllNew(t *testing.T) {
 	p := New(testLogger(), 5*time.Minute)
 
-	desiredRepos := []config.ArgoCDRepoConfig{
+	desiredRepos := []template.ArgoCDRepoTemplate{
 		{Name: "repo-a", URL: "https://a.com"},
 	}
 	var currentRepoNames []string
 
-	desiredMap := make(map[string]config.ArgoCDRepoConfig)
+	desiredMap := make(map[string]template.ArgoCDRepoTemplate)
 	for _, repo := range desiredRepos {
 		desiredMap[p.repoName(repo)] = repo
 	}
@@ -159,10 +159,10 @@ func TestDiffRepos_AllNew(t *testing.T) {
 }
 
 func TestDiffApps_AllRemoved(t *testing.T) {
-	var desiredApps []config.ArgoCDAppConfig
+	var desiredApps []template.ArgoCDAppTemplate
 	currentAppNames := []string{"app-old1", "app-old2"}
 
-	desiredMap := make(map[string]config.ArgoCDAppConfig)
+	desiredMap := make(map[string]template.ArgoCDAppTemplate)
 	for _, app := range desiredApps {
 		desiredMap[app.Name] = app
 	}

@@ -9,7 +9,7 @@ plugins:
   dashboard:
     enabled: true
     type: headlamp
-    version: "0.25.0"          # optional
+    version: "0.40.0"          # optional
     ingress:
       enabled: true
       host: headlamp.localhost
@@ -26,7 +26,7 @@ plugins:
 ## How It Works
 
 The plugin:
-1. Installs Headlamp via Helm from the OCI chart `oci://ghcr.io/headlamp-k8s/charts/headlamp`
+1. Installs Headlamp via Helm from the OCI chart `https://kubernetes-sigs.github.io/headlamp/`
 2. Creates a `ClusterRoleBinding` that assigns `cluster-admin` to the `headlamp` service account
 3. If ingress is enabled, creates an Ingress resource
 

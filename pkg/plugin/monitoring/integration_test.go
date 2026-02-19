@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/alepito/deploy-cluster/pkg/config"
+	"github.com/alepito/deploy-cluster/pkg/template"
 	"github.com/alepito/deploy-cluster/pkg/logger"
 )
 
@@ -34,7 +34,7 @@ func quietLogger() *logger.Logger {
 func TestInstallPrometheus_HelmArgs(t *testing.T) {
 	cmds := setupFakeExec(t)
 	p := New(quietLogger(), 5*time.Minute)
-	cfg := &config.MonitoringConfig{Enabled: true, Type: "prometheus"}
+	cfg := &template.MonitoringTemplate{Enabled: true, Type: "prometheus"}
 
 	if err := p.Install(cfg, "kind-test"); err != nil {
 		t.Fatalf("Install() error = %v", err)
@@ -64,7 +64,7 @@ func TestInstallPrometheus_HelmArgs(t *testing.T) {
 func TestInstallPrometheus_CustomTimeout(t *testing.T) {
 	cmds := setupFakeExec(t)
 	p := New(quietLogger(), 10*time.Minute)
-	cfg := &config.MonitoringConfig{Enabled: true, Type: "prometheus"}
+	cfg := &template.MonitoringTemplate{Enabled: true, Type: "prometheus"}
 
 	if err := p.Install(cfg, "kind-test"); err != nil {
 		t.Fatalf("Install() error = %v", err)
@@ -76,7 +76,7 @@ func TestInstallPrometheus_CustomTimeout(t *testing.T) {
 func TestInstallPrometheus_CustomVersion(t *testing.T) {
 	cmds := setupFakeExec(t)
 	p := New(quietLogger(), 5*time.Minute)
-	cfg := &config.MonitoringConfig{Enabled: true, Type: "prometheus", Version: "70.0.0"}
+	cfg := &template.MonitoringTemplate{Enabled: true, Type: "prometheus", Version: "70.0.0"}
 
 	if err := p.Install(cfg, "kind-test"); err != nil {
 		t.Fatalf("Install() error = %v", err)
@@ -88,10 +88,10 @@ func TestInstallPrometheus_CustomVersion(t *testing.T) {
 func TestInstallPrometheus_WithIngress(t *testing.T) {
 	cmds := setupFakeExec(t)
 	p := New(quietLogger(), 5*time.Minute)
-	cfg := &config.MonitoringConfig{
+	cfg := &template.MonitoringTemplate{
 		Enabled: true,
 		Type:    "prometheus",
-		Ingress: &config.MonitoringIngressConfig{
+		Ingress: &template.MonitoringIngressTemplate{
 			Enabled: true,
 			Host:    "grafana.local",
 		},

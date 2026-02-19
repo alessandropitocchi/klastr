@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/alepito/deploy-cluster/pkg/config"
+	"github.com/alepito/deploy-cluster/pkg/template"
 	"github.com/alepito/deploy-cluster/pkg/plugin/argocd"
 	"github.com/alepito/deploy-cluster/pkg/plugin/certmanager"
 	"github.com/alepito/deploy-cluster/pkg/plugin/customapps"
@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	createConfigFile string
+	createTemplateFile string
 	createEnvFile    string
 	createFailFast   bool
 )
@@ -29,21 +29,21 @@ type pluginResult struct {
 
 var createCmd = &cobra.Command{
 	Use:   "create",
-	Short: "Create a new cluster from configuration",
-	Long:  `Create a new Kubernetes cluster based on the provided configuration file.`,
+	Short: "Create a new cluster from template",
+	Long:  `Create a new Kubernetes cluster based on the provided template file.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		log := newLogger("")
 
 		// Load .env file
-		if err := config.LoadEnvFile(createEnvFile); err != nil {
+		if err := template.LoadEnvFile(createEnvFile); err != nil {
 			return fmt.Errorf("failed to load env file: %w", err)
 		}
 
 		// Load config
-		log.Info("Loading configuration from %s...\n", createConfigFile)
-		cfg, err := config.Load(createConfigFile)
+		log.Info("Loading template from %s...\n", createTemplateFile)
+		cfg, err := template.Load(createTemplateFile)
 		if err != nil {
-			return fmt.Errorf("failed to load config: %w", err)
+			return fmt.Errorf("failed to load template: %w", err)
 		}
 
 		log.Info("\n")
@@ -198,7 +198,7 @@ func hasErrors(results []pluginResult) bool {
 }
 
 func init() {
-	createCmd.Flags().StringVarP(&createConfigFile, "config", "c", "cluster.yaml", "cluster configuration file")
+	createCmd.Flags().StringVarP(&createTemplateFile, "template", "t", "template.yaml", "cluster template file")
 	createCmd.Flags().StringVarP(&createEnvFile, "env", "e", ".env", "environment file for secrets")
 	createCmd.Flags().BoolVar(&createFailFast, "fail-fast", false, "stop at first plugin failure")
 	rootCmd.AddCommand(createCmd)

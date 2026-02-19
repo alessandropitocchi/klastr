@@ -1,14 +1,14 @@
 package provider
 
-import "github.com/alepito/deploy-cluster/pkg/config"
+import "github.com/alepito/deploy-cluster/pkg/template"
 
 // Provider defines the interface for cluster providers (kind, k3d, etc.)
 type Provider interface {
 	// Name returns the provider name
 	Name() string
 
-	// Create creates a new cluster with the given configuration
-	Create(cfg *config.Config) error
+	// Create creates a new cluster with the given template
+	Create(tmpl *template.Template) error
 
 	// Delete removes the cluster
 	Delete(name string) error

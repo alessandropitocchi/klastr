@@ -7,19 +7,20 @@ import (
 	"strings"
 	"time"
 
-	"github.com/alepito/deploy-cluster/pkg/config"
 	"github.com/alepito/deploy-cluster/pkg/logger"
 	"github.com/alepito/deploy-cluster/pkg/retry"
+	"github.com/alepito/deploy-cluster/pkg/template"
 )
 
 // execCommand is a package-level variable for creating exec.Cmd, replaceable in tests.
 var execCommand = exec.Command
 
 const (
-	defaultHeadlampChart   = "oci://ghcr.io/headlamp-k8s/charts/headlamp"
-	defaultHeadlampVersion = "0.25.0"
-	releaseName            = "headlamp"
-	namespace              = "headlamp"
+	defaultHeadlampChart    = "https://kubernetes-sigs.github.io/headlamp/"
+	defaultHeadlampVersion  = "0.40.0"
+	defaultHeadlampChartRef = "headlamp/headlamp"
+	releaseName             = "headlamp"
+	namespace               = "headlamp"
 )
 
 type Plugin struct {
@@ -35,7 +36,7 @@ func (p *Plugin) Name() string {
 	return "dashboard"
 }
 
-func (p *Plugin) Install(cfg *config.DashboardConfig, kubecontext string) error {
+func (p *Plugin) Install(cfg *template.DashboardTemplate, kubecontext string) error {
 	switch cfg.Type {
 	case "headlamp":
 		return p.installHeadlamp(cfg, kubecontext)
@@ -44,7 +45,7 @@ func (p *Plugin) Install(cfg *config.DashboardConfig, kubecontext string) error 
 	}
 }
 
-func (p *Plugin) Uninstall(cfg *config.DashboardConfig, kubecontext string) error {
+func (p *Plugin) Uninstall(cfg *template.DashboardTemplate, kubecontext string) error {
 	switch cfg.Type {
 	case "headlamp":
 		return p.uninstallHeadlamp(kubecontext)
@@ -62,19 +63,19 @@ func (p *Plugin) IsInstalled(kubecontext string) (bool, error) {
 	return true, nil
 }
 
-func (p *Plugin) chartVersion(cfg *config.DashboardConfig) string {
+func (p *Plugin) chartVersion(cfg *template.DashboardTemplate) string {
 	if cfg.Version != "" {
 		return cfg.Version
 	}
 	return defaultHeadlampVersion
 }
 
-func (p *Plugin) installHeadlamp(cfg *config.DashboardConfig, kubecontext string) error {
+func (p *Plugin) installHeadlamp(cfg *template.DashboardTemplate, kubecontext string) error {
 	version := p.chartVersion(cfg)
 	p.Log.Info("Installing Headlamp %s via Helm...\n", version)
 
 	args := []string{
-		"upgrade", "--install", releaseName, defaultHeadlampChart,
+		"upgrade", "--install", releaseName, defaultHeadlampChartRef,
 		"--version", version,
 		"--namespace", namespace,
 		"--create-namespace",
@@ -84,6 +85,8 @@ func (p *Plugin) installHeadlamp(cfg *config.DashboardConfig, kubecontext string
 	}
 
 	err := retry.Run(3, 5*time.Second, p.Log.Warn, func() error {
+		execCommand("helm", "repo", "add", releaseName, defaultHeadlampChart).Run()
+		execCommand("helm", "repo", "update").Run()
 		cmd := execCommand("helm", args...)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
@@ -132,7 +135,7 @@ subjects:
 	return nil
 }
 
-func (p *Plugin) configureIngress(cfg *config.DashboardIngressConfig, kubecontext string) error {
+func (p *Plugin) configureIngress(cfg *template.DashboardIngressTemplate, kubecontext string) error {
 	p.Log.Info("Configuring ingress for Headlamp...\n")
 
 	manifest := fmt.Sprintf(`apiVersion: networking.k8s.io/v1

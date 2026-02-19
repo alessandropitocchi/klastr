@@ -2,7 +2,7 @@
 
 CLI tool for deploying local Kubernetes clusters with plugin support.
 
-Create clusters with configurable topology and automatically install components like storage, ingress, cert-manager, monitoring, dashboard, ArgoCD and custom Helm apps — all defined in a single configuration file.
+Create clusters with configurable topology and automatically install components like storage, ingress, cert-manager, monitoring, dashboard, ArgoCD and custom Helm apps — all defined in a single template file.
 
 ## Requirements
 
@@ -20,23 +20,23 @@ go build -o deploy-cluster ./cmd/deploycluster
 # Check prerequisites
 ./deploy-cluster check
 
-# Interactive wizard to generate the configuration
+# Interactive wizard to generate the template
 ./deploy-cluster init
 
 # Create the cluster with all configured plugins
-./deploy-cluster create --config cluster.yaml
+./deploy-cluster create --template template.yaml
 
 # Check status
-./deploy-cluster status --config cluster.yaml
+./deploy-cluster status --template template.yaml
 
 # Update plugins without recreating the cluster
-./deploy-cluster upgrade --config cluster.yaml
+./deploy-cluster upgrade --template template.yaml
 
 # Switch kubectl context between clusters
 ./deploy-cluster switch my-cluster
 
 # Destroy the cluster
-./deploy-cluster destroy --config cluster.yaml
+./deploy-cluster destroy --template template.yaml
 ```
 
 ## Configuration Example
@@ -112,6 +112,6 @@ With ingress enabled:
 |---------|-------------|
 | [Getting Started](docs/getting-started.md) | Installation and first use |
 | [CLI Commands](docs/commands.md) | Complete command reference |
-| [Configuration](docs/configuration.md) | `cluster.yaml` file structure |
+| [Configuration](docs/configuration.md) | `template.yaml` file structure |
 | [Provider: kind](docs/providers/kind.md) | kind provider details |
 | [Plugins](docs/plugins/) | Documentation for each plugin |

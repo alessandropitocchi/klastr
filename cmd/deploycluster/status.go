@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/alepito/deploy-cluster/pkg/config"
+	"github.com/alepito/deploy-cluster/pkg/template"
 	"github.com/alepito/deploy-cluster/pkg/logger"
 	"github.com/alepito/deploy-cluster/pkg/plugin/argocd"
 	"github.com/alepito/deploy-cluster/pkg/plugin/certmanager"
@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	statusConfigFile string
+	statusTemplateFile string
 )
 
 var statusCmd = &cobra.Command{
@@ -24,9 +24,9 @@ var statusCmd = &cobra.Command{
 	Short: "Show the current status of a cluster",
 	Long:  `Show the current status of a cluster, including existence and installed plugins.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := config.Load(statusConfigFile)
+		cfg, err := template.Load(statusTemplateFile)
 		if err != nil {
-			return fmt.Errorf("failed to load config: %w", err)
+			return fmt.Errorf("failed to load template: %w", err)
 		}
 
 		// Check cluster existence
@@ -177,6 +177,6 @@ var statusCmd = &cobra.Command{
 }
 
 func init() {
-	statusCmd.Flags().StringVarP(&statusConfigFile, "config", "c", "cluster.yaml", "cluster configuration file")
+	statusCmd.Flags().StringVarP(&statusTemplateFile, "template", "t", "template.yaml", "cluster template file")
 	rootCmd.AddCommand(statusCmd)
 }

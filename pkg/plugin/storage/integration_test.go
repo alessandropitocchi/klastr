@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/alepito/deploy-cluster/pkg/config"
+	"github.com/alepito/deploy-cluster/pkg/template"
 	"github.com/alepito/deploy-cluster/pkg/logger"
 )
 
@@ -34,7 +34,7 @@ func quietLogger() *logger.Logger {
 func TestInstallLocalPath_Commands(t *testing.T) {
 	cmds := setupFakeExec(t)
 	p := New(quietLogger(), 5*time.Minute)
-	cfg := &config.StorageConfig{Enabled: true, Type: "local-path"}
+	cfg := &template.StorageTemplate{Enabled: true, Type: "local-path"}
 
 	err := p.Install(cfg, "kind-test")
 	if err != nil {
@@ -68,7 +68,7 @@ func TestInstallLocalPath_Commands(t *testing.T) {
 func TestInstallLocalPath_CustomTimeout(t *testing.T) {
 	cmds := setupFakeExec(t)
 	p := New(quietLogger(), 30*time.Second)
-	cfg := &config.StorageConfig{Enabled: true, Type: "local-path"}
+	cfg := &template.StorageTemplate{Enabled: true, Type: "local-path"}
 
 	if err := p.Install(cfg, "kind-test"); err != nil {
 		t.Fatalf("Install() error = %v", err)
@@ -87,7 +87,7 @@ func TestInstallLocalPath_CustomTimeout(t *testing.T) {
 func TestInstallLocalPath_Kubecontext(t *testing.T) {
 	cmds := setupFakeExec(t)
 	p := New(quietLogger(), 5*time.Minute)
-	cfg := &config.StorageConfig{Enabled: true, Type: "local-path"}
+	cfg := &template.StorageTemplate{Enabled: true, Type: "local-path"}
 
 	if err := p.Install(cfg, "kind-my-cluster"); err != nil {
 		t.Fatalf("Install() error = %v", err)
@@ -120,7 +120,7 @@ func TestIsInstalled_Kubecontext(t *testing.T) {
 func TestUninstallLocalPath_Commands(t *testing.T) {
 	cmds := setupFakeExec(t)
 	p := New(quietLogger(), 5*time.Minute)
-	cfg := &config.StorageConfig{Enabled: true, Type: "local-path"}
+	cfg := &template.StorageTemplate{Enabled: true, Type: "local-path"}
 
 	if err := p.Uninstall(cfg, "kind-test"); err != nil {
 		t.Fatalf("Uninstall() error = %v", err)

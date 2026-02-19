@@ -49,7 +49,7 @@ chart: https://charts.bitnami.com/bitnami/redis
 
 ### Inline
 
-Values written directly in the config:
+Values written directly in the template:
 
 ```yaml
 customApps:
@@ -172,7 +172,7 @@ The `upgrade` command runs `helm upgrade --install` for each app in the list. It
 ## Dry-run
 
 ```bash
-deploy-cluster upgrade --config cluster.yaml --dry-run
+deploy-cluster upgrade --template template.yaml --dry-run
 ```
 
 Output:
@@ -186,7 +186,7 @@ Output:
 ## Status
 
 ```bash
-deploy-cluster status --config cluster.yaml
+deploy-cluster status --template template.yaml
 ```
 
 ```

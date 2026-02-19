@@ -7,7 +7,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/alepito/deploy-cluster/pkg/config"
+	"github.com/alepito/deploy-cluster/pkg/template"
 	"gopkg.in/yaml.v3"
 )
 
@@ -52,7 +52,7 @@ func (p *Provider) log(format string, args ...interface{}) {
 	}
 }
 
-func (p *Provider) Create(cfg *config.Config) error {
+func (p *Provider) Create(cfg *template.Template) error {
 	// Check if kind is installed
 	p.log("[kind] Checking if kind is installed...\n")
 	if _, err := exec.LookPath("kind"); err != nil {
@@ -142,7 +142,7 @@ func (p *Provider) KubeContext(name string) string {
 	return fmt.Sprintf("kind-%s", name)
 }
 
-func (p *Provider) generateKindConfig(cfg *config.Config) *KindConfig {
+func (p *Provider) generateKindConfig(cfg *template.Template) *KindConfig {
 	kindCfg := &KindConfig{
 		Kind:       "Cluster",
 		APIVersion: "kind.x-k8s.io/v1alpha4",

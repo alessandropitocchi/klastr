@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/alepito/deploy-cluster/pkg/config"
+	"github.com/alepito/deploy-cluster/pkg/template"
 	"github.com/alepito/deploy-cluster/pkg/logger"
 	"github.com/alepito/deploy-cluster/pkg/retry"
 )
@@ -32,7 +32,7 @@ func (p *Plugin) Name() string {
 	return "storage"
 }
 
-func (p *Plugin) Install(cfg *config.StorageConfig, kubecontext string) error {
+func (p *Plugin) Install(cfg *template.StorageTemplate, kubecontext string) error {
 	switch cfg.Type {
 	case "local-path":
 		return p.installLocalPath(kubecontext)
@@ -41,7 +41,7 @@ func (p *Plugin) Install(cfg *config.StorageConfig, kubecontext string) error {
 	}
 }
 
-func (p *Plugin) Uninstall(cfg *config.StorageConfig, kubecontext string) error {
+func (p *Plugin) Uninstall(cfg *template.StorageTemplate, kubecontext string) error {
 	switch cfg.Type {
 	case "local-path":
 		return p.uninstallLocalPath(kubecontext)

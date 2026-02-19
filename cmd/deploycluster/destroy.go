@@ -3,12 +3,12 @@ package main
 import (
 	"fmt"
 
-	"github.com/alepito/deploy-cluster/pkg/config"
+	"github.com/alepito/deploy-cluster/pkg/template"
 	"github.com/spf13/cobra"
 )
 
 var (
-	destroyConfigFile string
+	destroyTemplateFile string
 	destroyName       string
 )
 
@@ -25,9 +25,9 @@ var destroyCmd = &cobra.Command{
 			clusterName = destroyName
 			providerType = "kind" // default
 		} else {
-			cfg, err := config.Load(destroyConfigFile)
+			cfg, err := template.Load(destroyTemplateFile)
 			if err != nil {
-				return fmt.Errorf("failed to load config: %w", err)
+				return fmt.Errorf("failed to load template: %w", err)
 			}
 			clusterName = cfg.Name
 			providerType = cfg.Provider.Type
@@ -51,7 +51,7 @@ var destroyCmd = &cobra.Command{
 }
 
 func init() {
-	destroyCmd.Flags().StringVarP(&destroyConfigFile, "config", "c", "cluster.yaml", "cluster configuration file")
+	destroyCmd.Flags().StringVarP(&destroyTemplateFile, "template", "t", "template.yaml", "cluster template file")
 	destroyCmd.Flags().StringVarP(&destroyName, "name", "n", "", "cluster name (overrides config)")
 	rootCmd.AddCommand(destroyCmd)
 }

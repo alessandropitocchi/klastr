@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/alepito/deploy-cluster/pkg/config"
+	"github.com/alepito/deploy-cluster/pkg/template"
 	"github.com/alepito/deploy-cluster/pkg/logger"
 )
 
@@ -34,7 +34,7 @@ func quietLogger() *logger.Logger {
 func TestInstallHeadlamp_HelmArgs(t *testing.T) {
 	cmds := setupFakeExec(t)
 	p := New(quietLogger(), 5*time.Minute)
-	cfg := &config.DashboardConfig{Enabled: true, Type: "headlamp"}
+	cfg := &template.DashboardTemplate{Enabled: true, Type: "headlamp"}
 
 	if err := p.Install(cfg, "kind-test"); err != nil {
 		t.Fatalf("Install() error = %v", err)
@@ -62,7 +62,7 @@ func TestInstallHeadlamp_HelmArgs(t *testing.T) {
 func TestInstallHeadlamp_CustomTimeout(t *testing.T) {
 	cmds := setupFakeExec(t)
 	p := New(quietLogger(), 3*time.Minute)
-	cfg := &config.DashboardConfig{Enabled: true, Type: "headlamp"}
+	cfg := &template.DashboardTemplate{Enabled: true, Type: "headlamp"}
 
 	if err := p.Install(cfg, "kind-test"); err != nil {
 		t.Fatalf("Install() error = %v", err)
@@ -74,10 +74,10 @@ func TestInstallHeadlamp_CustomTimeout(t *testing.T) {
 func TestInstallHeadlamp_WithIngress(t *testing.T) {
 	cmds := setupFakeExec(t)
 	p := New(quietLogger(), 5*time.Minute)
-	cfg := &config.DashboardConfig{
+	cfg := &template.DashboardTemplate{
 		Enabled: true,
 		Type:    "headlamp",
-		Ingress: &config.DashboardIngressConfig{
+		Ingress: &template.DashboardIngressTemplate{
 			Enabled: true,
 			Host:    "headlamp.local",
 		},

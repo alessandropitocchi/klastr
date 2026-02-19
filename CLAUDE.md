@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**deploy-cluster** is a CLI tool for deploying Kubernetes clusters on kind (Kubernetes in Docker). It allows users to define cluster topology and install plugins (storage, ingress, cert-manager, monitoring, dashboard, custom Helm apps, ArgoCD) from a single YAML configuration file.
+**deploy-cluster** is a CLI tool for deploying Kubernetes clusters on kind (Kubernetes in Docker). It allows users to define cluster topology and install plugins (storage, ingress, cert-manager, monitoring, dashboard, custom Helm apps, ArgoCD) from a single YAML template file.
 
 ## Architecture
 
@@ -12,7 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **Providers**: Abstraction layer for cluster providers. Interface in `pkg/provider/provider.go`. Currently implemented: **kind**.
 - **Plugins**: Modular components installed on clusters. Each plugin has its own package under `pkg/plugin/`. Implemented: **storage** (local-path-provisioner), **ingress** (nginx), **cert-manager**, **monitoring** (kube-prometheus-stack via Helm), **dashboard** (Headlamp via Helm), **customApps** (arbitrary Helm charts), **ArgoCD**.
-- **Config**: Single `cluster.yaml` defines cluster topology + all plugins. Parsed and validated in `pkg/config/`.
+- **Template**: Single `template.yaml` defines cluster topology + all plugins. Parsed and validated in `pkg/template/`.
 
 ### Plugin Installation Order
 
@@ -26,7 +26,7 @@ When `plugins.ingress` is enabled, the kind config automatically adds `ingress-r
 
 | Command | Description |
 |---------|-------------|
-| `init` | Generate starter `cluster.yaml` |
+| `init` | Generate starter `template.yaml` |
 | `create` | Create cluster + install all enabled plugins |
 | `upgrade` | Update plugins on existing cluster (diff-based for ArgoCD repos/apps) |
 | `upgrade --dry-run` | Preview changes without applying |
@@ -41,7 +41,7 @@ When `plugins.ingress` is enabled, the kind config automatically adds `ingress-r
 ### Tech Stack
 - **Language**: Go
 - **CLI Framework**: cobra
-- **Config Format**: YAML (gopkg.in/yaml.v3)
+- **Template Format**: YAML (gopkg.in/yaml.v3)
 - **Cluster Interaction**: kubectl and helm commands via `os/exec`
 
 ### Build & Test
@@ -63,8 +63,8 @@ cmd/deploycluster/          # CLI entrypoint and cobra commands
   init.go                   # init command
   get.go                    # get subcommands
 pkg/
-  config/
-    config.go               # Config structs, Load(), Save(), Validate()
+  template/
+    template.go             # Template structs, Load(), Save(), Validate()
     env.go                  # .env file loading
   provider/
     provider.go             # Provider interface (Name, Create, Delete, Exists, KubeContext, GetKubeconfig)
@@ -90,11 +90,11 @@ pkg/
 ### Key Design Decisions
 - Provider abstraction: `KubeContext()` method avoids hardcoding `kind-<name>` everywhere
 - Kind config generates `kubeadmConfigPatches` with `ingress-ready=true` label when ingress plugin is enabled
-- ArgoCD `Upgrade()` is diff-based: applies all desired repos/apps (idempotent), removes those no longer in config
+- ArgoCD `Upgrade()` is diff-based: applies all desired repos/apps (idempotent), removes those no longer in template
 - ArgoCD insecure mode uses `argocd-cmd-params-cm` ConfigMap (not container args patching)
 - Repo name generation is centralized in `repoName()` — used by both `addRepository` and `Upgrade` diff logic
-- Config `Validate()` runs inside `Load()` — invalid configs fail early
-- No generic Plugin interface — each plugin has typed config (ArgoCD receives `*ArgoCDConfig`, etc.)
+- Template `Validate()` runs inside `Load()` — invalid templates fail early
+- No generic Plugin interface — each plugin has typed template (ArgoCD receives `*ArgoCDTemplate`, etc.)
 - Helm-based plugins (monitoring, dashboard, customApps) use `helm upgrade --install` for idempotency
 - customApps: inline `values` are written to temp files, `valuesFile` takes precedence over inline values
 - Plugin installation is idempotent (`kubectl apply` or `helm upgrade --install`)
@@ -103,7 +103,7 @@ pkg/
 Tests are colocated with source files (`*_test.go` in same package). Run with `go test ./...`.
 
 Key test areas:
-- `pkg/config/`: Load/Save round-trip, validation (all error cases), env file parsing
+- `pkg/template/`: Load/Save round-trip, validation (all error cases), env file parsing
 - `pkg/plugin/argocd/`: repoName generation, diff logic (add/remove repos/apps)
 - `pkg/plugin/storage/`: type routing, error messages
 - `pkg/plugin/ingress/`: type routing, error messages

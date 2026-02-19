@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/alepito/deploy-cluster/pkg/config"
+	"github.com/alepito/deploy-cluster/pkg/template"
 	"github.com/alepito/deploy-cluster/pkg/logger"
 	"github.com/alepito/deploy-cluster/pkg/retry"
 )
@@ -35,7 +35,7 @@ func (p *Plugin) Name() string {
 	return "monitoring"
 }
 
-func (p *Plugin) Install(cfg *config.MonitoringConfig, kubecontext string) error {
+func (p *Plugin) Install(cfg *template.MonitoringTemplate, kubecontext string) error {
 	switch cfg.Type {
 	case "prometheus":
 		return p.installPrometheus(cfg, kubecontext)
@@ -44,7 +44,7 @@ func (p *Plugin) Install(cfg *config.MonitoringConfig, kubecontext string) error
 	}
 }
 
-func (p *Plugin) Uninstall(cfg *config.MonitoringConfig, kubecontext string) error {
+func (p *Plugin) Uninstall(cfg *template.MonitoringTemplate, kubecontext string) error {
 	switch cfg.Type {
 	case "prometheus":
 		return p.uninstallPrometheus(kubecontext)
@@ -62,14 +62,14 @@ func (p *Plugin) IsInstalled(kubecontext string) (bool, error) {
 	return true, nil
 }
 
-func (p *Plugin) chartVersion(cfg *config.MonitoringConfig) string {
+func (p *Plugin) chartVersion(cfg *template.MonitoringTemplate) string {
 	if cfg.Version != "" {
 		return cfg.Version
 	}
 	return defaultChartVersion
 }
 
-func (p *Plugin) installPrometheus(cfg *config.MonitoringConfig, kubecontext string) error {
+func (p *Plugin) installPrometheus(cfg *template.MonitoringTemplate, kubecontext string) error {
 	version := p.chartVersion(cfg)
 	p.Log.Info("Installing kube-prometheus-stack %s via Helm...\n", version)
 
@@ -112,7 +112,7 @@ func (p *Plugin) installPrometheus(cfg *config.MonitoringConfig, kubecontext str
 	return nil
 }
 
-func (p *Plugin) configureGrafanaIngress(cfg *config.MonitoringIngressConfig, kubecontext string) error {
+func (p *Plugin) configureGrafanaIngress(cfg *template.MonitoringIngressTemplate, kubecontext string) error {
 	p.Log.Info("Configuring ingress for Grafana...\n")
 
 	manifest := fmt.Sprintf(`apiVersion: networking.k8s.io/v1

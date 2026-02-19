@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/alepito/deploy-cluster/pkg/config"
+	"github.com/alepito/deploy-cluster/pkg/template"
 	"github.com/alepito/deploy-cluster/pkg/logger"
 )
 
@@ -34,7 +34,7 @@ func quietLogger() *logger.Logger {
 func TestInstallNginx_Commands(t *testing.T) {
 	cmds := setupFakeExec(t)
 	p := New(quietLogger(), 5*time.Minute)
-	cfg := &config.IngressConfig{Enabled: true, Type: "nginx"}
+	cfg := &template.IngressTemplate{Enabled: true, Type: "nginx"}
 
 	if err := p.Install(cfg, "kind-test"); err != nil {
 		t.Fatalf("Install() error = %v", err)
@@ -63,7 +63,7 @@ func TestInstallNginx_Commands(t *testing.T) {
 func TestInstallNginx_CustomTimeout(t *testing.T) {
 	cmds := setupFakeExec(t)
 	p := New(quietLogger(), 2*time.Minute)
-	cfg := &config.IngressConfig{Enabled: true, Type: "nginx"}
+	cfg := &template.IngressTemplate{Enabled: true, Type: "nginx"}
 
 	if err := p.Install(cfg, "kind-test"); err != nil {
 		t.Fatalf("Install() error = %v", err)
@@ -81,7 +81,7 @@ func TestInstallNginx_CustomTimeout(t *testing.T) {
 func TestInstallNginx_Namespace(t *testing.T) {
 	cmds := setupFakeExec(t)
 	p := New(quietLogger(), 5*time.Minute)
-	cfg := &config.IngressConfig{Enabled: true, Type: "nginx"}
+	cfg := &template.IngressTemplate{Enabled: true, Type: "nginx"}
 
 	if err := p.Install(cfg, "kind-test"); err != nil {
 		t.Fatalf("Install() error = %v", err)

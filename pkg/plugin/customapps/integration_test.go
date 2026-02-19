@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/alepito/deploy-cluster/pkg/config"
 	"github.com/alepito/deploy-cluster/pkg/logger"
+	"github.com/alepito/deploy-cluster/pkg/template"
 )
 
 type capturedCmd struct {
@@ -34,10 +34,10 @@ func quietLogger() *logger.Logger {
 func TestInstall_HelmArgs(t *testing.T) {
 	cmds := setupFakeExec(t)
 	p := New(quietLogger(), 5*time.Minute)
-	app := config.CustomAppConfig{
-		Name:    "my-app",
-		Chart:   "oci://ghcr.io/my/chart",
-		Version: "1.0.0",
+	app := template.CustomAppTemplate{
+		Name:      "my-app",
+		ChartName: "oci://ghcr.io/my/chart",
+		Version:   "1.0.0",
 	}
 
 	if err := p.Install(app, "kind-test"); err != nil {
@@ -68,9 +68,9 @@ func TestInstall_HelmArgs(t *testing.T) {
 func TestInstall_CustomTimeout(t *testing.T) {
 	cmds := setupFakeExec(t)
 	p := New(quietLogger(), 45*time.Second)
-	app := config.CustomAppConfig{
-		Name:  "my-app",
-		Chart: "oci://ghcr.io/my/chart",
+	app := template.CustomAppTemplate{
+		Name:      "my-app",
+		ChartName: "oci://ghcr.io/my/chart",
 	}
 
 	if err := p.Install(app, "kind-test"); err != nil {
@@ -83,9 +83,9 @@ func TestInstall_CustomTimeout(t *testing.T) {
 func TestInstall_CustomNamespace(t *testing.T) {
 	cmds := setupFakeExec(t)
 	p := New(quietLogger(), 5*time.Minute)
-	app := config.CustomAppConfig{
+	app := template.CustomAppTemplate{
 		Name:      "my-app",
-		Chart:     "oci://ghcr.io/my/chart",
+		ChartName: "oci://ghcr.io/my/chart",
 		Namespace: "custom-ns",
 	}
 
@@ -99,9 +99,9 @@ func TestInstall_CustomNamespace(t *testing.T) {
 func TestInstallAll_MultipleApps(t *testing.T) {
 	cmds := setupFakeExec(t)
 	p := New(quietLogger(), 5*time.Minute)
-	apps := []config.CustomAppConfig{
-		{Name: "app-one", Chart: "chart-one"},
-		{Name: "app-two", Chart: "chart-two"},
+	apps := []template.CustomAppTemplate{
+		{Name: "app-one", ChartName: "chart-one"},
+		{Name: "app-two", ChartName: "chart-two"},
 	}
 
 	if err := p.InstallAll(apps, "kind-test"); err != nil {
@@ -123,10 +123,10 @@ func TestInstallAll_MultipleApps(t *testing.T) {
 func TestInstall_WithIngress(t *testing.T) {
 	cmds := setupFakeExec(t)
 	p := New(quietLogger(), 5*time.Minute)
-	app := config.CustomAppConfig{
-		Name:  "my-app",
-		Chart: "oci://ghcr.io/my/chart",
-		Ingress: &config.CustomAppIngressConfig{
+	app := template.CustomAppTemplate{
+		Name:      "my-app",
+		ChartName: "oci://ghcr.io/my/chart",
+		Ingress: &template.CustomAppIngressTemplate{
 			Enabled:     true,
 			Host:        "my-app.local",
 			ServiceName: "my-svc",

@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/alepito/deploy-cluster/pkg/config"
+	"github.com/alepito/deploy-cluster/pkg/template"
 	"github.com/alepito/deploy-cluster/pkg/logger"
 )
 
@@ -41,7 +41,7 @@ func TestName(t *testing.T) {
 
 func TestInstall_UnsupportedType(t *testing.T) {
 	p := New(testLogger(), 5*time.Minute)
-	cfg := &config.DashboardConfig{Enabled: true, Type: "lens"}
+	cfg := &template.DashboardTemplate{Enabled: true, Type: "lens"}
 	err := p.Install(cfg, "fake-context")
 	if err == nil {
 		t.Fatal("Install() should fail for unsupported type")
@@ -53,7 +53,7 @@ func TestInstall_UnsupportedType(t *testing.T) {
 
 func TestUninstall_UnsupportedType(t *testing.T) {
 	p := New(testLogger(), 5*time.Minute)
-	cfg := &config.DashboardConfig{Enabled: true, Type: "lens"}
+	cfg := &template.DashboardTemplate{Enabled: true, Type: "lens"}
 	err := p.Uninstall(cfg, "fake-context")
 	if err == nil {
 		t.Fatal("Uninstall() should fail for unsupported type")
@@ -65,7 +65,7 @@ func TestUninstall_UnsupportedType(t *testing.T) {
 
 func TestChartVersion_Default(t *testing.T) {
 	p := New(testLogger(), 5*time.Minute)
-	cfg := &config.DashboardConfig{Enabled: true, Type: "headlamp"}
+	cfg := &template.DashboardTemplate{Enabled: true, Type: "headlamp"}
 	if got := p.chartVersion(cfg); got != defaultHeadlampVersion {
 		t.Errorf("chartVersion() = %q, want %q", got, defaultHeadlampVersion)
 	}
@@ -73,7 +73,7 @@ func TestChartVersion_Default(t *testing.T) {
 
 func TestChartVersion_Custom(t *testing.T) {
 	p := New(testLogger(), 5*time.Minute)
-	cfg := &config.DashboardConfig{Enabled: true, Type: "headlamp", Version: "0.20.0"}
+	cfg := &template.DashboardTemplate{Enabled: true, Type: "headlamp", Version: "0.20.0"}
 	if got := p.chartVersion(cfg); got != "0.20.0" {
 		t.Errorf("chartVersion() = %q, want %q", got, "0.20.0")
 	}

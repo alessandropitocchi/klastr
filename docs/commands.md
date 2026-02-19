@@ -4,7 +4,7 @@
 
 | Command | Description |
 |---------|-------------|
-| [`init`](#init) | Generate a `cluster.yaml` file via interactive wizard |
+| [`init`](#init) | Generate a `template.yaml` file via interactive wizard |
 | [`create`](#create) | Create the cluster and install configured plugins |
 | [`upgrade`](#upgrade) | Update plugins on an existing cluster |
 | [`status`](#status) | Show cluster and plugin status |
@@ -17,7 +17,7 @@
 
 ## `init`
 
-Generates a `cluster.yaml` configuration file via an interactive wizard that guides you through plugin and option selection.
+Generates a `template.yaml` template file via an interactive wizard that guides you through plugin and option selection.
 
 ```bash
 deploy-cluster init [flags]
@@ -27,12 +27,12 @@ deploy-cluster init [flags]
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `-o, --output` | `cluster.yaml` | Output file path |
+| `-o, --output` | `template.yaml` | Output file path |
 
 ### Example
 
 ```bash
-# Generate cluster.yaml in the current directory
+# Generate template.yaml in the current directory
 deploy-cluster init
 
 # Generate with custom name
@@ -49,7 +49,7 @@ The wizard asks in sequence:
 
 ## `create`
 
-Creates a new Kubernetes cluster and installs all plugins enabled in the configuration.
+Creates a new Kubernetes cluster and installs all plugins enabled in the template.
 
 ```bash
 deploy-cluster create [flags]
@@ -59,7 +59,7 @@ deploy-cluster create [flags]
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `-c, --config` | `cluster.yaml` | Configuration file |
+| `-t, --template` | `template.yaml` | Template file |
 | `-e, --env` | `.env` | File with environment variables for secrets |
 | `--timeout` | `5m` | Timeout for plugin operations (kubectl/helm) |
 
@@ -78,16 +78,16 @@ Plugins are installed in this order:
 ### Example
 
 ```bash
-deploy-cluster create --config cluster.yaml
-deploy-cluster create --config cluster.yaml --env production.env
-deploy-cluster create --config cluster.yaml --timeout 10m
+deploy-cluster create --template template.yaml
+deploy-cluster create --template template.yaml --env production.env
+deploy-cluster create --template template.yaml --timeout 10m
 ```
 
 ---
 
 ## `upgrade`
 
-Updates an existing cluster by applying only the differences from the current configuration. The cluster is not recreated.
+Updates an existing cluster by applying only the differences from the current template. The cluster is not recreated.
 
 ```bash
 deploy-cluster upgrade [flags]
@@ -97,7 +97,7 @@ deploy-cluster upgrade [flags]
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `-c, --config` | `cluster.yaml` | Configuration file |
+| `-t, --template` | `template.yaml` | Template file |
 | `-e, --env` | `.env` | File with environment variables for secrets |
 | `--dry-run` | `false` | Show changes without applying them |
 | `--timeout` | `5m` | Timeout for plugin operations (kubectl/helm) |
@@ -118,10 +118,10 @@ deploy-cluster upgrade [flags]
 
 ```bash
 # Preview
-deploy-cluster upgrade --config cluster.yaml --dry-run
+deploy-cluster upgrade --template template.yaml --dry-run
 
 # Apply
-deploy-cluster upgrade --config cluster.yaml
+deploy-cluster upgrade --template template.yaml
 ```
 
 ---
@@ -138,12 +138,12 @@ deploy-cluster status [flags]
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `-c, --config` | `cluster.yaml` | Configuration file |
+| `-t, --template` | `template.yaml` | Template file |
 
 ### Example
 
 ```bash
-deploy-cluster status --config cluster.yaml
+deploy-cluster status --template template.yaml
 ```
 
 ---
@@ -160,13 +160,13 @@ deploy-cluster destroy [flags]
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `-c, --config` | `cluster.yaml` | Configuration file |
-| `-n, --name` | - | Cluster name (overrides config) |
+| `-t, --template` | `template.yaml` | Template file |
+| `-n, --name` | - | Cluster name (overrides template) |
 
 ### Example
 
 ```bash
-deploy-cluster destroy --config cluster.yaml
+deploy-cluster destroy --template template.yaml
 deploy-cluster destroy --name my-cluster
 ```
 

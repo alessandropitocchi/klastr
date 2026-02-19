@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/alepito/deploy-cluster/pkg/config"
 	"github.com/alepito/deploy-cluster/pkg/logger"
+	"github.com/alepito/deploy-cluster/pkg/template"
 )
 
 func testLogger() *logger.Logger {
@@ -42,7 +42,7 @@ func TestName(t *testing.T) {
 
 func TestResolveValues_Empty(t *testing.T) {
 	p := New(testLogger(), 5*time.Minute)
-	app := config.CustomAppConfig{Name: "test", Chart: "test/chart"}
+	app := template.CustomAppTemplate{Name: "test", ChartName: "test/chart"}
 
 	path, cleanup, err := p.resolveValues(app)
 	if err != nil {
@@ -58,9 +58,9 @@ func TestResolveValues_Empty(t *testing.T) {
 
 func TestResolveValues_Inline(t *testing.T) {
 	p := New(testLogger(), 5*time.Minute)
-	app := config.CustomAppConfig{
-		Name:  "test",
-		Chart: "test/chart",
+	app := template.CustomAppTemplate{
+		Name:      "test",
+		ChartName: "test/chart",
 		Values: map[string]interface{}{
 			"replicaCount": 3,
 			"image":        "nginx",
@@ -103,9 +103,9 @@ func TestResolveValues_ValuesFile(t *testing.T) {
 	_, _ = tmpFile.WriteString("replicaCount: 5\n")
 	tmpFile.Close()
 
-	app := config.CustomAppConfig{
+	app := template.CustomAppTemplate{
 		Name:       "test",
-		Chart:      "test/chart",
+		ChartName:  "test/chart",
 		ValuesFile: tmpFile.Name(),
 	}
 
@@ -131,9 +131,9 @@ func TestResolveValues_ValuesFileTakesPrecedence(t *testing.T) {
 	defer os.Remove(tmpFile.Name())
 	tmpFile.Close()
 
-	app := config.CustomAppConfig{
+	app := template.CustomAppTemplate{
 		Name:       "test",
-		Chart:      "test/chart",
+		ChartName:  "test/chart",
 		ValuesFile: tmpFile.Name(),
 		Values:     map[string]interface{}{"key": "value"},
 	}

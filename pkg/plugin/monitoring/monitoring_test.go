@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/alepito/deploy-cluster/pkg/config"
+	"github.com/alepito/deploy-cluster/pkg/template"
 	"github.com/alepito/deploy-cluster/pkg/logger"
 )
 
@@ -41,7 +41,7 @@ func TestName(t *testing.T) {
 
 func TestInstall_UnsupportedType(t *testing.T) {
 	p := New(testLogger(), 5*time.Minute)
-	cfg := &config.MonitoringConfig{Enabled: true, Type: "datadog"}
+	cfg := &template.MonitoringTemplate{Enabled: true, Type: "datadog"}
 	err := p.Install(cfg, "fake-context")
 	if err == nil {
 		t.Fatal("Install() should fail for unsupported type")
@@ -53,7 +53,7 @@ func TestInstall_UnsupportedType(t *testing.T) {
 
 func TestUninstall_UnsupportedType(t *testing.T) {
 	p := New(testLogger(), 5*time.Minute)
-	cfg := &config.MonitoringConfig{Enabled: true, Type: "datadog"}
+	cfg := &template.MonitoringTemplate{Enabled: true, Type: "datadog"}
 	err := p.Uninstall(cfg, "fake-context")
 	if err == nil {
 		t.Fatal("Uninstall() should fail for unsupported type")
@@ -65,7 +65,7 @@ func TestUninstall_UnsupportedType(t *testing.T) {
 
 func TestChartVersion_Default(t *testing.T) {
 	p := New(testLogger(), 5*time.Minute)
-	cfg := &config.MonitoringConfig{Enabled: true, Type: "prometheus"}
+	cfg := &template.MonitoringTemplate{Enabled: true, Type: "prometheus"}
 	if got := p.chartVersion(cfg); got != defaultChartVersion {
 		t.Errorf("chartVersion() = %q, want %q", got, defaultChartVersion)
 	}
@@ -73,7 +73,7 @@ func TestChartVersion_Default(t *testing.T) {
 
 func TestChartVersion_Custom(t *testing.T) {
 	p := New(testLogger(), 5*time.Minute)
-	cfg := &config.MonitoringConfig{Enabled: true, Type: "prometheus", Version: "70.0.0"}
+	cfg := &template.MonitoringTemplate{Enabled: true, Type: "prometheus", Version: "70.0.0"}
 	if got := p.chartVersion(cfg); got != "70.0.0" {
 		t.Errorf("chartVersion() = %q, want %q", got, "70.0.0")
 	}

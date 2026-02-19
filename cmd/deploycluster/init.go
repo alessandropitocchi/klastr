@@ -5,7 +5,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/alepito/deploy-cluster/pkg/config"
+	"github.com/alepito/deploy-cluster/pkg/template"
 	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
 )
@@ -16,8 +16,8 @@ var (
 
 var initCmd = &cobra.Command{
 	Use:   "init",
-	Short: "Generate an initial cluster configuration file",
-	Long: `Generate a cluster.yaml configuration file through an interactive wizard
+	Short: "Generate an initial cluster template file",
+	Long: `Generate a template.yaml file through an interactive wizard
 that lets you choose which plugins to enable and configure.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Check if file already exists
@@ -31,17 +31,17 @@ that lets you choose which plugins to enable and configure.`,
 		}
 
 		if err := cfg.Save(initOutput); err != nil {
-			return fmt.Errorf("failed to write config: %w", err)
+			return fmt.Errorf("failed to write template: %w", err)
 		}
 
 		fmt.Printf("\nCreated %s\n", initOutput)
 		fmt.Println("\nEdit the file to customize your cluster, then run:")
-		fmt.Printf("  deploy-cluster create --config %s\n", initOutput)
+		fmt.Printf("  deploy-cluster create --template %s\n", initOutput)
 		return nil
 	},
 }
 
-func runInitWizard() (*config.Config, error) {
+func runInitWizard() (*template.Template, error) {
 	// Form variables with defaults
 	var (
 		name          = "my-cluster"
@@ -171,12 +171,12 @@ func runInitWizard() (*config.Config, error) {
 	cp, _ := strconv.Atoi(controlPlanes)
 	w, _ := strconv.Atoi(workers)
 
-	cfg := &config.Config{
+	cfg := &template.Template{
 		Name: name,
-		Provider: config.ProviderConfig{
+		Provider: template.ProviderTemplate{
 			Type: "kind",
 		},
-		Cluster: config.ClusterConfig{
+		Cluster: template.ClusterTemplate{
 			ControlPlanes: cp,
 			Workers:       w,
 			Version:       version,
@@ -186,33 +186,33 @@ func runInitWizard() (*config.Config, error) {
 	hasIngress := hasPlugin("ingress")
 
 	if hasPlugin("storage") {
-		cfg.Plugins.Storage = &config.StorageConfig{
+		cfg.Plugins.Storage = &template.StorageTemplate{
 			Enabled: true,
 			Type:    "local-path",
 		}
 	}
 
 	if hasIngress {
-		cfg.Plugins.Ingress = &config.IngressConfig{
+		cfg.Plugins.Ingress = &template.IngressTemplate{
 			Enabled: true,
 			Type:    "nginx",
 		}
 	}
 
 	if hasPlugin("certmanager") {
-		cfg.Plugins.CertManager = &config.CertManagerConfig{
+		cfg.Plugins.CertManager = &template.CertManagerTemplate{
 			Enabled: true,
 			Version: "v1.16.3",
 		}
 	}
 
 	if hasPlugin("monitoring") {
-		mon := &config.MonitoringConfig{
+		mon := &template.MonitoringTemplate{
 			Enabled: true,
 			Type:    "prometheus",
 		}
 		if hasIngress {
-			mon.Ingress = &config.MonitoringIngressConfig{
+			mon.Ingress = &template.MonitoringIngressTemplate{
 				Enabled: true,
 				Host:    monitoringHost,
 			}
@@ -221,12 +221,12 @@ func runInitWizard() (*config.Config, error) {
 	}
 
 	if hasPlugin("dashboard") {
-		dash := &config.DashboardConfig{
+		dash := &template.DashboardTemplate{
 			Enabled: true,
 			Type:    "headlamp",
 		}
 		if hasIngress {
-			dash.Ingress = &config.DashboardIngressConfig{
+			dash.Ingress = &template.DashboardIngressTemplate{
 				Enabled: true,
 				Host:    dashboardHost,
 			}
@@ -235,13 +235,13 @@ func runInitWizard() (*config.Config, error) {
 	}
 
 	if hasPlugin("argocd") {
-		argo := &config.ArgoCDConfig{
+		argo := &template.ArgoCDTemplate{
 			Enabled:   true,
 			Namespace: argocdNamespace,
 			Version:   argocdVersion,
 		}
 		if hasIngress {
-			argo.Ingress = &config.ArgoCDIngressConfig{
+			argo.Ingress = &template.ArgoCDIngressTemplate{
 				Enabled: true,
 				Host:    argocdHost,
 			}
@@ -253,6 +253,6 @@ func runInitWizard() (*config.Config, error) {
 }
 
 func init() {
-	initCmd.Flags().StringVarP(&initOutput, "output", "o", "cluster.yaml", "output file path")
+	initCmd.Flags().StringVarP(&initOutput, "output", "o", "template.yaml", "output file path")
 	rootCmd.AddCommand(initCmd)
 }

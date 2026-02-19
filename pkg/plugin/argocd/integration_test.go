@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/alepito/deploy-cluster/pkg/config"
+	"github.com/alepito/deploy-cluster/pkg/template"
 	"github.com/alepito/deploy-cluster/pkg/logger"
 )
 
@@ -34,7 +34,7 @@ func quietLog() *logger.Logger {
 func TestInstall_FullFlow(t *testing.T) {
 	cmds := setupFakeExec(t)
 	p := New(quietLog(), 5*time.Minute)
-	cfg := &config.ArgoCDConfig{
+	cfg := &template.ArgoCDTemplate{
 		Enabled:   true,
 		Namespace: "argocd",
 		Version:   "stable",
@@ -74,7 +74,7 @@ func TestInstall_FullFlow(t *testing.T) {
 func TestInstall_CustomTimeout(t *testing.T) {
 	cmds := setupFakeExec(t)
 	p := New(quietLog(), 15*time.Minute)
-	cfg := &config.ArgoCDConfig{
+	cfg := &template.ArgoCDTemplate{
 		Enabled:   true,
 		Namespace: "argocd",
 		Version:   "stable",
@@ -96,7 +96,7 @@ func TestInstall_CustomTimeout(t *testing.T) {
 func TestInstall_CustomNamespace(t *testing.T) {
 	cmds := setupFakeExec(t)
 	p := New(quietLog(), 5*time.Minute)
-	cfg := &config.ArgoCDConfig{
+	cfg := &template.ArgoCDTemplate{
 		Enabled:   true,
 		Namespace: "gitops",
 		Version:   "stable",
@@ -113,11 +113,11 @@ func TestInstall_CustomNamespace(t *testing.T) {
 func TestInstall_WithIngress(t *testing.T) {
 	cmds := setupFakeExec(t)
 	p := New(quietLog(), 5*time.Minute)
-	cfg := &config.ArgoCDConfig{
+	cfg := &template.ArgoCDTemplate{
 		Enabled:   true,
 		Namespace: "argocd",
 		Version:   "stable",
-		Ingress: &config.ArgoCDIngressConfig{
+		Ingress: &template.ArgoCDIngressTemplate{
 			Enabled: true,
 			Host:    "argocd.local",
 		},
@@ -149,11 +149,11 @@ func TestInstall_WithIngress(t *testing.T) {
 func TestInstall_WithRepos(t *testing.T) {
 	cmds := setupFakeExec(t)
 	p := New(quietLog(), 5*time.Minute)
-	cfg := &config.ArgoCDConfig{
+	cfg := &template.ArgoCDTemplate{
 		Enabled:   true,
 		Namespace: "argocd",
 		Version:   "stable",
-		Repos: []config.ArgoCDRepoConfig{
+		Repos: []template.ArgoCDRepoTemplate{
 			{Name: "my-repo", URL: "https://github.com/user/repo.git"},
 		},
 	}
@@ -177,11 +177,11 @@ func TestInstall_WithRepos(t *testing.T) {
 func TestInstall_WithApps(t *testing.T) {
 	cmds := setupFakeExec(t)
 	p := New(quietLog(), 5*time.Minute)
-	cfg := &config.ArgoCDConfig{
+	cfg := &template.ArgoCDTemplate{
 		Enabled:   true,
 		Namespace: "argocd",
 		Version:   "stable",
-		Apps: []config.ArgoCDAppConfig{
+		Apps: []template.ArgoCDAppTemplate{
 			{
 				Name:           "my-app",
 				RepoURL:        "https://github.com/user/repo.git",
@@ -256,7 +256,7 @@ func TestWaitForDeployment_Timeout(t *testing.T) {
 func TestUpgrade_Flow(t *testing.T) {
 	cmds := setupFakeExec(t)
 	p := New(quietLog(), 5*time.Minute)
-	cfg := &config.ArgoCDConfig{
+	cfg := &template.ArgoCDTemplate{
 		Enabled:   true,
 		Namespace: "argocd",
 		Version:   "stable",

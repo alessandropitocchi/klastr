@@ -6,10 +6,10 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"text/template"
+	texttemplate "text/template"
 	"time"
 
-	"github.com/alepito/deploy-cluster/pkg/config"
+	"github.com/alepito/deploy-cluster/pkg/template"
 	"github.com/alepito/deploy-cluster/pkg/logger"
 	"github.com/alepito/deploy-cluster/pkg/retry"
 	"gopkg.in/yaml.v3"
@@ -56,7 +56,7 @@ func (p *Plugin) Name() string {
 	return "argocd"
 }
 
-func (p *Plugin) Install(cfg *config.ArgoCDConfig, kubecontext string) error {
+func (p *Plugin) Install(cfg *template.ArgoCDTemplate, kubecontext string) error {
 	// Set defaults
 	namespace := cfg.Namespace
 	if namespace == "" {
@@ -159,7 +159,7 @@ func (p *Plugin) Install(cfg *config.ArgoCDConfig, kubecontext string) error {
 	return nil
 }
 
-func (p *Plugin) addRepository(repo config.ArgoCDRepoConfig, kubecontext string, namespace string) error {
+func (p *Plugin) addRepository(repo template.ArgoCDRepoTemplate, kubecontext string, namespace string) error {
 	// Set defaults
 	name := p.repoName(repo)
 
@@ -193,7 +193,7 @@ func (p *Plugin) addRepository(repo config.ArgoCDRepoConfig, kubecontext string,
 	}
 
 	// Template functions
-	funcMap := template.FuncMap{
+	funcMap := texttemplate.FuncMap{
 		"indent": func(spaces int, s string) string {
 			pad := strings.Repeat(" ", spaces)
 			lines := strings.Split(s, "\n")
@@ -207,7 +207,7 @@ func (p *Plugin) addRepository(repo config.ArgoCDRepoConfig, kubecontext string,
 	}
 
 	// Generate Secret manifest
-	tmpl, err := template.New("repo").Funcs(funcMap).Parse(repoSecretTemplate)
+	tmpl, err := texttemplate.New("repo").Funcs(funcMap).Parse(repoSecretTemplate)
 	if err != nil {
 		return err
 	}
@@ -259,7 +259,7 @@ func (p *Plugin) addRepository(repo config.ArgoCDRepoConfig, kubecontext string,
 	})
 }
 
-func (p *Plugin) createApplication(app config.ArgoCDAppConfig, kubecontext string, argoNamespace string) error {
+func (p *Plugin) createApplication(app template.ArgoCDAppTemplate, kubecontext string, argoNamespace string) error {
 	// Set defaults
 	project := app.Project
 	if project == "" {
@@ -363,7 +363,7 @@ spec:
 	})
 }
 
-func (p *Plugin) Upgrade(cfg *config.ArgoCDConfig, kubecontext string) error {
+func (p *Plugin) Upgrade(cfg *template.ArgoCDTemplate, kubecontext string) error {
 	namespace := cfg.Namespace
 	if namespace == "" {
 		namespace = "argocd"
@@ -397,7 +397,7 @@ func (p *Plugin) Upgrade(cfg *config.ArgoCDConfig, kubecontext string) error {
 	}
 
 	// --- Repos diff ---
-	desiredRepos := make(map[string]config.ArgoCDRepoConfig)
+	desiredRepos := make(map[string]template.ArgoCDRepoTemplate)
 	for _, repo := range cfg.Repos {
 		name := p.repoName(repo)
 		desiredRepos[name] = repo
@@ -432,7 +432,7 @@ func (p *Plugin) Upgrade(cfg *config.ArgoCDConfig, kubecontext string) error {
 	}
 
 	// --- Apps diff ---
-	desiredApps := make(map[string]config.ArgoCDAppConfig)
+	desiredApps := make(map[string]template.ArgoCDAppTemplate)
 	for _, app := range cfg.Apps {
 		desiredApps[app.Name] = app
 	}
@@ -470,7 +470,7 @@ func (p *Plugin) Upgrade(cfg *config.ArgoCDConfig, kubecontext string) error {
 }
 
 // DryRun shows what would change without applying anything.
-func (p *Plugin) DryRun(cfg *config.ArgoCDConfig, kubecontext string) error {
+func (p *Plugin) DryRun(cfg *template.ArgoCDTemplate, kubecontext string) error {
 	namespace := cfg.Namespace
 	if namespace == "" {
 		namespace = "argocd"
@@ -558,7 +558,7 @@ func (p *Plugin) DryRun(cfg *config.ArgoCDConfig, kubecontext string) error {
 }
 
 // repoName returns the secret name for a repo config (without the "repo-" prefix).
-func (p *Plugin) repoName(repo config.ArgoCDRepoConfig) string {
+func (p *Plugin) repoName(repo template.ArgoCDRepoTemplate) string {
 	name := repo.Name
 	if name == "" {
 		name = strings.ReplaceAll(repo.URL, "https://", "")
@@ -631,7 +631,7 @@ func (p *Plugin) deleteApp(name, kubecontext, namespace string) error {
 	return p.runKubectl(kubecontext, "delete", "application.argoproj.io", name, "-n", namespace)
 }
 
-func (p *Plugin) configureIngress(cfg *config.ArgoCDIngressConfig, kubecontext string, namespace string) error {
+func (p *Plugin) configureIngress(cfg *template.ArgoCDIngressTemplate, kubecontext string, namespace string) error {
 	p.Log.Info("Configuring ingress for ArgoCD UI...\n")
 
 	// Set server.insecure=true in argocd-cmd-params-cm ConfigMap

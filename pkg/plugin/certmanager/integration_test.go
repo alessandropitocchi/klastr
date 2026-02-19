@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/alepito/deploy-cluster/pkg/config"
+	"github.com/alepito/deploy-cluster/pkg/template"
 	"github.com/alepito/deploy-cluster/pkg/logger"
 )
 
@@ -34,7 +34,7 @@ func quietLogger() *logger.Logger {
 func TestInstall_Commands(t *testing.T) {
 	cmds := setupFakeExec(t)
 	p := New(quietLogger(), 5*time.Minute)
-	cfg := &config.CertManagerConfig{Enabled: true, Version: "v1.16.3"}
+	cfg := &template.CertManagerTemplate{Enabled: true, Version: "v1.16.3"}
 
 	if err := p.Install(cfg, "kind-test"); err != nil {
 		t.Fatalf("Install() error = %v", err)
@@ -65,7 +65,7 @@ func TestInstall_Commands(t *testing.T) {
 func TestInstall_CustomTimeout(t *testing.T) {
 	cmds := setupFakeExec(t)
 	p := New(quietLogger(), 10*time.Minute)
-	cfg := &config.CertManagerConfig{Enabled: true}
+	cfg := &template.CertManagerTemplate{Enabled: true}
 
 	if err := p.Install(cfg, "kind-test"); err != nil {
 		t.Fatalf("Install() error = %v", err)
@@ -87,7 +87,7 @@ func TestInstall_CustomTimeout(t *testing.T) {
 func TestInstall_DefaultVersion(t *testing.T) {
 	cmds := setupFakeExec(t)
 	p := New(quietLogger(), 5*time.Minute)
-	cfg := &config.CertManagerConfig{Enabled: true} // no version
+	cfg := &template.CertManagerTemplate{Enabled: true} // no version
 
 	if err := p.Install(cfg, "kind-test"); err != nil {
 		t.Fatalf("Install() error = %v", err)
@@ -99,7 +99,7 @@ func TestInstall_DefaultVersion(t *testing.T) {
 func TestInstall_CustomVersion(t *testing.T) {
 	cmds := setupFakeExec(t)
 	p := New(quietLogger(), 5*time.Minute)
-	cfg := &config.CertManagerConfig{Enabled: true, Version: "v1.14.0"}
+	cfg := &template.CertManagerTemplate{Enabled: true, Version: "v1.14.0"}
 
 	if err := p.Install(cfg, "kind-test"); err != nil {
 		t.Fatalf("Install() error = %v", err)

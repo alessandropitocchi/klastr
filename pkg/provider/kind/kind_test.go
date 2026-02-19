@@ -3,14 +3,14 @@ package kind
 import (
 	"testing"
 
-	"github.com/alepito/deploy-cluster/pkg/config"
+	"github.com/alepito/deploy-cluster/pkg/template"
 )
 
 func TestGenerateKindConfig_SingleNode(t *testing.T) {
 	p := New()
-	cfg := &config.Config{
+	cfg := &template.Template{
 		Name: "test",
-		Cluster: config.ClusterConfig{
+		Cluster: template.ClusterTemplate{
 			ControlPlanes: 1,
 			Workers:       0,
 		},
@@ -37,9 +37,9 @@ func TestGenerateKindConfig_SingleNode(t *testing.T) {
 
 func TestGenerateKindConfig_MultiNode(t *testing.T) {
 	p := New()
-	cfg := &config.Config{
+	cfg := &template.Template{
 		Name: "multi",
-		Cluster: config.ClusterConfig{
+		Cluster: template.ClusterTemplate{
 			ControlPlanes: 3,
 			Workers:       5,
 		},
@@ -74,9 +74,9 @@ func TestGenerateKindConfig_MultiNode(t *testing.T) {
 
 func TestGenerateKindConfig_WithVersion(t *testing.T) {
 	p := New()
-	cfg := &config.Config{
+	cfg := &template.Template{
 		Name: "versioned",
-		Cluster: config.ClusterConfig{
+		Cluster: template.ClusterTemplate{
 			ControlPlanes: 1,
 			Workers:       2,
 			Version:       "v1.31.0",
@@ -95,9 +95,9 @@ func TestGenerateKindConfig_WithVersion(t *testing.T) {
 
 func TestGenerateKindConfig_NoVersion(t *testing.T) {
 	p := New()
-	cfg := &config.Config{
+	cfg := &template.Template{
 		Name: "no-version",
-		Cluster: config.ClusterConfig{
+		Cluster: template.ClusterTemplate{
 			ControlPlanes: 1,
 			Workers:       1,
 		},
@@ -114,9 +114,9 @@ func TestGenerateKindConfig_NoVersion(t *testing.T) {
 
 func TestGenerateKindConfig_ZeroWorkers(t *testing.T) {
 	p := New()
-	cfg := &config.Config{
+	cfg := &template.Template{
 		Name: "cp-only",
-		Cluster: config.ClusterConfig{
+		Cluster: template.ClusterTemplate{
 			ControlPlanes: 1,
 			Workers:       0,
 		},
@@ -134,9 +134,9 @@ func TestGenerateKindConfig_ZeroWorkers(t *testing.T) {
 
 func TestGenerateKindConfig_NodeOrder(t *testing.T) {
 	p := New()
-	cfg := &config.Config{
+	cfg := &template.Template{
 		Name: "order",
-		Cluster: config.ClusterConfig{
+		Cluster: template.ClusterTemplate{
 			ControlPlanes: 2,
 			Workers:       3,
 		},
@@ -159,14 +159,14 @@ func TestGenerateKindConfig_NodeOrder(t *testing.T) {
 
 func TestGenerateKindConfig_WithIngress(t *testing.T) {
 	p := New()
-	cfg := &config.Config{
+	cfg := &template.Template{
 		Name: "ingress-test",
-		Cluster: config.ClusterConfig{
+		Cluster: template.ClusterTemplate{
 			ControlPlanes: 1,
 			Workers:       1,
 		},
-		Plugins: config.PluginsConfig{
-			Ingress: &config.IngressConfig{
+		Plugins: template.PluginsTemplate{
+			Ingress: &template.IngressTemplate{
 				Enabled: true,
 				Type:    "nginx",
 			},
@@ -201,9 +201,9 @@ func TestGenerateKindConfig_WithIngress(t *testing.T) {
 
 func TestGenerateKindConfig_WithoutIngress(t *testing.T) {
 	p := New()
-	cfg := &config.Config{
+	cfg := &template.Template{
 		Name: "no-ingress",
-		Cluster: config.ClusterConfig{
+		Cluster: template.ClusterTemplate{
 			ControlPlanes: 1,
 			Workers:       1,
 		},

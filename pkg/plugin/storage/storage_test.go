@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/alepito/deploy-cluster/pkg/config"
+	"github.com/alepito/deploy-cluster/pkg/template"
 	"github.com/alepito/deploy-cluster/pkg/logger"
 )
 
@@ -41,7 +41,7 @@ func TestName(t *testing.T) {
 
 func TestInstall_UnsupportedType(t *testing.T) {
 	p := New(testLogger(), 5*time.Minute)
-	cfg := &config.StorageConfig{Enabled: true, Type: "openebs"}
+	cfg := &template.StorageTemplate{Enabled: true, Type: "openebs"}
 	err := p.Install(cfg, "fake-context")
 	if err == nil {
 		t.Fatal("Install() should fail for unsupported type")
@@ -53,7 +53,7 @@ func TestInstall_UnsupportedType(t *testing.T) {
 
 func TestUninstall_UnsupportedType(t *testing.T) {
 	p := New(testLogger(), 5*time.Minute)
-	cfg := &config.StorageConfig{Enabled: true, Type: "openebs"}
+	cfg := &template.StorageTemplate{Enabled: true, Type: "openebs"}
 	err := p.Uninstall(cfg, "fake-context")
 	if err == nil {
 		t.Fatal("Uninstall() should fail for unsupported type")

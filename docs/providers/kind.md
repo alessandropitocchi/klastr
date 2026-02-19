@@ -13,7 +13,7 @@ provider:
 
 The kind provider:
 
-1. Generates a kind configuration (`kind.x-k8s.io/v1alpha4`) based on `cluster.yaml`
+1. Generates a kind configuration (`kind.x-k8s.io/v1alpha4`) based on `template.yaml`
 2. Creates nodes as Docker containers (one per control plane, one per worker)
 3. Automatically configures kubeconfig with context `kind-<cluster-name>`
 

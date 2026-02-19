@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/alepito/deploy-cluster/pkg/config"
+	"github.com/alepito/deploy-cluster/pkg/template"
 	"github.com/alepito/deploy-cluster/pkg/logger"
 	"github.com/alepito/deploy-cluster/pkg/retry"
 )
@@ -33,7 +33,7 @@ func (p *Plugin) manifestURL(version string) string {
 	return fmt.Sprintf("https://github.com/cert-manager/cert-manager/releases/download/%s/cert-manager.yaml", version)
 }
 
-func (p *Plugin) Install(cfg *config.CertManagerConfig, kubecontext string) error {
+func (p *Plugin) Install(cfg *template.CertManagerTemplate, kubecontext string) error {
 	version := cfg.Version
 	if version == "" {
 		version = defaultVersion
@@ -79,7 +79,7 @@ func (p *Plugin) Install(cfg *config.CertManagerConfig, kubecontext string) erro
 	return nil
 }
 
-func (p *Plugin) Uninstall(cfg *config.CertManagerConfig, kubecontext string) error {
+func (p *Plugin) Uninstall(cfg *template.CertManagerTemplate, kubecontext string) error {
 	version := cfg.Version
 	if version == "" {
 		version = defaultVersion

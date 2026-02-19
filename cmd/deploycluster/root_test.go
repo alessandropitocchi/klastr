@@ -50,7 +50,7 @@ func TestRootFlags_VerboseAndQuietMutuallyExclusive(t *testing.T) {
 	// We need a subcommand that triggers PersistentPreRunE.
 	// "status" is a good candidate since it will fail on missing config,
 	// but PersistentPreRunE runs first.
-	err := executeCommand("status", "--verbose", "--quiet", "--config", "nonexistent.yaml")
+	err := executeCommand("status", "--verbose", "--quiet", "--template", "nonexistent.yaml")
 	if err == nil {
 		t.Fatal("expected error for --verbose and --quiet together")
 	}
@@ -60,7 +60,7 @@ func TestRootFlags_VerboseAndQuietMutuallyExclusive(t *testing.T) {
 }
 
 func TestRootFlags_TimeoutNegative(t *testing.T) {
-	err := executeCommand("status", "--timeout", "-1s", "--config", "nonexistent.yaml")
+	err := executeCommand("status", "--timeout", "-1s", "--template", "nonexistent.yaml")
 	if err == nil {
 		t.Fatal("expected error for negative timeout")
 	}
@@ -70,7 +70,7 @@ func TestRootFlags_TimeoutNegative(t *testing.T) {
 }
 
 func TestRootFlags_TimeoutZero(t *testing.T) {
-	err := executeCommand("status", "--timeout", "0s", "--config", "nonexistent.yaml")
+	err := executeCommand("status", "--timeout", "0s", "--template", "nonexistent.yaml")
 	if err == nil {
 		t.Fatal("expected error for zero timeout")
 	}
@@ -82,7 +82,7 @@ func TestRootFlags_TimeoutZero(t *testing.T) {
 func TestRootFlags_TimeoutCustomValid(t *testing.T) {
 	// With a valid timeout, PersistentPreRunE should pass.
 	// The command will fail later (no config file), but timeout validation passes.
-	err := executeCommand("status", "--timeout", "30s", "--config", "nonexistent.yaml")
+	err := executeCommand("status", "--timeout", "30s", "--template", "nonexistent.yaml")
 	if err == nil {
 		t.Fatal("expected error (missing config), but not a timeout validation error")
 	}
@@ -106,7 +106,7 @@ func TestRootFlags_TimeoutParsing(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.flag, func(t *testing.T) {
 			globalTimeout = 0
-			rootCmd.SetArgs([]string{"status", "--timeout", tt.flag, "--config", "nonexistent.yaml"})
+			rootCmd.SetArgs([]string{"status", "--timeout", tt.flag, "--template", "nonexistent.yaml"})
 			_ = rootCmd.Execute()
 
 			if globalTimeout != tt.want {
@@ -135,16 +135,16 @@ func TestSubcommands_Registered(t *testing.T) {
 func TestCreateCmd_Flags(t *testing.T) {
 	f := createCmd.Flags()
 
-	// --config
-	cf := f.Lookup("config")
+	// --template
+	cf := f.Lookup("template")
 	if cf == nil {
-		t.Fatal("create should have --config flag")
+		t.Fatal("create should have --template flag")
 	}
-	if cf.DefValue != "cluster.yaml" {
-		t.Errorf("--config default = %q, want %q", cf.DefValue, "cluster.yaml")
+	if cf.DefValue != "template.yaml" {
+		t.Errorf("--template default = %q, want %q", cf.DefValue, "template.yaml")
 	}
-	if cf.Shorthand != "c" {
-		t.Errorf("--config shorthand = %q, want %q", cf.Shorthand, "c")
+	if cf.Shorthand != "t" {
+		t.Errorf("--template shorthand = %q, want %q", cf.Shorthand, "t")
 	}
 
 	// --env
@@ -169,10 +169,10 @@ func TestCreateCmd_Flags(t *testing.T) {
 func TestUpgradeCmd_Flags(t *testing.T) {
 	f := upgradeCmd.Flags()
 
-	// --config
-	cf := f.Lookup("config")
+	// --template
+	cf := f.Lookup("template")
 	if cf == nil {
-		t.Fatal("upgrade should have --config flag")
+		t.Fatal("upgrade should have --template flag")
 	}
 
 	// --env
@@ -200,9 +200,9 @@ func TestUpgradeCmd_Flags(t *testing.T) {
 func TestDestroyCmd_Flags(t *testing.T) {
 	f := destroyCmd.Flags()
 
-	cf := f.Lookup("config")
+	cf := f.Lookup("template")
 	if cf == nil {
-		t.Fatal("destroy should have --config flag")
+		t.Fatal("destroy should have --template flag")
 	}
 
 	nf := f.Lookup("name")
@@ -217,12 +217,12 @@ func TestDestroyCmd_Flags(t *testing.T) {
 func TestStatusCmd_Flags(t *testing.T) {
 	f := statusCmd.Flags()
 
-	cf := f.Lookup("config")
+	cf := f.Lookup("template")
 	if cf == nil {
-		t.Fatal("status should have --config flag")
+		t.Fatal("status should have --template flag")
 	}
-	if cf.DefValue != "cluster.yaml" {
-		t.Errorf("--config default = %q, want %q", cf.DefValue, "cluster.yaml")
+	if cf.DefValue != "template.yaml" {
+		t.Errorf("--template default = %q, want %q", cf.DefValue, "template.yaml")
 	}
 }
 
@@ -233,8 +233,8 @@ func TestInitCmd_Flags(t *testing.T) {
 	if of == nil {
 		t.Fatal("init should have --output flag")
 	}
-	if of.DefValue != "cluster.yaml" {
-		t.Errorf("--output default = %q, want %q", of.DefValue, "cluster.yaml")
+	if of.DefValue != "template.yaml" {
+		t.Errorf("--output default = %q, want %q", of.DefValue, "template.yaml")
 	}
 	if of.Shorthand != "o" {
 		t.Errorf("--output shorthand = %q, want %q", of.Shorthand, "o")

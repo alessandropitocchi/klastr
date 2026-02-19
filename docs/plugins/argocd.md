@@ -118,7 +118,7 @@ repos:
 Run with `--env .env`:
 
 ```bash
-deploy-cluster create --config cluster.yaml --env .env
+deploy-cluster create --template template.yaml --env .env
 ```
 
 ### HTTPS Authentication with Token
@@ -215,13 +215,13 @@ The `upgrade` command for ArgoCD is intelligent:
 
 1. **ArgoCD manifest**: re-applies the manifest (updates version if changed)
 2. **Ingress**: re-configures if enabled
-3. **Repositories**: applies all desired ones (idempotent). Removes those no longer present in config
-4. **Applications**: applies all desired ones (idempotent). Removes those no longer present in config
+3. **Repositories**: applies all desired ones (idempotent). Removes those no longer present in template
+4. **Applications**: applies all desired ones (idempotent). Removes those no longer present in template
 
 ### Dry-run
 
 ```bash
-deploy-cluster upgrade --config cluster.yaml --dry-run
+deploy-cluster upgrade --template template.yaml --dry-run
 ```
 
 ```
@@ -240,10 +240,10 @@ deploy-cluster upgrade --config cluster.yaml --dry-run
 
 ### Disabling
 
-If ArgoCD is disabled in the config but still installed in the cluster, the tool shows a warning without automatically uninstalling it:
+If ArgoCD is disabled in the template but still installed in the cluster, the tool shows a warning without automatically uninstalling it:
 
 ```
-[argocd] WARNING: ArgoCD is installed but disabled in config. It will NOT be automatically uninstalled.
+[argocd] WARNING: ArgoCD is installed but disabled in template. It will NOT be automatically uninstalled.
 [argocd] To uninstall manually: kubectl delete namespace argocd --context kind-my-cluster
 ```
 
