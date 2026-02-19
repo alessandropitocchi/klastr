@@ -104,7 +104,8 @@ plugins:
       host: headlamp.localhost
   customApps:
     - name: redis
-      chart: oci://registry-1.docker.io/bitnamicharts/redis
+      chartName: redis
+      chartRepo: https://charts.bitnami.com/bitnami
       version: "21.1.5"
       namespace: redis
       values:

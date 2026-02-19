@@ -19,14 +19,14 @@ plugins:
 |-------|------|---------|:---:|-------------|
 | `enabled` | bool | `false` | yes | Enable the plugin |
 | `type` | string | - | yes | Dashboard type. Values: `headlamp` |
-| `version` | string | `0.25.0` | no | Helm chart version |
+| `version` | string | `0.40.0` | no | Helm chart version |
 | `ingress.enabled` | bool | `false` | no | Create an Ingress for Headlamp |
 | `ingress.host` | string | - | if ingress enabled | Hostname for Headlamp |
 
 ## How It Works
 
 The plugin:
-1. Installs Headlamp via Helm from the OCI chart `https://kubernetes-sigs.github.io/headlamp/`
+1. Installs Headlamp via Helm from the chart repository `https://kubernetes-sigs.github.io/headlamp/`
 2. Creates a `ClusterRoleBinding` that assigns `cluster-admin` to the `headlamp` service account
 3. If ingress is enabled, creates an Ingress resource
 

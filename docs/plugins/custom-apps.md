@@ -8,7 +8,8 @@ Allows installing any Helm chart without creating a dedicated plugin. Each entry
 plugins:
   customApps:
     - name: redis
-      chart: oci://registry-1.docker.io/bitnamicharts/redis
+      chartName: redis
+      chartRepo: https://charts.bitnami.com/bitnami
       version: "21.1.5"
       namespace: redis
       values:
@@ -20,7 +21,8 @@ plugins:
 | Field | Type | Default | Required | Description |
 |-------|------|---------|:---:|-------------|
 | `name` | string | - | yes | Helm release name |
-| `chart` | string | - | yes | Chart reference (OCI, URL, local path) |
+| `chartName` | string | - | yes | Helm chart name |
+| `chartRepo` | string | - | yes | Chart repository URL (passed to `helm --repo`) |
 | `version` | string | latest | no | Chart version |
 | `namespace` | string | same as `name` | no | Installation namespace |
 | `values` | map | - | no | Inline Helm values |
@@ -29,21 +31,6 @@ plugins:
 | `ingress.host` | string | - | if ingress enabled | Hostname |
 | `ingress.serviceName` | string | same as `name` | no | Backend service name |
 | `ingress.servicePort` | int | `80` | no | Backend service port |
-
-## Supported Chart Formats
-
-### OCI Chart (recommended)
-
-```yaml
-chart: oci://registry-1.docker.io/bitnamicharts/redis
-chart: oci://ghcr.io/prometheus-community/charts/kube-prometheus-stack
-```
-
-### Helm Repository Chart
-
-```yaml
-chart: https://charts.bitnami.com/bitnami/redis
-```
 
 ## Values
 
@@ -54,7 +41,8 @@ Values written directly in the template:
 ```yaml
 customApps:
   - name: redis
-    chart: oci://registry-1.docker.io/bitnamicharts/redis
+    chartName: redis
+    chartRepo: https://charts.bitnami.com/bitnami
     values:
       architecture: standalone
       auth:
@@ -70,7 +58,8 @@ Path to a YAML file with values:
 ```yaml
 customApps:
   - name: redis
-    chart: oci://registry-1.docker.io/bitnamicharts/redis
+    chartName: redis
+    chartRepo: https://charts.bitnami.com/bitnami
     valuesFile: ./redis-values.yaml
 ```
 
@@ -83,7 +72,8 @@ If the ingress plugin is enabled in the cluster, you can expose apps via hostnam
 ```yaml
 customApps:
   - name: rabbitmq
-    chart: oci://registry-1.docker.io/bitnamicharts/rabbitmq
+    chartName: rabbitmq
+    chartRepo: https://charts.bitnami.com/bitnami
     version: "14.0.0"
     namespace: rabbitmq
     ingress:
@@ -105,7 +95,8 @@ customApps:
 
 ```yaml
 - name: redis
-  chart: oci://registry-1.docker.io/bitnamicharts/redis
+  chartName: redis
+  chartRepo: https://charts.bitnami.com/bitnami
   version: "21.1.5"
   namespace: redis
   values:
@@ -118,7 +109,8 @@ customApps:
 
 ```yaml
 - name: rabbitmq
-  chart: oci://registry-1.docker.io/bitnamicharts/rabbitmq
+  chartName: rabbitmq
+  chartRepo: https://charts.bitnami.com/bitnami
   version: "14.0.0"
   namespace: rabbitmq
   values:
@@ -136,7 +128,8 @@ customApps:
 
 ```yaml
 - name: postgres
-  chart: oci://registry-1.docker.io/bitnamicharts/postgresql
+  chartName: postgresql
+  chartRepo: https://charts.bitnami.com/bitnami
   version: "16.4.4"
   namespace: postgres
   values:
@@ -149,7 +142,8 @@ customApps:
 
 ```yaml
 - name: minio
-  chart: oci://registry-1.docker.io/bitnamicharts/minio
+  chartName: minio
+  chartRepo: https://charts.bitnami.com/bitnami
   version: "14.8.5"
   namespace: minio
   values:
@@ -179,8 +173,8 @@ Output:
 
 ```
 [customApps] Custom apps:
-  ~ redis (oci://registry-1.docker.io/bitnamicharts/redis@21.1.5) (update)
-  + rabbitmq (oci://registry-1.docker.io/bitnamicharts/rabbitmq@14.0.0) (install)
+  ~ redis (redis@21.1.5) (update)
+  + rabbitmq (rabbitmq@14.0.0) (install)
 ```
 
 ## Status

@@ -82,7 +82,7 @@ pkg/
     monitoring/
       monitoring.go         # Monitoring plugin (kube-prometheus-stack via Helm OCI, Grafana ingress)
     dashboard/
-      dashboard.go          # Dashboard plugin (Headlamp via Helm OCI, ingress)
+      dashboard.go          # Dashboard plugin (Headlamp via Helm, ingress)
     customapps/
       customapps.go         # Custom apps plugin (arbitrary Helm charts with values/ingress)
 ```
