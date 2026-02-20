@@ -46,14 +46,14 @@ plugins:
           targetRevision: main
           path: argocd
           autoSync: true 
-    customApps:
-        - name: metrics-server
-          namespace: kube-system
-          chartRepo: https://kubernetes-sigs.github.io/metrics-server/
-          chartName: metrics-server
-          version: 3.13.0
-          values:
-            args:
-            - --kubelet-insecure-tls
+    # customApps:
+    #     - name: metrics-server
+    #       namespace: kube-system
+    #       chartRepo: https://kubernetes-sigs.github.io/metrics-server/
+    #       chartName: metrics-server
+    #       version: 3.13.0
+    #       values:
+    #         args:
+    #         - --kubelet-insecure-tls
         
 

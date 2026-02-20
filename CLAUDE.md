@@ -35,6 +35,10 @@ When `plugins.ingress` is enabled, the kind config automatically adds `ingress-r
 | `get clusters` | List kind clusters |
 | `get nodes <name>` | List cluster nodes |
 | `get kubeconfig <name>` | Print kubeconfig |
+| `snapshot save <name>` | Export cluster resources to a local snapshot |
+| `snapshot restore <name>` | Restore resources from a snapshot (supports `--dry-run`) |
+| `snapshot list` | List all saved snapshots |
+| `snapshot delete <name>` | Delete a snapshot from disk |
 
 ## Development
 
@@ -62,7 +66,14 @@ cmd/deploycluster/          # CLI entrypoint and cobra commands
   status.go                 # status command
   init.go                   # init command
   get.go                    # get subcommands
+  snapshot.go               # snapshot save/restore/list/delete subcommands
 pkg/
+  snapshot/
+    snapshot.go             # Orchestration: Save/Restore/List/Delete
+    metadata.go             # Metadata struct + YAML serialization
+    discovery.go            # kubectl api-resources discovery + filtering
+    export.go               # Resource export + sanitization + system resource filtering
+    restore.go              # Ordered restore (CRDs → Namespaces → cluster-scoped → namespaced)
   template/
     template.go             # Template structs, Load(), Save(), Validate()
     env.go                  # .env file loading
@@ -98,6 +109,11 @@ pkg/
 - Helm-based plugins (monitoring, dashboard, customApps) use `helm upgrade --install` for idempotency
 - customApps: inline `values` are written to temp files, `valuesFile` takes precedence over inline values
 - Plugin installation is idempotent (`kubectl apply` or `helm upgrade --install`)
+- Snapshot uses dynamic resource discovery via `kubectl api-resources` to capture all resource types including CRDs
+- Snapshot restore follows dependency order: CRDs → Namespaces → cluster-scoped → namespaced (with per-type priority)
+- Snapshot sanitizes exported resources (removes resourceVersion, uid, managedFields, status, etc.)
+- Snapshot filters system resources (ownerReferences, default SA, kube-root-ca.crt, kubernetes service)
+- Snapshots stored at `~/.deploy-cluster/snapshots/<name>/` with one file per resource
 
 ### Testing
 Tests are colocated with source files (`*_test.go` in same package). Run with `go test ./...`.
@@ -112,3 +128,4 @@ Key test areas:
 - `pkg/plugin/dashboard/`: type routing, chart version
 - `pkg/plugin/customapps/`: values resolution (inline, file, precedence)
 - `pkg/provider/kind/`: generateKindConfig (with/without ingress), KubeContext
+- `pkg/snapshot/`: metadata round-trip, api-resources parsing, sanitizeResource, isSystemResource, restore ordering, dry-run
