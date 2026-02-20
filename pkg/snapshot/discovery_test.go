@@ -5,6 +5,7 @@ import (
 )
 
 func TestParseAPIResources(t *testing.T) {
+	// Format WITHOUT SHORTNAMES (some kubectl versions)
 	output := `NAME                              APIVERSION                               NAMESPACED   KIND                             VERBS
 configmaps                        v1                                       true         ConfigMap                        [create delete deletecollection get list patch update watch]
 namespaces                        v1                                       false        Namespace                        [create delete get list patch update watch]
@@ -46,6 +47,87 @@ clusterroles                      rbac.authorization.k8s.io/v1             false
 	excludedExpected := []string{"events", "endpoints", "nodes", "pods"}
 	for _, name := range excludedExpected {
 		if found[name] {
+			t.Errorf("excluded resource %q should not be in results", name)
+		}
+	}
+}
+
+func TestParseAPIResources_WithShortnames(t *testing.T) {
+	// Real kubectl output format with SHORTNAMES and CATEGORIES columns
+	output := `NAME                                SHORTNAMES         APIVERSION                        NAMESPACED   KIND                               VERBS                                                        CATEGORIES
+configmaps                          cm                 v1                                true         ConfigMap                          create,delete,deletecollection,get,list,patch,update,watch
+endpoints                           ep                 v1                                true         Endpoints                          create,delete,deletecollection,get,list,patch,update,watch
+events                              ev                 v1                                true         Event                              create,delete,deletecollection,get,list,patch,update,watch
+namespaces                          ns                 v1                                false        Namespace                          create,delete,get,list,patch,update,watch
+nodes                               no                 v1                                false        Node                               create,delete,deletecollection,get,list,patch,update,watch
+pods                                po                 v1                                true         Pod                                create,delete,deletecollection,get,list,patch,update,watch   all
+secrets                                                v1                                true         Secret                             create,delete,deletecollection,get,list,patch,update,watch
+services                            svc                v1                                true         Service                            create,delete,deletecollection,get,list,patch,update,watch   all
+deployments                         deploy             apps/v1                           true         Deployment                         create,delete,deletecollection,get,list,patch,update,watch   all
+clusterroles                                           rbac.authorization.k8s.io/v1      false        ClusterRole                        create,delete,deletecollection,get,list,patch,update,watch
+ingresses                           ing                networking.k8s.io/v1              true         Ingress                            create,delete,deletecollection,get,list,patch,update,watch`
+
+	resources, err := parseAPIResources(output)
+	if err != nil {
+		t.Fatalf("parseAPIResources() error = %v", err)
+	}
+
+	found := make(map[string]APIResource)
+	for _, r := range resources {
+		found[r.Name] = r
+	}
+
+	// Deployments should be parsed correctly despite SHORTNAMES column
+	dep, ok := found["deployments"]
+	if !ok {
+		t.Fatal("deployments not found in results")
+	}
+	if dep.Group != "apps" {
+		t.Errorf("deployments group = %q, want %q", dep.Group, "apps")
+	}
+	if dep.Version != "v1" {
+		t.Errorf("deployments version = %q, want %q", dep.Version, "v1")
+	}
+	if dep.Kind != "Deployment" {
+		t.Errorf("deployments kind = %q, want %q", dep.Kind, "Deployment")
+	}
+	if !dep.Namespaced {
+		t.Error("deployments should be namespaced")
+	}
+
+	// Secrets (no shortname) should work
+	sec, ok := found["secrets"]
+	if !ok {
+		t.Fatal("secrets not found in results")
+	}
+	if sec.Group != "" {
+		t.Errorf("secrets group = %q, want empty", sec.Group)
+	}
+
+	// Ingresses should be parsed correctly
+	ing, ok := found["ingresses"]
+	if !ok {
+		t.Fatal("ingresses not found in results")
+	}
+	if ing.Group != "networking.k8s.io" {
+		t.Errorf("ingresses group = %q, want %q", ing.Group, "networking.k8s.io")
+	}
+
+	// ClusterRoles (no shortname, grouped) should work
+	cr, ok := found["clusterroles"]
+	if !ok {
+		t.Fatal("clusterroles not found in results")
+	}
+	if cr.Group != "rbac.authorization.k8s.io" {
+		t.Errorf("clusterroles group = %q, want %q", cr.Group, "rbac.authorization.k8s.io")
+	}
+	if cr.Namespaced {
+		t.Error("clusterroles should not be namespaced")
+	}
+
+	// Excluded resources should be filtered
+	for _, name := range []string{"events", "endpoints", "nodes", "pods"} {
+		if _, ok := found[name]; ok {
 			t.Errorf("excluded resource %q should not be in results", name)
 		}
 	}

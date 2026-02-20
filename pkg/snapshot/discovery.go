@@ -65,6 +65,7 @@ func DiscoverResources(kubecontext string) ([]APIResource, error) {
 }
 
 // parseAPIResources parses the output of kubectl api-resources -o wide.
+// Handles variable columns: NAME, SHORTNAMES (optional), APIVERSION/APIGROUP, NAMESPACED, KIND, VERBS, CATEGORIES (optional).
 func parseAPIResources(output string) ([]APIResource, error) {
 	lines := strings.Split(strings.TrimSpace(output), "\n")
 	if len(lines) < 2 {
@@ -73,29 +74,83 @@ func parseAPIResources(output string) ([]APIResource, error) {
 
 	// Parse header to find column positions
 	header := lines[0]
-	nameIdx := 0
-	apiVersionIdx := strings.Index(header, "APIVERSION")
-	if apiVersionIdx < 0 {
-		// Older kubectl uses APIGROUP
-		apiVersionIdx = strings.Index(header, "APIGROUP")
-	}
-	namespacedIdx := strings.Index(header, "NAMESPACED")
-	kindIdx := strings.Index(header, "KIND")
 
-	if apiVersionIdx < 0 || namespacedIdx < 0 || kindIdx < 0 {
+	// Build ordered list of column starts from the header
+	type column struct {
+		name  string
+		start int
+	}
+	knownColumns := []string{"NAME", "SHORTNAMES", "APIVERSION", "APIGROUP", "NAMESPACED", "KIND", "VERBS", "CATEGORIES"}
+	var cols []column
+	for _, name := range knownColumns {
+		idx := strings.Index(header, name)
+		if idx >= 0 {
+			cols = append(cols, column{name: name, start: idx})
+		}
+	}
+
+	// Find required columns
+	colStart := func(name string) int {
+		for _, c := range cols {
+			if c.name == name {
+				return c.start
+			}
+		}
+		return -1
+	}
+	// colEnd returns the start of the next column after the named one, or -1 if it's the last.
+	colEnd := func(name string) int {
+		for i, c := range cols {
+			if c.name == name {
+				if i+1 < len(cols) {
+					return cols[i+1].start
+				}
+				return -1 // last column
+			}
+		}
+		return -1
+	}
+
+	nameStart := colStart("NAME")
+	apiVersionStart := colStart("APIVERSION")
+	if apiVersionStart < 0 {
+		apiVersionStart = colStart("APIGROUP")
+	}
+	namespacedStart := colStart("NAMESPACED")
+	kindStart := colStart("KIND")
+
+	if nameStart < 0 || apiVersionStart < 0 || namespacedStart < 0 || kindStart < 0 {
 		return nil, fmt.Errorf("unexpected api-resources header format: %s", header)
 	}
 
+	nameEnd := colEnd("NAME")
+
 	var resources []APIResource
 	for _, line := range lines[1:] {
-		if len(line) < kindIdx {
+		if len(line) < kindStart {
 			continue
 		}
 
-		name := strings.TrimSpace(line[nameIdx:min(apiVersionIdx, len(line))])
-		apiVersion := strings.TrimSpace(line[apiVersionIdx:min(namespacedIdx, len(line))])
-		namespacedStr := strings.TrimSpace(line[namespacedIdx:min(kindIdx, len(line))])
-		kind := strings.Fields(strings.TrimSpace(line[kindIdx:]))[0]
+		// Extract NAME column only (not SHORTNAMES)
+		end := nameEnd
+		if end < 0 || end > len(line) {
+			end = len(line)
+		}
+		name := strings.TrimSpace(line[nameStart:end])
+		// NAME could still contain shortnames if SHORTNAMES column is missing;
+		// take only the first field to be safe
+		if fields := strings.Fields(name); len(fields) > 0 {
+			name = fields[0]
+		}
+
+		apiVersion := strings.TrimSpace(line[apiVersionStart:min(namespacedStart, len(line))])
+		namespacedStr := strings.TrimSpace(line[namespacedStart:min(kindStart, len(line))])
+
+		kindFields := strings.Fields(strings.TrimSpace(line[kindStart:]))
+		if len(kindFields) == 0 {
+			continue
+		}
+		kind := kindFields[0]
 
 		// Parse group and version from apiVersion field
 		group := ""
