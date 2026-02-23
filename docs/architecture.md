@@ -197,10 +197,18 @@ Resources are applied in dependency order with retry and exponential backoff for
 
 ## Roadmap
 
+### Completed
+- [x] Storage plugin (local-path-provisioner)
+- [x] Ingress plugin (nginx for kind)
+- [x] Cert-manager plugin
+- [x] Monitoring plugin (kube-prometheus-stack via Helm)
+- [x] Dashboard plugin (Headlamp via Helm)
+- [x] Custom apps plugin (arbitrary Helm charts)
+- [x] ArgoCD plugin
+- [x] `upgrade` command for updating plugins on existing clusters
+- [x] Snapshot system (save, restore, list, delete, diff)
+
+### Planned
 - [ ] k3d provider
 - [ ] minikube provider
-- [ ] Storage plugin (local-path-provisioner, OpenEBS)
-- [ ] Ingress plugin (nginx, traefik)
-- [ ] Monitoring plugin (Prometheus, Grafana)
-- [ ] `apply` command for updating plugins on existing clusters
 - [ ] Plugin interface standardization

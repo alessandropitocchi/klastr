@@ -15,6 +15,7 @@ type ExportOptions struct {
 	Kubecontext    string
 	Namespaces     []string // nil = discover non-system namespaces
 	SkipNamespaces []string
+	ExcludeSecrets bool
 	Log            *logger.Logger
 }
 
@@ -82,6 +83,9 @@ func ExportResources(dir string, opts ExportOptions) (int, error) {
 
 	// Export cluster-scoped resources
 	for _, r := range clusterScoped {
+		if opts.ExcludeSecrets && r.Name == "secrets" {
+			continue
+		}
 		n, err := exportClusterScopedResource(dir, opts.Kubecontext, r, opts.Log)
 		if err != nil {
 			opts.Log.Debug("Skipping cluster-scoped resource %s: %v\n", r.GroupResource(), err)
@@ -93,6 +97,9 @@ func ExportResources(dir string, opts ExportOptions) (int, error) {
 	// Export namespaced resources
 	for _, ns := range namespaces {
 		for _, r := range namespacedRes {
+			if opts.ExcludeSecrets && r.Name == "secrets" {
+				continue
+			}
 			n, err := exportNamespacedResource(dir, opts.Kubecontext, ns, r, opts.Log)
 			if err != nil {
 				opts.Log.Debug("Skipping %s in %s: %v\n", r.GroupResource(), ns, err)

@@ -6,7 +6,7 @@ import (
 )
 
 func TestSnapshotCmd_Subcommands(t *testing.T) {
-	expected := []string{"save", "restore", "list", "delete"}
+	expected := []string{"save", "restore", "list", "delete", "diff"}
 	commands := snapshotCmd.Commands()
 
 	registered := make(map[string]bool)
@@ -43,6 +43,14 @@ func TestSnapshotSaveCmd_Flags(t *testing.T) {
 	ef := f.Lookup("env")
 	if ef == nil {
 		t.Fatal("save should have --env flag")
+	}
+
+	es := f.Lookup("exclude-secrets")
+	if es == nil {
+		t.Fatal("save should have --exclude-secrets flag")
+	}
+	if es.DefValue != "false" {
+		t.Errorf("--exclude-secrets default = %q, want %q", es.DefValue, "false")
 	}
 }
 
@@ -106,6 +114,40 @@ func TestSnapshotDelete_MissingName(t *testing.T) {
 	err := executeCommand("snapshot", "delete")
 	if err == nil {
 		t.Fatal("expected error for missing name argument")
+	}
+}
+
+func TestSnapshotDiffCmd_Flags(t *testing.T) {
+	f := snapshotDiffCmd.Flags()
+
+	tf := f.Lookup("template")
+	if tf == nil {
+		t.Fatal("diff should have --template flag")
+	}
+	if tf.DefValue != "template.yaml" {
+		t.Errorf("--template default = %q, want %q", tf.DefValue, "template.yaml")
+	}
+
+	ef := f.Lookup("env")
+	if ef == nil {
+		t.Fatal("diff should have --env flag")
+	}
+}
+
+func TestSnapshotDiff_MissingName(t *testing.T) {
+	err := executeCommand("snapshot", "diff")
+	if err == nil {
+		t.Fatal("expected error for missing name argument")
+	}
+}
+
+func TestSnapshotDiff_MissingTemplate(t *testing.T) {
+	err := executeCommand("snapshot", "diff", "test-snap", "--template", "nonexistent-template-xyz.yaml")
+	if err == nil {
+		t.Fatal("expected error for missing template")
+	}
+	if !strings.Contains(err.Error(), "failed to load template") {
+		t.Errorf("error = %q, want it to contain 'failed to load template'", err.Error())
 	}
 }
 

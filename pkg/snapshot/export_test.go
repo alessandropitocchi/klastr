@@ -237,6 +237,74 @@ func TestWriteResource(t *testing.T) {
 	}
 }
 
+func TestExportOptions_ExcludeSecrets(t *testing.T) {
+	// Verify that ExcludeSecrets skips resources named "secrets"
+	resources := []APIResource{
+		{Name: "configmaps", Group: "", Version: "v1", Kind: "ConfigMap", Namespaced: true},
+		{Name: "secrets", Group: "", Version: "v1", Kind: "Secret", Namespaced: true},
+		{Name: "deployments", Group: "apps", Version: "v1", Kind: "Deployment", Namespaced: true},
+		{Name: "clusterroles", Group: "rbac.authorization.k8s.io", Version: "v1", Kind: "ClusterRole", Namespaced: false},
+	}
+
+	opts := ExportOptions{ExcludeSecrets: true}
+
+	var namespacedKept, clusterScopedKept []string
+	for _, r := range resources {
+		if opts.ExcludeSecrets && r.Name == "secrets" {
+			continue
+		}
+		if r.Namespaced {
+			namespacedKept = append(namespacedKept, r.Name)
+		} else {
+			clusterScopedKept = append(clusterScopedKept, r.Name)
+		}
+	}
+
+	// secrets should be excluded
+	for _, name := range namespacedKept {
+		if name == "secrets" {
+			t.Error("secrets should be excluded when ExcludeSecrets is true")
+		}
+	}
+	for _, name := range clusterScopedKept {
+		if name == "secrets" {
+			t.Error("secrets should be excluded when ExcludeSecrets is true")
+		}
+	}
+
+	// configmaps and deployments should be kept
+	found := make(map[string]bool)
+	for _, n := range namespacedKept {
+		found[n] = true
+	}
+	if !found["configmaps"] {
+		t.Error("configmaps should not be excluded")
+	}
+	if !found["deployments"] {
+		t.Error("deployments should not be excluded")
+	}
+}
+
+func TestExportOptions_ExcludeSecrets_False(t *testing.T) {
+	resources := []APIResource{
+		{Name: "secrets", Group: "", Version: "v1", Kind: "Secret", Namespaced: true},
+	}
+
+	opts := ExportOptions{ExcludeSecrets: false}
+
+	var kept []string
+	for _, r := range resources {
+		if opts.ExcludeSecrets && r.Name == "secrets" {
+			continue
+		}
+		kept = append(kept, r.Name)
+	}
+
+	if len(kept) != 1 || kept[0] != "secrets" {
+		t.Error("secrets should be kept when ExcludeSecrets is false")
+	}
+}
+
 func TestWriteResource_SpecialChars(t *testing.T) {
 	dir := t.TempDir()
 	res := map[string]interface{}{

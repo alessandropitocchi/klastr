@@ -28,7 +28,7 @@ func snapshotDir(name string) (string, error) {
 }
 
 // Save creates a new snapshot by exporting cluster resources to disk.
-func Save(name, kubecontext, clusterName, provider, templateFile string, namespaces []string, log *logger.Logger) error {
+func Save(name, kubecontext, clusterName, provider, templateFile string, namespaces []string, excludeSecrets bool, log *logger.Logger) error {
 	dir, err := snapshotDir(name)
 	if err != nil {
 		return err
@@ -46,9 +46,10 @@ func Save(name, kubecontext, clusterName, provider, templateFile string, namespa
 	// Export resources
 	log.Info("Exporting resources from cluster %q...\n", clusterName)
 	count, err := ExportResources(dir, ExportOptions{
-		Kubecontext: kubecontext,
-		Namespaces:  namespaces,
-		Log:         log,
+		Kubecontext:    kubecontext,
+		Namespaces:     namespaces,
+		ExcludeSecrets: excludeSecrets,
+		Log:            log,
 	})
 	if err != nil {
 		// Clean up on failure

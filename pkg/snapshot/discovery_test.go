@@ -183,6 +183,126 @@ func TestParseAPIResources_EmptyOutput(t *testing.T) {
 	}
 }
 
+func TestParseAPIResources_RealFixture(t *testing.T) {
+	// Real kubectl api-resources -o wide --verbs=list,get output from a kind cluster.
+	// This fixture covers: core resources, grouped resources, resources with/without shortnames,
+	// CATEGORIES column, CRDs, and various column alignments.
+	output := `NAME                                SHORTNAMES   APIVERSION                             NAMESPACED   KIND                                VERBS                                                        CATEGORIES
+bindings                                         v1                                     true         Binding                             create
+configmaps                          cm           v1                                     true         ConfigMap                           create,delete,deletecollection,get,list,patch,update,watch
+endpoints                           ep           v1                                     true         Endpoints                           create,delete,deletecollection,get,list,patch,update,watch
+events                              ev           v1                                     true         Event                               create,delete,deletecollection,get,list,patch,update,watch
+limitranges                         limits       v1                                     true         LimitRange                          create,delete,deletecollection,get,list,patch,update,watch
+namespaces                          ns           v1                                     false        Namespace                           create,delete,get,list,patch,update,watch
+nodes                               no           v1                                     false        Node                                create,delete,deletecollection,get,list,patch,update,watch
+persistentvolumeclaims              pvc          v1                                     true         PersistentVolumeClaim               create,delete,deletecollection,get,list,patch,update,watch
+persistentvolumes                   pv           v1                                     false        PersistentVolume                    create,delete,deletecollection,get,list,patch,update,watch
+pods                                po           v1                                     true         Pod                                 create,delete,deletecollection,get,list,patch,update,watch   all
+replicationcontrollers              rc           v1                                     true         ReplicationController               create,delete,deletecollection,get,list,patch,update,watch   all
+resourcequotas                      quota        v1                                     true         ResourceQuota                       create,delete,deletecollection,get,list,patch,update,watch
+secrets                                          v1                                     true         Secret                              create,delete,deletecollection,get,list,patch,update,watch
+serviceaccounts                     sa           v1                                     true         ServiceAccount                      create,delete,deletecollection,get,list,patch,update,watch
+services                            svc          v1                                     true         Service                             create,delete,deletecollection,get,list,patch,update,watch   all
+controllerrevisions                              apps/v1                                true         ControllerRevision                  create,delete,deletecollection,get,list,patch,update,watch
+daemonsets                          ds           apps/v1                                true         DaemonSet                           create,delete,deletecollection,get,list,patch,update,watch   all
+deployments                         deploy       apps/v1                                true         Deployment                          create,delete,deletecollection,get,list,patch,update,watch   all
+replicasets                         rs           apps/v1                                true         ReplicaSet                          create,delete,deletecollection,get,list,patch,update,watch   all
+statefulsets                        sts          apps/v1                                true         StatefulSet                         create,delete,deletecollection,get,list,patch,update,watch   all
+events                              ev           events.k8s.io/v1                       true         Event                               create,delete,deletecollection,get,list,patch,update,watch
+ingresses                           ing          networking.k8s.io/v1                   true         Ingress                             create,delete,deletecollection,get,list,patch,update,watch
+networkpolicies                     netpol       networking.k8s.io/v1                   true         NetworkPolicy                       create,delete,deletecollection,get,list,patch,update,watch
+clusterrolebindings                              rbac.authorization.k8s.io/v1           false        ClusterRoleBinding                  create,delete,deletecollection,get,list,patch,update,watch
+clusterroles                                     rbac.authorization.k8s.io/v1           false        ClusterRole                         create,delete,deletecollection,get,list,patch,update,watch
+rolebindings                                     rbac.authorization.k8s.io/v1           true         RoleBinding                         create,delete,deletecollection,get,list,patch,update,watch
+roles                                            rbac.authorization.k8s.io/v1           true         Role                                create,delete,deletecollection,get,list,patch,update,watch
+storageclasses                      sc           storage.k8s.io/v1                      false        StorageClass                        create,delete,deletecollection,get,list,patch,update,watch
+customresourcedefinitions           crd,crds     apiextensions.k8s.io/v1                false        CustomResourceDefinition            create,delete,deletecollection,get,list,patch,update,watch
+leases                                           coordination.k8s.io/v1                 true         Lease                               create,delete,deletecollection,get,list,patch,update,watch
+endpointslices                                   discovery.k8s.io/v1                    true         EndpointSlice                       create,delete,deletecollection,get,list,patch,update,watch
+applications                        app,apps     argoproj.io/v1alpha1                   true         Application                         create,delete,deletecollection,get,list,patch,update,watch
+appprojects                         appproj      argoproj.io/v1alpha1                   true         AppProject                          create,delete,deletecollection,get,list,patch,update,watch
+certificates                        cert,certs   cert-manager.io/v1                     true         Certificate                         create,delete,deletecollection,get,list,patch,update,watch`
+
+	resources, err := parseAPIResources(output)
+	if err != nil {
+		t.Fatalf("parseAPIResources() error = %v", err)
+	}
+
+	found := make(map[string]APIResource)
+	for _, r := range resources {
+		found[r.Name] = r
+	}
+
+	// Verify core resources are parsed correctly
+	tests := []struct {
+		name       string
+		group      string
+		version    string
+		kind       string
+		namespaced bool
+	}{
+		{"configmaps", "", "v1", "ConfigMap", true},
+		{"secrets", "", "v1", "Secret", true},
+		{"services", "", "v1", "Service", true},
+		{"namespaces", "", "v1", "Namespace", false},
+		{"persistentvolumeclaims", "", "v1", "PersistentVolumeClaim", true},
+		{"persistentvolumes", "", "v1", "PersistentVolume", false},
+		{"deployments", "apps", "v1", "Deployment", true},
+		{"statefulsets", "apps", "v1", "StatefulSet", true},
+		{"daemonsets", "apps", "v1", "DaemonSet", true},
+		{"ingresses", "networking.k8s.io", "v1", "Ingress", true},
+		{"networkpolicies", "networking.k8s.io", "v1", "NetworkPolicy", true},
+		{"clusterroles", "rbac.authorization.k8s.io", "v1", "ClusterRole", false},
+		{"clusterrolebindings", "rbac.authorization.k8s.io", "v1", "ClusterRoleBinding", false},
+		{"rolebindings", "rbac.authorization.k8s.io", "v1", "RoleBinding", true},
+		{"roles", "rbac.authorization.k8s.io", "v1", "Role", true},
+		{"storageclasses", "storage.k8s.io", "v1", "StorageClass", false},
+		{"customresourcedefinitions", "apiextensions.k8s.io", "v1", "CustomResourceDefinition", false},
+		// CRD-defined resources
+		{"applications", "argoproj.io", "v1alpha1", "Application", true},
+		{"appprojects", "argoproj.io", "v1alpha1", "AppProject", true},
+		{"certificates", "cert-manager.io", "v1", "Certificate", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r, ok := found[tt.name]
+			if !ok {
+				t.Fatalf("resource %q not found in results", tt.name)
+			}
+			if r.Group != tt.group {
+				t.Errorf("group = %q, want %q", r.Group, tt.group)
+			}
+			if r.Version != tt.version {
+				t.Errorf("version = %q, want %q", r.Version, tt.version)
+			}
+			if r.Kind != tt.kind {
+				t.Errorf("kind = %q, want %q", r.Kind, tt.kind)
+			}
+			if r.Namespaced != tt.namespaced {
+				t.Errorf("namespaced = %v, want %v", r.Namespaced, tt.namespaced)
+			}
+		})
+	}
+
+	// Verify excluded resources are filtered out
+	excludedExpected := []string{"events", "endpoints", "nodes", "pods", "replicasets", "controllerrevisions", "leases", "endpointslices"}
+	for _, name := range excludedExpected {
+		if _, ok := found[name]; ok {
+			t.Errorf("excluded resource %q should not be in results", name)
+		}
+	}
+
+	// Verify resources with multiple shortnames (crd,crds) are parsed correctly
+	crd, ok := found["customresourcedefinitions"]
+	if !ok {
+		t.Fatal("customresourcedefinitions not found")
+	}
+	if crd.Name != "customresourcedefinitions" {
+		t.Errorf("CRD name = %q, want %q", crd.Name, "customresourcedefinitions")
+	}
+}
+
 func TestAPIResource_GroupResource(t *testing.T) {
 	tests := []struct {
 		name     string
