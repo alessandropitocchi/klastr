@@ -8,13 +8,19 @@ deploy-cluster is a CLI tool written in Go for provisioning local Kubernetes clu
 
 ```
 deploy-cluster/
-├── cmd/deploy-cluster/          # CLI entrypoint
+├── cmd/deploycluster/           # CLI entrypoint
 │   ├── main.go                  # Main
 │   ├── root.go                  # Root command (cobra)
 │   ├── init.go                  # init command: generates template.yaml
+│   ├── lint.go                  # lint command: validates template
 │   ├── create.go                # create command: creates cluster + plugins
+│   ├── upgrade.go               # upgrade command: updates plugins
+│   ├── uninstall.go             # uninstall command: removes plugins
 │   ├── destroy.go               # destroy command: destroys cluster
+│   ├── status.go                # status command: shows cluster status
 │   ├── get.go                   # get command: cluster/node/kubeconfig info
+│   ├── switch.go                # switch command: kubectl context switch
+│   ├── check.go                 # check command: prerequisites check
 │   └── snapshot.go              # snapshot command: save/restore/list/delete
 ├── pkg/
 │   ├── template/
@@ -26,16 +32,38 @@ deploy-cluster/
 │   │   │   └── kind.go          # kind provider implementation
 │   │   └── k3d/
 │   │       └── k3d.go           # k3d provider implementation
+│   ├── plugin/
+│   │   ├── plugin.go            # Plugin interface and registry
+│   │   ├── manager.go           # Plugin orchestration manager
+│   │   ├── argocd/
+│   │   │   └── argocd.go        # ArgoCD plugin implementation
+│   │   ├── certmanager/
+│   │   │   └── certmanager.go   # Cert-manager plugin implementation
+│   │   ├── customapps/
+│   │   │   └── customapps.go    # Custom apps plugin implementation
+│   │   ├── dashboard/
+│   │   │   └── dashboard.go     # Dashboard plugin implementation
+│   │   ├── ingress/
+│   │   │   └── ingress.go       # Ingress plugin implementation
+│   │   ├── monitoring/
+│   │   │   └── monitoring.go    # Monitoring plugin implementation
+│   │   └── storage/
+│   │       └── storage.go       # Storage plugin implementation
+│   ├── linter/
+│   │   └── linter.go            # Template validation and linting
 │   ├── snapshot/
 │   │   ├── snapshot.go          # Orchestration: Save/Restore/List/Delete
 │   │   ├── metadata.go          # Metadata struct + YAML serialization
 │   │   ├── discovery.go         # kubectl api-resources discovery + filtering
 │   │   ├── export.go            # Resource export + sanitization
-│   │   └── restore.go           # Ordered restore with dependency awareness
-│   └── plugin/
-│       ├── plugin.go            # Plugin interface
-│       └── argocd/
-│           └── argocd.go        # ArgoCD plugin implementation
+│   │   ├── restore.go           # Ordered restore with dependency awareness
+│   │   └── diff.go              # Snapshot diff functionality
+│   ├── k8s/
+│   │   └── ingress.go           # Kubernetes ingress manifest helpers
+│   ├── logger/
+│   │   └── logger.go            # Structured logging with levels
+│   └── retry/
+│       └── retry.go             # Retry logic with exponential backoff
 ├── example-app/                 # Example applications for ArgoCD
 │   ├── app/                     # Plain YAML manifests
 │   ├── nginx-helm/              # Example Helm chart
@@ -52,6 +80,14 @@ deploy-cluster/
 1. Generates a `Template` with default values
 2. Serializes to YAML and writes to file
 
+### `deploy-cluster lint`
+
+Validates the template without modifying the cluster:
+
+1. **Parse template**: Loads and validates YAML structure
+2. **Run linters**: Checks cluster name, version, topology, ingress hosts, dependencies
+3. **Report issues**: Outputs errors, warnings, and info messages
+
 ### `deploy-cluster create`
 
 ```
@@ -65,8 +101,32 @@ Load .env → Load template.yaml → Create cluster (Provider) → Install plugi
    - Checks the cluster doesn't already exist
    - Generates the kind configuration (nodes, version, image)
    - Runs `kind create cluster` with streaming output
-4. **Install plugins**: For each enabled plugin:
+4. **Install plugins**: For each enabled plugin (via Plugin Manager):
+   - **Storage**: Applies local-path-provisioner manifest
+   - **Ingress**: Applies NGINX or verifies Traefik
+   - **Cert-Manager**: Applies cert-manager manifest
+   - **Monitoring**: Helm install/upgrade kube-prometheus-stack
+   - **Dashboard**: Helm install/upgrade Headlamp
+   - **Custom Apps**: Helm install/upgrade for each app
    - **ArgoCD**: Creates namespace → Applies manifest → Waits for ready → Adds repos → Creates Applications
+
+### `deploy-cluster upgrade`
+
+Updates plugins on an existing cluster:
+
+1. **Load template**: Parses the updated `template.yaml`
+2. **Check cluster**: Verifies cluster exists
+3. **Upgrade plugins**: For each enabled plugin:
+   - Most plugins: Re-apply configuration (idempotent)
+   - ArgoCD: Diff-based update (adds new repos/apps, removes deleted ones)
+
+### `deploy-cluster uninstall`
+
+Removes plugins without destroying the cluster:
+
+1. **Load template**: Parses the `template.yaml`
+2. **Uninstall plugins**: In reverse installation order
+3. **Keep cluster**: The kind/k3d cluster remains running
 
 ### `deploy-cluster destroy`
 
@@ -94,13 +154,55 @@ Implementations: `kind`, `k3d`. Planned: `minikube`
 ```go
 type Plugin interface {
     Name() string
-    Install(kubeconfig string) error
-    Uninstall(kubeconfig string) error
-    IsInstalled(kubeconfig string) (bool, error)
+    Install(cfg interface{}, kubecontext string, providerType string) error
+    IsInstalled(kubecontext string) (bool, error)
+    Upgrade(cfg interface{}, kubecontext string, providerType string) error
+    Uninstall(cfg interface{}, kubecontext string) error
+    DryRun(cfg interface{}, kubecontext string, providerType string) error
 }
 ```
 
-> Note: The ArgoCD plugin uses a specific signature `Install(cfg *template.ArgoCDTemplate, kubecontext string)` to receive typed configuration. The interface may be standardized in the future.
+All plugins implement this unified interface. The `cfg` parameter is type-asserted by each plugin to its specific configuration struct (e.g., `*template.ArgoCDTemplate`).
+
+### Plugin Manager
+
+The `Manager` in `pkg/plugin/manager.go` orchestrates plugin operations:
+
+```go
+type Manager struct {
+    registry    *Registry
+    log         *logger.Logger
+    failFast    bool
+    parallel    bool
+    maxParallel int
+}
+```
+
+Features:
+- **Registry**: Maintains all available plugins
+- **Install Order**: Plugins installed in dependency order (storage → ingress → ... → argocd)
+- **Parallel Installation**: Optional parallel execution for independent plugins
+- **Result Tracking**: Tracks success, failure, and skipped plugins
+
+### Linter
+
+The `Linter` in `pkg/linter/linter.go` validates templates:
+
+```go
+type Linter struct {
+    strict bool
+}
+
+func (l *Linter) Lint(t *template.Template) *Result
+```
+
+Checks include:
+- Cluster name validity (DNS subdomain)
+- Kubernetes version format and EOL status
+- Topology recommendations (odd control planes)
+- Ingress host uniqueness
+- Resource dependencies (ingress plugin required for ingress hosts)
+- Best practices (storage for multi-node, etc.)
 
 ## Configuration
 
@@ -201,18 +303,27 @@ Resources are applied in dependency order with retry and exponential backoff for
 
 ### Completed
 - [x] Storage plugin (local-path-provisioner)
-- [x] Ingress plugin (nginx for kind)
+- [x] Ingress plugin (nginx for kind, traefik for k3d)
 - [x] Cert-manager plugin
 - [x] Monitoring plugin (kube-prometheus-stack via Helm)
 - [x] Dashboard plugin (Headlamp via Helm)
 - [x] Custom apps plugin (arbitrary Helm charts)
-- [x] ArgoCD plugin
+- [x] ArgoCD plugin with diff-based upgrade
+- [x] Unified Plugin interface
+- [x] Plugin Manager with parallel installation support
+- [x] `lint` command for template validation
 - [x] `upgrade` command for updating plugins on existing clusters
+- [x] `uninstall` command for removing plugins without destroying cluster
+- [x] `status` command for cluster and plugin status
+- [x] `switch` command for kubectl context switching
+- [x] `check` command for prerequisites verification
 - [x] Snapshot system (save, restore, list, delete, diff)
-
-### Completed (continued)
+- [x] kind provider
 - [x] k3d provider (with traefik ingress support)
 
 ### Planned
 - [ ] minikube provider
-- [ ] Plugin interface standardization
+- [ ] Additional storage backends (OpenEBS, Rook-Ceph)
+- [ ] Service mesh plugin (Istio/Linkerd)
+- [ ] External DNS plugin
+- [ ] Vault integration for secrets

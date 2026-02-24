@@ -23,6 +23,9 @@ go build -o deploy-cluster ./cmd/deploycluster
 # Interactive wizard to generate the template
 ./deploy-cluster init
 
+# Validate the template before creating
+./deploy-cluster lint --template template.yaml
+
 # Create the cluster with all configured plugins
 ./deploy-cluster create --template template.yaml
 
@@ -146,5 +149,6 @@ Snapshots are stored at `~/.deploy-cluster/snapshots/<name>/` with one file per 
 | [Getting Started](docs/getting-started.md) | Installation and first use |
 | [CLI Commands](docs/commands.md) | Complete command reference |
 | [Configuration](docs/configuration.md) | `template.yaml` file structure |
+| [Architecture](docs/architecture.md) | Project architecture and design |
 | [Provider: kind](docs/providers/kind.md) | kind provider details |
 | [Plugins](docs/plugins/) | Documentation for each plugin |

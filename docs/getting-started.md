@@ -34,7 +34,22 @@ The interactive wizard guides you through:
 
 The result is a ready-to-use `template.yaml` file.
 
-### 2. Create the cluster
+### 2. Validate the template
+
+Before creating the cluster, validate the template for errors and best practices:
+
+```bash
+./deploy-cluster lint
+```
+
+This checks for:
+- Valid cluster name and Kubernetes version
+- Correct topology configuration
+- Ingress host uniqueness
+- Resource dependencies
+- Best practices recommendations
+
+### 3. Create the cluster
 
 ```bash
 ./deploy-cluster create --template template.yaml
@@ -42,7 +57,7 @@ The result is a ready-to-use `template.yaml` file.
 
 The tool creates the kind cluster and automatically installs all configured plugins in the correct order.
 
-### 3. Check status
+### 4. Check status
 
 ```bash
 ./deploy-cluster status --template template.yaml
@@ -75,7 +90,7 @@ ArgoCD: installed (namespace: argocd)
     - nginx
 ```
 
-### 4. Update the template
+### 5. Update the template
 
 Edit `template.yaml` and apply changes without recreating the cluster:
 
@@ -87,7 +102,7 @@ Edit `template.yaml` and apply changes without recreating the cluster:
 ./deploy-cluster upgrade --template template.yaml
 ```
 
-### 5. Destroy the cluster
+### 6. Destroy the cluster
 
 ```bash
 ./deploy-cluster destroy --template template.yaml

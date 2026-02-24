@@ -5,8 +5,10 @@
 | Command | Description |
 |---------|-------------|
 | [`init`](#init) | Generate a `template.yaml` file via interactive wizard |
+| [`lint`](#lint) | Validate template for errors and best practices |
 | [`create`](#create) | Create the cluster and install configured plugins |
 | [`upgrade`](#upgrade) | Update plugins on an existing cluster |
+| [`uninstall`](#uninstall) | Uninstall plugins from a cluster (keeps cluster) |
 | [`status`](#status) | Show cluster and plugin status |
 | [`destroy`](#destroy) | Destroy the cluster |
 | [`get`](#get) | Subcommands for retrieving cluster information |
@@ -45,6 +47,54 @@ The wizard asks in sequence:
 2. **Plugins** — multi-select plugins to enable
 3. **Ingress** — hostname for each service with a UI (if ingress enabled)
 4. **ArgoCD** — namespace and version (if ArgoCD enabled)
+
+---
+
+## `lint`
+
+Validates the template file for errors, warnings, and best practices before creating or upgrading a cluster.
+
+```bash
+deploy-cluster lint [flags]
+```
+
+### Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `-t, --template` | `template.yaml` | Template file |
+| `--strict` | `false` | Treat warnings as errors |
+
+### Checks Performed
+
+| Category | Checks |
+|----------|--------|
+| **Cluster Name** | Valid DNS subdomain format, length (3-63 chars) |
+| **Kubernetes Version** | Valid format (vX.Y.Z), EOL version detection |
+| **Topology** | Control planes (odd numbers recommended), workers |
+| **Ingress Hosts** | Uniqueness, valid hostname format |
+| **Dependencies** | Ingress plugin required if ingress hosts configured |
+| **Best Practices** | Storage for multi-node, monitoring, ArgoCD repos |
+
+### Example
+
+```bash
+# Basic lint
+$ deploy-cluster lint
+
+  ✓ No issues found!
+
+# Lint with warnings
+$ deploy-cluster lint --template my-cluster.yaml
+
+  ⚠ [WARN] cluster.controlPlanes: using 2 control planes (even number) is not recommended for etcd quorum, use odd numbers (1, 3, 5)
+  ℹ [INFO] plugins.storage: consider enabling storage plugin for multi-node clusters (PVC support)
+
+Total: 2 issues (0 errors, 1 warnings, 1 info)
+
+# Strict mode (treats warnings as errors)
+$ deploy-cluster lint --strict
+```
 
 ---
 
@@ -123,6 +173,46 @@ deploy-cluster upgrade --template template.yaml --dry-run
 
 # Apply
 deploy-cluster upgrade --template template.yaml
+```
+
+---
+
+## `uninstall`
+
+Uninstalls all enabled plugins from an existing cluster **without destroying the cluster itself**. Useful for resetting plugin state or cleaning up before a fresh plugin install.
+
+```bash
+deploy-cluster uninstall [flags]
+```
+
+### Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `-t, --template` | `template.yaml` | Template file |
+| `-e, --env` | `.env` | Environment file for secrets |
+| `--fail-fast` | `false` | Stop at first plugin failure |
+
+### Uninstall Order
+
+Plugins are uninstalled in reverse installation order:
+
+1. **ArgoCD**
+2. **Custom Apps**
+3. **Dashboard**
+4. **Monitoring**
+5. **Cert-Manager**
+6. **Ingress**
+7. **Storage**
+
+### Example
+
+```bash
+# Uninstall all plugins
+deploy-cluster uninstall --template template.yaml
+
+# Uninstall with fail-fast
+deploy-cluster uninstall --template template.yaml --fail-fast
 ```
 
 ---

@@ -11,12 +11,31 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Core Concepts
 
 - **Providers**: Abstraction layer for cluster providers. Interface in `pkg/provider/provider.go`. Implemented: **kind**, **k3d**.
-- **Plugins**: Modular components installed on clusters. Each plugin has its own package under `pkg/plugin/`. Implemented: **storage** (local-path-provisioner), **ingress** (nginx or traefik), **cert-manager**, **monitoring** (kube-prometheus-stack via Helm), **dashboard** (Headlamp via Helm), **customApps** (arbitrary Helm charts), **ArgoCD**.
+- **Plugins**: Modular components installed on clusters. Each plugin implements the unified `Plugin` interface in `pkg/plugin/plugin.go`. Implemented: **storage** (local-path-provisioner), **ingress** (nginx or traefik), **cert-manager**, **monitoring** (kube-prometheus-stack via Helm), **dashboard** (Headlamp via Helm), **customApps** (arbitrary Helm charts), **ArgoCD**.
+- **Plugin Manager**: Orchestrates plugin installation in `pkg/plugin/manager.go`. Handles install order, parallel execution, and result tracking.
+- **Linter**: Validates templates for errors and best practices in `pkg/linter/linter.go`.
 - **Template**: Single `template.yaml` defines cluster topology + all plugins. Parsed and validated in `pkg/template/`.
 
 ### Plugin Installation Order
 
 `create` and `upgrade` install plugins in this order: **storage → ingress → cert-manager → monitoring → dashboard → customApps → ArgoCD**. Storage first so PVCs are available; ingress before others so Ingress resources work; ArgoCD last because it may depend on everything else.
+
+### Unified Plugin Interface
+
+All plugins implement this interface:
+
+```go
+type Plugin interface {
+    Name() string
+    Install(cfg interface{}, kubecontext string, providerType string) error
+    IsInstalled(kubecontext string) (bool, error)
+    Upgrade(cfg interface{}, kubecontext string, providerType string) error
+    Uninstall(cfg interface{}, kubecontext string) error
+    DryRun(cfg interface{}, kubecontext string, providerType string) error
+}
+```
+
+The `cfg` parameter is type-asserted by each plugin to its specific configuration struct.
 
 ### Ingress Integration
 
@@ -30,12 +49,16 @@ Several plugins support optional `ingress` sub-config to expose their UI (ArgoCD
 
 | Command | Description |
 |---------|-------------|
-| `init` | Generate starter `template.yaml` |
+| `init` | Generate starter `template.yaml` via interactive wizard |
+| `lint` | Validate template for errors and best practices |
 | `create` | Create cluster + install all enabled plugins |
 | `upgrade` | Update plugins on existing cluster (diff-based for ArgoCD repos/apps) |
 | `upgrade --dry-run` | Preview changes without applying |
+| `uninstall` | Uninstall plugins from cluster (keeps cluster) |
 | `status` | Show cluster and plugin status |
 | `destroy` | Delete cluster |
+| `check` | Verify that all prerequisites are installed |
+| `switch` | Switch kubectl context between clusters |
 | `get clusters [--provider]` | List clusters (kind and/or k3d) |
 | `get nodes <name> [--provider]` | List cluster nodes |
 | `get kubeconfig <name> [--provider]` | Print kubeconfig |
@@ -47,7 +70,7 @@ Several plugins support optional `ingress` sub-config to expose their UI (ArgoCD
 ## Development
 
 ### Tech Stack
-- **Language**: Go
+- **Language**: Go 1.21+
 - **CLI Framework**: cobra
 - **Template Format**: YAML (gopkg.in/yaml.v3)
 - **Cluster Interaction**: kubectl and helm commands via `os/exec`
@@ -58,83 +81,93 @@ go build -o deploy-cluster ./cmd/deploycluster
 go test ./...
 ```
 
+### Linting
+```bash
+# Run golangci-lint
+~/go/bin/golangci-lint run ./...
+```
+
 ### Project Structure
 ```
 cmd/deploycluster/          # CLI entrypoint and cobra commands
   main.go                   # Entry point
   root.go                   # Root command
-  helpers.go                # Shared getProvider() helper
+  helpers.go                # Shared helpers (getProvider, newLogger)
+  init.go                   # init command
+  lint.go                   # lint command
   create.go                 # create command
-  upgrade.go                # upgrade command (with --dry-run)
+  upgrade.go                # upgrade command
+  uninstall.go              # uninstall command
   destroy.go                # destroy command
   status.go                 # status command
-  init.go                   # init command
+  check.go                  # check command
+  switch.go                 # switch command
   get.go                    # get subcommands
-  snapshot.go               # snapshot save/restore/list/delete subcommands
+  snapshot.go               # snapshot subcommands
+  plugins.go                # Plugin orchestration (installPlugins, upgradePlugins)
 pkg/
-  snapshot/
-    snapshot.go             # Orchestration: Save/Restore/List/Delete
-    metadata.go             # Metadata struct + YAML serialization
-    discovery.go            # kubectl api-resources discovery + filtering
-    export.go               # Resource export + sanitization + system resource filtering
-    restore.go              # Ordered restore (CRDs → Namespaces → cluster-scoped → namespaced)
+  plugin/
+    plugin.go               # Plugin interface and Registry
+    manager.go              # Plugin Manager for orchestration
+    argocd/                 # ArgoCD plugin
+    certmanager/            # Cert-manager plugin
+    customapps/             # Custom apps plugin
+    dashboard/              # Dashboard plugin
+    ingress/                # Ingress plugin
+    monitoring/             # Monitoring plugin
+    storage/                # Storage plugin
+  linter/
+    linter.go               # Template validation and linting
   template/
     template.go             # Template structs, Load(), Save(), Validate()
     env.go                  # .env file loading
   provider/
-    provider.go             # Provider interface (Name, Create, Delete, Exists, KubeContext, GetKubeconfig)
-    kind/
-      kind.go               # kind provider (generates kind config with ingress labels/ports)
-    k3d/
-      k3d.go                # k3d provider (generates k3d SimpleConfig, loadbalancer ports, traefik disable)
-  plugin/
-    argocd/
-      argocd.go             # ArgoCD plugin (Install, Upgrade, DryRun, repos/apps diff, ingress, insecure mode)
-    storage/
-      storage.go            # Storage plugin (local-path-provisioner)
-    ingress/
-      ingress.go            # Ingress plugin (nginx or traefik, provider-aware manifest URL)
-    certmanager/
-      certmanager.go        # Cert-manager plugin (TLS certificates)
-    monitoring/
-      monitoring.go         # Monitoring plugin (kube-prometheus-stack via Helm OCI, Grafana ingress)
-    dashboard/
-      dashboard.go          # Dashboard plugin (Headlamp via Helm, ingress)
-    customapps/
-      customapps.go         # Custom apps plugin (arbitrary Helm charts with values/ingress)
+    provider.go             # Provider interface
+    kind/                   # kind provider
+    k3d/                    # k3d provider
+  snapshot/                 # Snapshot system
+  k8s/                      # Kubernetes helpers
+  logger/                   # Structured logging
+  retry/                    # Retry logic
 ```
 
 ### Key Design Decisions
-- Provider abstraction: `KubeContext()` method avoids hardcoding `kind-<name>` everywhere
-- Kind config generates `kubeadmConfigPatches` with `ingress-ready=true` label when ingress plugin is enabled
-- k3d config uses SimpleConfig (k3d.io/v1alpha5), ports on loadbalancer, disables Traefik when nginx is chosen
-- Ingress plugin is provider-aware: uses kind-specific or cloud nginx manifest URL based on provider type
-- ArgoCD `Upgrade()` is diff-based: applies all desired repos/apps (idempotent), removes those no longer in template
-- ArgoCD insecure mode uses `argocd-cmd-params-cm` ConfigMap (not container args patching)
-- Repo name generation is centralized in `repoName()` — used by both `addRepository` and `Upgrade` diff logic
-- Template `Validate()` runs inside `Load()` — invalid templates fail early
-- No generic Plugin interface — each plugin has typed template (ArgoCD receives `*ArgoCDTemplate`, etc.)
-- Helm-based plugins (monitoring, dashboard, customApps) use `helm upgrade --install` for idempotency
-- customApps: inline `values` are written to temp files, `valuesFile` takes precedence over inline values
-- Plugin installation is idempotent (`kubectl apply` or `helm upgrade --install`)
-- Snapshot uses dynamic resource discovery via `kubectl api-resources` to capture all resource types including CRDs
-- Snapshot restore follows dependency order: CRDs → Namespaces → cluster-scoped → namespaced (with per-type priority)
-- Snapshot sanitizes exported resources (removes resourceVersion, uid, managedFields, status, etc.)
-- Snapshot filters system resources (ownerReferences, default SA, kube-root-ca.crt, kubernetes service)
-- Snapshots stored at `~/.deploy-cluster/snapshots/<name>/` with one file per resource
+- **Unified Plugin Interface**: All plugins implement the same interface for consistent handling
+- **Plugin Manager**: Centralized orchestration with support for parallel installation
+- **Provider abstraction**: `KubeContext()` method avoids hardcoding `kind-<name>` everywhere
+- **Kind config**: Generates `kubeadmConfigPatches` with `ingress-ready=true` label when ingress plugin is enabled
+- **k3d config**: Uses SimpleConfig (k3d.io/v1alpha5), ports on loadbalancer, disables Traefik when nginx is chosen
+- **Ingress plugin**: Provider-aware, uses kind-specific or cloud nginx manifest URL based on provider type
+- **ArgoCD Upgrade**: Diff-based - applies all desired repos/apps, removes those no longer in template
+- **ArgoCD insecure mode**: Uses `argocd-cmd-params-cm` ConfigMap (not container args patching)
+- **Template validation**: `Validate()` runs inside `Load()` — invalid templates fail early
+- **Helm-based plugins**: Use `helm upgrade --install` for idempotency
+- **customApps**: Inline `values` are written to temp files, `valuesFile` takes precedence over inline values
+- **Snapshot system**: Dynamic resource discovery, dependency-aware restore, resource sanitization
+- **Linter**: Comprehensive validation including best practices and dependency checking
 
 ### Testing
 Tests are colocated with source files (`*_test.go` in same package). Run with `go test ./...`.
 
 Key test areas:
-- `pkg/template/`: Load/Save round-trip, validation (all error cases), env file parsing
-- `pkg/plugin/argocd/`: repoName generation, diff logic (add/remove repos/apps)
-- `pkg/plugin/storage/`: type routing, error messages
-- `pkg/plugin/ingress/`: type routing, error messages
-- `pkg/plugin/certmanager/`: version handling, manifest URL generation
-- `pkg/plugin/monitoring/`: type routing, chart version
-- `pkg/plugin/dashboard/`: type routing, chart version
-- `pkg/plugin/customapps/`: values resolution (inline, file, precedence)
-- `pkg/provider/kind/`: generateKindConfig (with/without ingress), KubeContext
-- `pkg/provider/k3d/`: generateK3dConfig (single/multi node, version, ingress nginx/traefik), KubeContext
-- `pkg/snapshot/`: metadata round-trip, api-resources parsing, sanitizeResource, isSystemResource, restore ordering, dry-run
+- `pkg/template/`: Load/Save round-trip, validation, env file parsing
+- `pkg/plugin/`: All plugin implementations (argocd, storage, ingress, certmanager, monitoring, dashboard, customapps)
+- `pkg/linter/`: Lint checks, issue formatting
+- `pkg/provider/kind/` and `pkg/provider/k3d/`: Provider implementations
+- `pkg/snapshot/`: Metadata, discovery, export, restore, diff
+
+### Adding a New Plugin
+
+1. Create package under `pkg/plugin/<name>/`
+2. Implement the `Plugin` interface:
+   - `Name() string` - Return plugin identifier
+   - `Install(cfg interface{}, kubecontext, providerType string) error`
+   - `IsInstalled(kubecontext string) (bool, error)`
+   - `Upgrade(cfg interface{}, kubecontext, providerType string) error`
+   - `Uninstall(cfg interface{}, kubecontext string) error`
+   - `DryRun(cfg interface{}, kubecontext, providerType string) error`
+3. Add config struct to `pkg/template/template.go` if needed
+4. Register in `cmd/deploycluster/plugins.go` `createRegistry()`
+5. Add to `plugin.InstallOrder` if it has dependencies
+6. Add extractor to `plugin.Extractors` for config extraction
+7. Update documentation in `docs/plugins/<name>.md`
