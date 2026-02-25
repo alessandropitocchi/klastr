@@ -1,60 +1,4 @@
-package main
-
-import (
-	"fmt"
-	"os"
-
-	"github.com/spf13/cobra"
-)
-
-var (
-	initOutput string
-)
-
-var initCmd = &cobra.Command{
-	Use:   "init",
-	Short: "Generate a starter cluster template file",
-	Long: `Generate a template.yaml file with all available options documented.
-
-The generated template includes comprehensive comments explaining each option,
-with sensible defaults to get you started quickly. Edit the file to customize
-your cluster configuration.`,
-	Example: `  # Generate template.yaml in current directory
-  deploy-cluster init
-
-  # Generate with custom name
-  deploy-cluster init --output my-cluster.yaml`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		// Check if file already exists
-		if _, err := os.Stat(initOutput); err == nil {
-			return fmt.Errorf("file %s already exists, use --output to specify a different name", initOutput)
-		}
-
-		// Generate commented template with defaults
-		content := generateStarterTemplate()
-		if err := os.WriteFile(initOutput, []byte(content), 0644); err != nil {
-			return fmt.Errorf("failed to write template: %w", err)
-		}
-
-		fmt.Printf("✓ Created %s\n", initOutput)
-		fmt.Println("\nNext steps:")
-		fmt.Printf("  1. Edit %s to customize your cluster\n", initOutput)
-		fmt.Printf("  2. Validate: deploy-cluster lint --template %s\n", initOutput)
-		fmt.Printf("  3. Create:   deploy-cluster create --template %s\n", initOutput)
-		return nil
-	},
-}
-
-
-
-func init() {
-	initCmd.Flags().StringVarP(&initOutput, "output", "o", "template.yaml", "output file path")
-	rootCmd.AddCommand(initCmd)
-}
-
-// generateStarterTemplate creates a comprehensive starter template with all options documented
-func generateStarterTemplate() string {
-	return `# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ╔══════════════════════════════════════════════════════════════════════════════╗
 # ║                     deploy-cluster Configuration Template                    ║
 # ╚══════════════════════════════════════════════════════════════════════════════╝
 #
@@ -247,5 +191,3 @@ plugins:
 #   GIT_SSH_KEY=-----BEGIN OPENSSH PRIVATE KEY-----
 #
 # Reference env vars in this template with ${VAR_NAME} syntax
-`
-}
