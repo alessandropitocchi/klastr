@@ -1,0 +1,59 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  schedule:
+    # Run e2e tests nightly
+    - cron: '0 0 * * *'
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        k8s_version: [v1.31.0, v1.30.0]
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+
+    - name: Install dependencies
+      run: |
+        # Install kind
+        curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.25.0/kind-linux-amd64
+        chmod +x ./kind
+        sudo mv ./kind /usr/local/bin/kind
+        
+        # Install kubectl
+        curl -LO "https://dl.k8s/release/$(curl -L -s https://dl.k8s/release/stable.txt)/bin/linux/amd64/kubectl"
+        chmod +x kubectl
+        sudo mv kubectl /usr/local/bin/kubectl
+        
+        # Install helm
+        curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+    - name: Verify dependencies
+      run: |
+        kind version
+        kubectl version --client
+        helm version
+
+    - name: Run unit tests
+      run: go test ./... -v -short
+
+    - name: Run e2e tests
+      run: go test ./e2e/... -v -timeout 30m
+      env:
+        K8S_VERSION: ${{ matrix.k8s_version }}
+
+    - name: Cleanup clusters
+      if: always()
+      run: |
+        kind delete clusters --all || true

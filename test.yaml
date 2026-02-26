@@ -109,10 +109,10 @@ plugins:
   # Dashboard: Headlamp - Modern Kubernetes Web UI
   # Features: Pod logs, resource editing, cluster overview
   # ─────────────────────────────────────────────────────────────────────────────
-  # dashboard:
-  #   enabled: true
-  #   type: headlamp
-  #   version: "0.25.0"
+  dashboard:
+    enabled: true
+    type: headlamp
+    version: "0.40.0"
   #   # Optional: expose Headlamp via ingress
   #   # ingress:
   #   #   enabled: true
