@@ -52,7 +52,7 @@ This checks for:
 ### 3. Create the cluster
 
 ```bash
-./deploy-cluster create --template template.yaml
+./deploy-cluster run --template template.yaml
 ```
 
 The tool creates the kind cluster and automatically installs all configured plugins in the correct order.

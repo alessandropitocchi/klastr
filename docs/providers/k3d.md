@@ -133,7 +133,7 @@ plugins:
 
 ```bash
 # Create k3d cluster
-./deploy-cluster create --template template-k3d.yaml
+./deploy-cluster run --template template-k3d.yaml
 
 # Check status
 ./deploy-cluster status --template template-k3d.yaml

@@ -40,7 +40,7 @@ your cluster configuration.`,
 		fmt.Println("\nNext steps:")
 		fmt.Printf("  1. Edit %s to customize your cluster\n", initOutput)
 		fmt.Printf("  2. Validate: deploy-cluster lint --template %s\n", initOutput)
-		fmt.Printf("  3. Create:   deploy-cluster create --template %s\n", initOutput)
+		fmt.Printf("  3. Run:      deploy-cluster run --template %s\n", initOutput)
 		return nil
 	},
 }
@@ -62,7 +62,7 @@ func generateStarterTemplate() string {
 # Quick Start:
 #   1. Edit this file to customize your cluster
 #   2. Validate:  deploy-cluster lint --template template.yaml
-#   3. Create:    deploy-cluster create --template template.yaml
+#   3. Run:       deploy-cluster run --template template.yaml
 #   4. Upgrade:   deploy-cluster upgrade --template template.yaml
 #
 # Documentation: https://github.com/alessandropitocchi/deploy-cluster#readme

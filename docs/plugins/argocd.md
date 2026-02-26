@@ -118,7 +118,7 @@ repos:
 Run with `--env .env`:
 
 ```bash
-deploy-cluster create --template template.yaml --env .env
+deploy-cluster run --template template.yaml --env .env
 ```
 
 ### HTTPS Authentication with Token

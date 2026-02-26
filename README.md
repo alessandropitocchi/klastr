@@ -28,7 +28,7 @@ go build -o deploy-cluster ./cmd/deploycluster
 ./deploy-cluster lint --template template.yaml
 
 # Create the cluster with all configured plugins
-./deploy-cluster create --template template.yaml
+./deploy-cluster run --template template.yaml
 
 # Check status
 ./deploy-cluster status --template template.yaml

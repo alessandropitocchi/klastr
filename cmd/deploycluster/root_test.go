@@ -117,7 +117,7 @@ func TestRootFlags_TimeoutParsing(t *testing.T) {
 }
 
 func TestSubcommands_Registered(t *testing.T) {
-	expected := []string{"create", "upgrade", "destroy", "status", "init", "get", "uninstall", "snapshot"}
+	expected := []string{"run", "upgrade", "destroy", "status", "init", "get", "uninstall", "snapshot", "drift", "lint", "check", "switch"}
 	commands := rootCmd.Commands()
 
 	registered := make(map[string]bool)
@@ -132,13 +132,13 @@ func TestSubcommands_Registered(t *testing.T) {
 	}
 }
 
-func TestCreateCmd_Flags(t *testing.T) {
-	f := createCmd.Flags()
+func TestRunCmd_Flags(t *testing.T) {
+	f := runCmd.Flags()
 
 	// --template
 	cf := f.Lookup("template")
 	if cf == nil {
-		t.Fatal("create should have --template flag")
+		t.Fatal("run should have --template flag")
 	}
 	if cf.DefValue != "template.yaml" {
 		t.Errorf("--template default = %q, want %q", cf.DefValue, "template.yaml")
@@ -150,7 +150,7 @@ func TestCreateCmd_Flags(t *testing.T) {
 	// --env
 	ef := f.Lookup("env")
 	if ef == nil {
-		t.Fatal("create should have --env flag")
+		t.Fatal("run should have --env flag")
 	}
 	if ef.DefValue != ".env" {
 		t.Errorf("--env default = %q, want %q", ef.DefValue, ".env")
@@ -159,7 +159,7 @@ func TestCreateCmd_Flags(t *testing.T) {
 	// --fail-fast
 	ff := f.Lookup("fail-fast")
 	if ff == nil {
-		t.Fatal("create should have --fail-fast flag")
+		t.Fatal("run should have --fail-fast flag")
 	}
 	if ff.DefValue != "false" {
 		t.Errorf("--fail-fast default = %q, want %q", ff.DefValue, "false")

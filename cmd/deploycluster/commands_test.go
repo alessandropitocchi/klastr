@@ -7,8 +7,8 @@ import (
 	"testing"
 )
 
-func TestCreate_MissingTemplate(t *testing.T) {
-	err := executeCommand("create", "--template", "nonexistent-template-xyz.yaml")
+func TestRun_MissingTemplate(t *testing.T) {
+	err := executeCommand("run", "--template", "nonexistent-template-xyz.yaml")
 	if err == nil {
 		t.Fatal("expected error for missing template")
 	}
@@ -17,14 +17,14 @@ func TestCreate_MissingTemplate(t *testing.T) {
 	}
 }
 
-func TestCreate_InvalidYAML(t *testing.T) {
+func TestRun_InvalidYAML(t *testing.T) {
 	tmp := t.TempDir()
 	f := filepath.Join(tmp, "bad.yaml")
 	if err := os.WriteFile(f, []byte("{{{{not yaml"), 0644); err != nil {
 		t.Fatal(err)
 	}
 
-	err := executeCommand("create", "--template", f)
+	err := executeCommand("run", "--template", f)
 	if err == nil {
 		t.Fatal("expected error for invalid YAML")
 	}
@@ -33,7 +33,7 @@ func TestCreate_InvalidYAML(t *testing.T) {
 	}
 }
 
-func TestCreate_InvalidProvider(t *testing.T) {
+func TestRun_InvalidProvider(t *testing.T) {
 	tmp := t.TempDir()
 	f := filepath.Join(tmp, "tmpl.yaml")
 	if err := os.WriteFile(f, []byte(`name: test
@@ -46,7 +46,7 @@ cluster:
 		t.Fatal(err)
 	}
 
-	err := executeCommand("create", "--template", f)
+	err := executeCommand("run", "--template", f)
 	if err == nil {
 		t.Fatal("expected error for unsupported provider")
 	}

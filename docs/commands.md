@@ -6,7 +6,7 @@
 |---------|-------------|
 | [`init`](#init) | Generate a `template.yaml` file via interactive wizard |
 | [`lint`](#lint) | Validate template for errors and best practices |
-| [`create`](#create) | Create the cluster and install configured plugins |
+| [`run`](#run) | Deploy cluster and install configured plugins |
 | [`upgrade`](#upgrade) | Update plugins on an existing cluster |
 | [`drift`](#drift) | Detect drift between cluster and template |
 | [`uninstall`](#uninstall) | Uninstall plugins from a cluster (keeps cluster) |
@@ -99,12 +99,18 @@ $ deploy-cluster lint --strict
 
 ---
 
-## `create`
+## `run`
 
-Creates a new Kubernetes cluster and installs all plugins enabled in the template.
+Deploys a Kubernetes cluster and installs all plugins enabled in the template.
+
+This command handles both:
+- **Creating new clusters** (kind, k3d)
+- **Deploying to existing clusters** (EKS, GKE, AKS, or existing kind/k3d)
+
+For `existing` provider, it skips cluster creation and only installs plugins.
 
 ```bash
-deploy-cluster create [flags]
+deploy-cluster run [flags]
 ```
 
 ### Flags
@@ -114,6 +120,7 @@ deploy-cluster create [flags]
 | `-t, --template` | `template.yaml` | Template file |
 | `-e, --env` | `.env` | File with environment variables for secrets |
 | `--timeout` | `5m` | Timeout for plugin operations (kubectl/helm) |
+| `--fail-fast` | `false` | Stop at first plugin failure |
 
 ### Installation Order
 
@@ -129,12 +136,20 @@ Plugins are installed in this order:
 8. **Custom Apps** — custom Helm charts
 9. **ArgoCD** — GitOps (last, as it may depend on others)
 
-### Example
+### Examples
 
 ```bash
-deploy-cluster create --template template.yaml
-deploy-cluster create --template template.yaml --env production.env
-deploy-cluster create --template template.yaml --timeout 10m
+# Deploy from template (creates cluster if needed)
+deploy-cluster run --template template.yaml
+
+# Deploy with environment variables
+deploy-cluster run --template template.yaml --env production.env
+
+# Deploy with extended timeout
+deploy-cluster run --template template.yaml --timeout 10m
+
+# Deploy to existing cluster (provider: existing)
+deploy-cluster run --template template-existing.yaml
 ```
 
 ---

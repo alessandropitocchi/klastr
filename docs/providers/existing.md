@@ -52,10 +52,10 @@ plugins:
 
 ```bash
 # Use current kubeconfig and context
-deploy-cluster create --template template-existing.yaml
+deploy-cluster run --template template-existing.yaml
 
 # Specify kubeconfig and context
-deploy-cluster create --template template-existing.yaml
+deploy-cluster run --template template-existing.yaml
 ```
 
 With template:
@@ -71,7 +71,7 @@ provider:
 
 ```bash
 export KUBECONFIG=~/.kube/my-cluster-config
-deploy-cluster create --template template.yaml
+deploy-cluster run --template template.yaml
 ```
 
 ### Drift Detection on Existing Cluster
@@ -107,7 +107,7 @@ Ensure the kubeconfig path is correct:
 ls -la ~/.kube/config
 # or
 export KUBECONFIG=/path/to/your/config
-deploy-cluster create --template template.yaml
+deploy-cluster run --template template.yaml
 ```
 
 ### "cannot connect to existing cluster"

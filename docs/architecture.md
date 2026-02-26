@@ -99,7 +99,7 @@ Validates the template without modifying the cluster:
 2. **Run linters**: Checks cluster name, version, topology, ingress hosts, dependencies
 3. **Report issues**: Outputs errors, warnings, and info messages
 
-### `deploy-cluster create`
+### `deploy-cluster run`
 
 ```
 Load .env → Load template.yaml → Create cluster (Provider) → Install plugins

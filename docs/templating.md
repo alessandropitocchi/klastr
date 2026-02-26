@@ -207,7 +207,7 @@ export WORKERS="5"
 export CF_API_TOKEN="your-token"
 
 # Create cluster (template is processed automatically)
-deploy-cluster create --template template.yaml
+deploy-cluster run --template template.yaml
 ```
 
 ### Loading Additional Env Files
@@ -216,10 +216,10 @@ You can specify additional environment files:
 
 ```bash
 # Load from .env file
-deploy-cluster create --template template.yaml --env .env
+deploy-cluster run --template template.yaml --env .env
 
 # Or use environment variables directly
-CLUSTER_NAME=prod WORKERS=5 deploy-cluster create --template template.yaml
+CLUSTER_NAME=prod WORKERS=5 deploy-cluster run --template template.yaml
 ```
 
 ## Validation
