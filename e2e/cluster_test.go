@@ -78,9 +78,9 @@ cluster:
 		}
 
 		// Verify cluster no longer exists
-		_, err = runKlastr(t, "status", "--name", clusterName)
-		if err == nil {
-			t.Error("Cluster still exists after destroy")
+		output, _ = runKlastr(t, "status", "--name", clusterName)
+		if !strings.Contains(output, "not found") && !strings.Contains(output, "Status: not found") {
+			t.Errorf("Cluster still exists after destroy. Output: %s", output)
 		}
 	})
 }
