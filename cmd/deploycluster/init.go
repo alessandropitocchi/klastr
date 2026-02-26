@@ -45,8 +45,6 @@ your cluster configuration.`,
 	},
 }
 
-
-
 func init() {
 	initCmd.Flags().StringVarP(&initOutput, "output", "o", "template.yaml", "output file path")
 	rootCmd.AddCommand(initCmd)
@@ -67,7 +65,7 @@ func generateStarterTemplate() string {
 #   3. Create:    deploy-cluster create --template template.yaml
 #   4. Upgrade:   deploy-cluster upgrade --template template.yaml
 #
-# Documentation: https://github.com/alepito/deploy-cluster#readme
+# Documentation: https://github.com/alessandropitocchi/deploy-cluster#readme
 #
 
 # ═══════════════════════════════════════════════════════════════════════════════
