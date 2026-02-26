@@ -45,12 +45,13 @@ jobs:
         kubectl version --client
         helm version
 
-    - name: Run unit tests
-      run: go test ./... -v -short
+    - name: Build klastr binary
+      run: go build -o klastr ./cmd/deploycluster
 
     - name: Run e2e tests
       run: go test ./e2e/... -v -timeout 30m
       env:
+        RUN_E2E: "1"
         K8S_VERSION: ${{ matrix.k8s_version }}
 
     - name: Cleanup clusters
