@@ -92,14 +92,15 @@ type ArgoCDAppTemplate struct {
 }
 
 type ArgoCDRepoTemplate struct {
-	Name       string `yaml:"name,omitempty"`       // Repository name (optional)
-	URL        string `yaml:"url"`                  // Repository URL
-	Type       string `yaml:"type,omitempty"`       // git or helm (default: git)
-	Insecure   *bool  `yaml:"insecure,omitempty"`   // Skip TLS verification (auto-detected for non-HTTPS)
-	Username   string `yaml:"username,omitempty"`   // For private repos (HTTPS)
-	Password   string `yaml:"password,omitempty"`   // For private repos (HTTPS)
-	SSHKeyEnv  string `yaml:"sshKeyEnv,omitempty"`  // Env var containing SSH private key
-	SSHKeyFile string `yaml:"sshKeyFile,omitempty"` // Path to SSH private key file
+	Name                string `yaml:"name,omitempty"`                  // Repository name (optional)
+	URL                 string `yaml:"url"`                             // Repository URL
+	Type                string `yaml:"type,omitempty"`                  // git or helm (default: git)
+	Insecure            *bool  `yaml:"insecure,omitempty"`              // Skip TLS verification (auto-detected for non-HTTPS)
+	InsecureIgnoreHostKey *bool `yaml:"insecureIgnoreHostKey,omitempty"` // Skip SSH host key verification (auto-detected for SSH)
+	Username            string `yaml:"username,omitempty"`              // For private repos (HTTPS)
+	Password            string `yaml:"password,omitempty"`              // For private repos (HTTPS)
+	SSHKeyEnv           string `yaml:"sshKeyEnv,omitempty"`             // Env var containing SSH private key
+	SSHKeyFile          string `yaml:"sshKeyFile,omitempty"`            // Path to SSH private key file
 }
 
 type StorageTemplate struct {

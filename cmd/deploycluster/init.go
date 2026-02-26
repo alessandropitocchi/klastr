@@ -278,6 +278,7 @@ plugins:
   #   #     # For private repos, use one of:
   #   #     # sshKeyFile: ~/.ssh/id_ed25519
   #   #     # sshKeyEnv: GIT_SSH_KEY
+  #   #     # insecureIgnoreHostKey: true  # Skip SSH host key verification (auto-enabled for SSH URLs)
   #   #
   #   # Applications to create
   #   # apps:
@@ -525,7 +526,11 @@ plugins:
     #   enabled: true
     #   host: argocd.localhost
     #   tls: false
-    # repos: []  # Git repositories to configure
+    # repos:  # Git repositories to configure
+    #   - name: my-repo
+    #     url: git@github.com:myorg/myrepo.git
+    #     sshKeyFile: ~/.ssh/id_ed25519
+    #     # insecureIgnoreHostKey: true  # Skip SSH host key verification (auto-enabled for SSH)
     # apps: []   # Applications to create
 `,
 		},

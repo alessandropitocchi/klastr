@@ -82,6 +82,7 @@ Repositories are configured as Kubernetes Secrets with the label `argocd.argopro
 | `url` | string | - | yes | Repository URL |
 | `type` | string | `git` | no | Type: `git` or `helm` |
 | `insecure` | bool | auto | no | Skip TLS verification. Auto: `true` for non-HTTPS URLs |
+| `insecureIgnoreHostKey` | bool | auto | no | Skip SSH host key verification. Auto: `true` for SSH URLs |
 | `username` | string | - | no | Username for HTTPS repos |
 | `password` | string | - | no | Password/token for HTTPS repos |
 | `sshKeyEnv` | string | - | no | Environment variable name containing the SSH key |
@@ -94,7 +95,10 @@ repos:
   - name: private-repo
     url: git@github.com:user/repo.git
     sshKeyFile: ~/.ssh/id_ed25519
+    # insecureIgnoreHostKey is auto-enabled for SSH URLs
 ```
+
+> **Note:** For SSH repositories, `insecureIgnoreHostKey` is automatically enabled to avoid interactive host key verification. This sets `insecureIgnoreHostKey: "true"` in the ArgoCD repository secret, allowing ArgoCD to connect without manual confirmation. You can disable this by explicitly setting `insecureIgnoreHostKey: false`.
 
 ### SSH Authentication from Environment Variable
 

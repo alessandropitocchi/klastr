@@ -38,6 +38,9 @@ stringData:
 {{- if .Insecure }}
   insecure: "true"
 {{- end }}
+{{- if .InsecureIgnoreHostKey }}
+  insecureIgnoreHostKey: "true"
+{{- end }}
 {{- if .SSHPrivateKey }}
   sshPrivateKey: |
 {{ .SSHPrivateKey | indent 4 }}
@@ -479,24 +482,39 @@ func (p *Plugin) addRepository(repo template.ArgoCDRepoTemplate, kubecontext str
 		p.Log.Debug("Using insecure mode (skip TLS verification)\n")
 	}
 
+	// Determine insecureIgnoreHostKey flag: explicit config or auto-detect for SSH URLs
+	insecureIgnoreHostKey := false
+	if repo.InsecureIgnoreHostKey != nil {
+		insecureIgnoreHostKey = *repo.InsecureIgnoreHostKey
+	} else if strings.HasPrefix(repo.URL, "git@") || strings.HasPrefix(repo.URL, "ssh://") {
+		// Auto-enable for SSH URLs to avoid interactive host key verification
+		insecureIgnoreHostKey = true
+		p.Log.Debug("Auto-enabling insecureIgnoreHostKey for SSH repository\n")
+	}
+	if insecureIgnoreHostKey {
+		p.Log.Debug("Using insecureIgnoreHostKey (skip SSH host key verification)\n")
+	}
+
 	data := struct {
-		Name          string
-		Namespace     string
-		Type          string
-		URL           string
-		Insecure      bool
-		Username      string
-		Password      string
-		SSHPrivateKey string
+		Name                  string
+		Namespace             string
+		Type                  string
+		URL                   string
+		Insecure              bool
+		InsecureIgnoreHostKey bool
+		Username              string
+		Password              string
+		SSHPrivateKey         string
 	}{
-		Name:          name,
-		Namespace:     namespace,
-		Type:          repoType,
-		URL:           repo.URL,
-		Insecure:      insecure,
-		Username:      repo.Username,
-		Password:      repo.Password,
-		SSHPrivateKey: sshPrivateKey,
+		Name:                  name,
+		Namespace:             namespace,
+		Type:                  repoType,
+		URL:                   repo.URL,
+		Insecure:              insecure,
+		InsecureIgnoreHostKey: insecureIgnoreHostKey,
+		Username:              repo.Username,
+		Password:              repo.Password,
+		SSHPrivateKey:         sshPrivateKey,
 	}
 
 	var manifest bytes.Buffer

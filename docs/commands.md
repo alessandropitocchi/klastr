@@ -21,7 +21,7 @@
 
 ## `init`
 
-Generates a `template.yaml` template file via an interactive wizard that guides you through plugin and option selection.
+Generates a starter configuration via an interactive wizard. Can create either a single `template.yaml` file or a directory structure.
 
 ```bash
 klastr init [flags]
@@ -29,11 +29,15 @@ klastr init [flags]
 
 ### Flags
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `-o, --output` | `template.yaml` | Output file path |
+| Flag | Short | Default | Description |
+|------|-------|---------|-------------|
+| `--output` | `-o` | `template.yaml` | Output file or directory path |
+| `--dir` | `-d` | `false` | Generate directory structure instead of single file |
+| `--provider` | `-p` | `kind` | Provider type: `kind`, `k3d`, or `existing` |
 
-### Example
+### Single File (Default)
+
+Generates a `template.yaml` file with all configuration in one place.
 
 ```bash
 # Generate template.yaml in the current directory
@@ -41,13 +45,51 @@ klastr init
 
 # Generate with custom name
 klastr init -o my-cluster.yaml
+
+# Generate for existing cluster
+klastr init --provider existing -o eks-cluster.yaml
 ```
 
-The wizard asks in sequence:
-1. **Cluster** — name, Kubernetes version, number of control planes and workers
-2. **Plugins** — multi-select plugins to enable
-3. **Ingress** — hostname for each service with a UI (if ingress enabled)
-4. **ArgoCD** — namespace and version (if ArgoCD enabled)
+### Directory Structure
+
+Generates a directory with configuration split across multiple files. Recommended for complex setups or team environments.
+
+```bash
+# Generate directory structure
+klastr init --dir --output my-cluster/
+
+# Generate for specific provider
+klastr init --dir --provider k3d --output my-k3d-cluster/
+```
+
+Generated structure:
+
+```
+my-cluster/
+├── klastr.yaml          # Main configuration
+├── plugins/             # Plugin configurations
+│   ├── storage.yaml
+│   ├── ingress.yaml
+│   ├── cert-manager.yaml
+│   ├── external-dns.yaml
+│   ├── istio.yaml
+│   ├── monitoring.yaml
+│   ├── dashboard.yaml
+│   └── argocd.yaml
+├── apps/                # Custom application configs
+├── .env.example         # Environment variables template
+└── README.md            # Documentation
+```
+
+### Usage with Directory
+
+All commands accept a directory path instead of a file:
+
+```bash
+klastr lint --template my-cluster/
+klastr run --template my-cluster/
+klastr upgrade --template my-cluster/
+```
 
 ---
 
