@@ -91,6 +91,21 @@ klastr run --template my-cluster/
 klastr upgrade --template my-cluster/
 ```
 
+### Template Flag Aliases
+
+All commands that accept a `--template` flag also support `-t` and `-f` as shorthand:
+
+```bash
+# These are all equivalent:
+klastr run --template production.yaml
+klastr run -t production.yaml
+klastr run -f production.yaml
+
+# Works with directories too:
+klastr lint -f my-cluster/
+klastr upgrade -t my-cluster/
+```
+
 ---
 
 ## `lint`
@@ -105,7 +120,7 @@ klastr lint [flags]
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `-t, --template` | `template.yaml` | Template file |
+| `-t, -f, --template` | `template.yaml` | Template file or directory |
 | `--strict` | `false` | Treat warnings as errors |
 
 ### Checks Performed
@@ -159,7 +174,7 @@ klastr run [flags]
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `-t, --template` | `template.yaml` | Template file |
+| `-t, -f, --template` | `template.yaml` | Template file or directory |
 | `-e, --env` | `.env` | File with environment variables for secrets |
 | `--timeout` | `5m` | Timeout for plugin operations (kubectl/helm) |
 | `--fail-fast` | `false` | Stop at first plugin failure |
@@ -208,7 +223,7 @@ klastr upgrade [flags]
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `-t, --template` | `template.yaml` | Template file |
+| `-t, -f, --template` | `template.yaml` | Template file or directory |
 | `-e, --env` | `.env` | File with environment variables for secrets |
 | `--dry-run` | `false` | Show changes without applying them |
 | `--timeout` | `5m` | Timeout for plugin operations (kubectl/helm) |
@@ -251,7 +266,7 @@ klastr drift [flags]
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `-t, --template` | `template.yaml` | Template file |
+| `-t, -f, --template` | `template.yaml` | Template file or directory |
 | `-e, --env` | `.env` | Environment file |
 | `--exit-error` | `false` | Exit with error code if drift detected |
 
@@ -311,7 +326,7 @@ klastr uninstall [flags]
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `-t, --template` | `template.yaml` | Template file |
+| `-t, -f, --template` | `template.yaml` | Template file or directory |
 | `-e, --env` | `.env` | Environment file for secrets |
 | `--fail-fast` | `false` | Stop at first plugin failure |
 
@@ -351,7 +366,7 @@ klastr status [flags]
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `-t, --template` | `template.yaml` | Template file |
+| `-t, -f, --template` | `template.yaml` | Template file or directory |
 
 ### Example
 
@@ -373,7 +388,7 @@ klastr destroy [flags]
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `-t, --template` | `template.yaml` | Template file |
+| `-t, -f, --template` | `template.yaml` | Template file or directory |
 | `-n, --name` | - | Cluster name (overrides template) |
 
 ### Example
@@ -494,7 +509,7 @@ klastr snapshot save <name> [flags]
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `-t, --template` | `template.yaml` | Template file |
+| `-t, -f, --template` | `template.yaml` | Template file or directory |
 | `-e, --env` | `.env` | Environment file for secrets |
 | `--namespace` | *(all non-system)* | Comma-separated list of namespaces to snapshot |
 | `--exclude-secrets` | `false` | Exclude Kubernetes Secrets from the snapshot |
@@ -548,7 +563,7 @@ klastr snapshot restore <name> [flags]
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `-t, --template` | `template.yaml` | Template file |
+| `-t, -f, --template` | `template.yaml` | Template file or directory |
 | `-e, --env` | `.env` | Environment file for secrets |
 | `--dry-run` | `false` | Preview what would be applied without making changes |
 | `--s3` | `false` | Restore snapshot from S3 |

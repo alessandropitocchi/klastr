@@ -79,6 +79,7 @@ Use this command to verify GitOps compliance and detect manual changes.`,
 
 func init() {
 	driftCmd.Flags().StringVarP(&driftTemplateFile, "template", "t", "template.yaml", "cluster template file")
+	driftCmd.Flags().StringVarP(&driftTemplateFile, "file", "f", "template.yaml", "cluster template file (alias for -t)")
 	driftCmd.Flags().StringVarP(&driftEnvFile, "env", "e", ".env", "environment file for secrets")
 	driftCmd.Flags().BoolVar(&driftExitError, "exit-error", false, "exit with error code if drift detected")
 	rootCmd.AddCommand(driftCmd)

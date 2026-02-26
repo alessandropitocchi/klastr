@@ -63,6 +63,7 @@ Use --strict to treat warnings as errors.`,
 
 func init() {
 	lintCmd.Flags().StringVarP(&lintTemplateFile, "template", "t", "template.yaml", "cluster template file")
+	lintCmd.Flags().StringVarP(&lintTemplateFile, "file", "f", "template.yaml", "cluster template file (alias for -t)")
 	lintCmd.Flags().BoolVar(&lintStrict, "strict", false, "treat warnings as errors")
 	rootCmd.AddCommand(lintCmd)
 }

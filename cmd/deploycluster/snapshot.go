@@ -365,6 +365,7 @@ func getS3Client(cfg *template.Template) (*s3.Client, error) {
 func init() {
 	// Save command flags
 	snapshotSaveCmd.Flags().StringVarP(&snapshotTemplateFile, "template", "t", "template.yaml", "cluster template file")
+	snapshotSaveCmd.Flags().StringVarP(&snapshotTemplateFile, "file", "f", "template.yaml", "cluster template file (alias for -t)")
 	snapshotSaveCmd.Flags().StringVar(&snapshotNamespaces, "namespace", "", "comma-separated list of namespaces to snapshot (default: all non-system)")
 	snapshotSaveCmd.Flags().StringVarP(&snapshotEnvFile, "env", "e", ".env", "environment file for secrets")
 	snapshotSaveCmd.Flags().BoolVar(&snapshotExcludeSecrets, "exclude-secrets", false, "exclude Kubernetes Secrets from the snapshot")
@@ -377,6 +378,7 @@ func init() {
 
 	// Restore command flags
 	snapshotRestoreCmd.Flags().StringVarP(&snapshotTemplateFile, "template", "t", "template.yaml", "cluster template file")
+	snapshotRestoreCmd.Flags().StringVarP(&snapshotTemplateFile, "file", "f", "template.yaml", "cluster template file (alias for -t)")
 	snapshotRestoreCmd.Flags().BoolVar(&snapshotDryRun, "dry-run", false, "preview restore without applying")
 	snapshotRestoreCmd.Flags().StringVarP(&snapshotEnvFile, "env", "e", ".env", "environment file for secrets")
 	snapshotRestoreCmd.Flags().BoolVar(&snapshotS3, "s3", false, "restore snapshot from S3")
@@ -387,6 +389,7 @@ func init() {
 
 	// List command flags
 	snapshotListCmd.Flags().StringVarP(&snapshotTemplateFile, "template", "t", "template.yaml", "cluster template file (for S3 config)")
+	snapshotListCmd.Flags().StringVarP(&snapshotTemplateFile, "file", "f", "template.yaml", "cluster template file (alias for -t)")
 	snapshotListCmd.Flags().BoolVar(&snapshotS3, "s3", false, "list snapshots in S3")
 	snapshotListCmd.Flags().StringVar(&snapshotS3Bucket, "s3-bucket", "", "S3 bucket name")
 	snapshotListCmd.Flags().StringVar(&snapshotS3Prefix, "s3-prefix", "", "S3 key prefix")
@@ -395,6 +398,7 @@ func init() {
 
 	// Delete command flags
 	snapshotDeleteCmd.Flags().StringVarP(&snapshotTemplateFile, "template", "t", "template.yaml", "cluster template file (for S3 config)")
+	snapshotDeleteCmd.Flags().StringVarP(&snapshotTemplateFile, "file", "f", "template.yaml", "cluster template file (alias for -t)")
 	snapshotDeleteCmd.Flags().BoolVar(&snapshotS3, "s3", false, "delete snapshot from S3")
 	snapshotDeleteCmd.Flags().StringVar(&snapshotS3Bucket, "s3-bucket", "", "S3 bucket name")
 	snapshotDeleteCmd.Flags().StringVar(&snapshotS3Prefix, "s3-prefix", "", "S3 key prefix")
@@ -402,6 +406,7 @@ func init() {
 	snapshotDeleteCmd.Flags().StringVar(&snapshotS3Endpoint, "s3-endpoint", "", "S3 endpoint URL")
 
 	snapshotDiffCmd.Flags().StringVarP(&snapshotTemplateFile, "template", "t", "template.yaml", "cluster template file")
+	snapshotDiffCmd.Flags().StringVarP(&snapshotTemplateFile, "file", "f", "template.yaml", "cluster template file (alias for -t)")
 	snapshotDiffCmd.Flags().StringVarP(&snapshotEnvFile, "env", "e", ".env", "environment file for secrets")
 
 	snapshotCmd.AddCommand(snapshotSaveCmd)

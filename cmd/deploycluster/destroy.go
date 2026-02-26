@@ -52,6 +52,7 @@ var destroyCmd = &cobra.Command{
 
 func init() {
 	destroyCmd.Flags().StringVarP(&destroyTemplateFile, "template", "t", "template.yaml", "cluster template file")
+	destroyCmd.Flags().StringVarP(&destroyTemplateFile, "file", "f", "template.yaml", "cluster template file (alias for -t)")
 	destroyCmd.Flags().StringVarP(&destroyName, "name", "n", "", "cluster name (overrides config)")
 	rootCmd.AddCommand(destroyCmd)
 }

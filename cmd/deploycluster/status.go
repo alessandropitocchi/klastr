@@ -178,5 +178,6 @@ var statusCmd = &cobra.Command{
 
 func init() {
 	statusCmd.Flags().StringVarP(&statusTemplateFile, "template", "t", "template.yaml", "cluster template file")
+	statusCmd.Flags().StringVarP(&statusTemplateFile, "file", "f", "template.yaml", "cluster template file (alias for -t)")
 	rootCmd.AddCommand(statusCmd)
 }

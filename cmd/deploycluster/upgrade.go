@@ -86,6 +86,7 @@ func runUpgradeDryRun(cfg *template.Template, kubecontext string) error {
 
 func init() {
 	upgradeCmd.Flags().StringVarP(&upgradeTemplateFile, "template", "t", "template.yaml", "cluster template file")
+	upgradeCmd.Flags().StringVarP(&upgradeTemplateFile, "file", "f", "template.yaml", "cluster template file (alias for -t)")
 	upgradeCmd.Flags().StringVarP(&upgradeEnvFile, "env", "e", ".env", "environment file for secrets")
 	upgradeCmd.Flags().BoolVar(&upgradeDryRun, "dry-run", false, "preview changes without applying them")
 	upgradeCmd.Flags().BoolVar(&upgradeFailFast, "fail-fast", false, "stop at first plugin failure")

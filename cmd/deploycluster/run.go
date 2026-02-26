@@ -111,6 +111,7 @@ For 'existing' provider, it skips cluster creation and only installs plugins.`,
 
 func init() {
 	runCmd.Flags().StringVarP(&runTemplateFile, "template", "t", "template.yaml", "cluster template file")
+	runCmd.Flags().StringVarP(&runTemplateFile, "file", "f", "template.yaml", "cluster template file (alias for -t)")
 	runCmd.Flags().StringVarP(&runEnvFile, "env", "e", ".env", "environment file for secrets")
 	runCmd.Flags().BoolVar(&runFailFast, "fail-fast", false, "stop at first plugin failure")
 	rootCmd.AddCommand(runCmd)

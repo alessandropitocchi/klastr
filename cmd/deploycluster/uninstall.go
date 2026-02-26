@@ -187,6 +187,7 @@ func printUninstallSummary(results []plugin.InstallResult, log interface {
 
 func init() {
 	uninstallCmd.Flags().StringVarP(&uninstallTemplateFile, "template", "t", "template.yaml", "cluster template file")
+	uninstallCmd.Flags().StringVarP(&uninstallTemplateFile, "file", "f", "template.yaml", "cluster template file (alias for -t)")
 	uninstallCmd.Flags().StringVarP(&uninstallEnvFile, "env", "e", ".env", "environment file for secrets")
 	uninstallCmd.Flags().BoolVar(&uninstallFailFast, "fail-fast", false, "stop at first plugin failure")
 	rootCmd.AddCommand(uninstallCmd)
