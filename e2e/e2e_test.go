@@ -28,17 +28,30 @@ func klastrBinary() string {
 
 // TestMain builds the binary before running e2e tests
 func TestMain(m *testing.M) {
+	// Skip e2e tests unless explicitly enabled with RUN_E2E=1
+	// This prevents blocking during 'go test ./...'
+	if os.Getenv("RUN_E2E") != "1" {
+		// Still run the tests, but they will skip themselves
+		os.Exit(m.Run())
+	}
+
 	// Get project root
 	wd, _ := os.Getwd()
 	projectRoot := filepath.Dir(wd)
 	
-	// Build klastr binary
 	binaryPath := filepath.Join(projectRoot, "klastr")
-	cmd := exec.Command("go", "build", "-o", binaryPath, "./cmd/deploycluster")
-	cmd.Dir = projectRoot
-	if output, err := cmd.CombinedOutput(); err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to build klastr: %v\n%s\n", err, output)
-		os.Exit(1)
+	
+	// Check if binary already exists
+	if _, err := os.Stat(binaryPath); os.IsNotExist(err) {
+		// Build klastr binary
+		fmt.Println("Building klastr binary for e2e tests...")
+		cmd := exec.Command("go", "build", "-o", binaryPath, "./cmd/deploycluster")
+		cmd.Dir = projectRoot
+		if output, err := cmd.CombinedOutput(); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to build klastr: %v\n%s\n", err, output)
+			os.Exit(1)
+		}
+		fmt.Println("Build complete.")
 	}
 
 	os.Exit(m.Run())

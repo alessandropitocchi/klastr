@@ -11,8 +11,8 @@ import (
 
 // TestClusterLifecycle tests basic cluster creation and destruction
 func TestClusterLifecycle(t *testing.T) {
-	if testing.Short() {
-		t.Skip("Skipping e2e test in short mode")
+	if os.Getenv("RUN_E2E") != "1" {
+		t.Skip("Skipping e2e test. Set RUN_E2E=1 to run.")
 	}
 
 	clusterName := "e2e-test-cluster"
@@ -87,8 +87,8 @@ cluster:
 
 // TestClusterWithStorage tests cluster with storage plugin
 func TestClusterWithStorage(t *testing.T) {
-	if testing.Short() {
-		t.Skip("Skipping e2e test in short mode")
+	if os.Getenv("RUN_E2E") != "1" {
+		t.Skip("Skipping e2e test. Set RUN_E2E=1 to run.")
 	}
 
 	clusterName := "e2e-storage-test"
@@ -131,8 +131,8 @@ plugins:
 
 // TestClusterWithIngress tests cluster with ingress plugin
 func TestClusterWithIngress(t *testing.T) {
-	if testing.Short() {
-		t.Skip("Skipping e2e test in short mode")
+	if os.Getenv("RUN_E2E") != "1" {
+		t.Skip("Skipping e2e test. Set RUN_E2E=1 to run.")
 	}
 
 	clusterName := "e2e-ingress-test"

@@ -9,8 +9,8 @@ import (
 
 // TestDirectoryStructure tests loading configuration from directory
 func TestDirectoryStructure(t *testing.T) {
-	if testing.Short() {
-		t.Skip("Skipping e2e test in short mode")
+	if os.Getenv("RUN_E2E") != "1" {
+		t.Skip("Skipping e2e test. Set RUN_E2E=1 to run.")
 	}
 
 	clusterName := "e2e-dir-test"
@@ -95,8 +95,8 @@ plugins:
 
 // TestDirectoryMerge tests that files are merged correctly
 func TestDirectoryMerge(t *testing.T) {
-	if testing.Short() {
-		t.Skip("Skipping e2e test in short mode")
+	if os.Getenv("RUN_E2E") != "1" {
+		t.Skip("Skipping e2e test. Set RUN_E2E=1 to run.")
 	}
 
 	clusterName := "e2e-merge-test"

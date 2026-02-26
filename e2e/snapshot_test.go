@@ -12,8 +12,8 @@ import (
 
 // TestSnapshotLifecycle tests snapshot save, list, and restore
 func TestSnapshotLifecycle(t *testing.T) {
-	if testing.Short() {
-		t.Skip("Skipping e2e test in short mode")
+	if os.Getenv("RUN_E2E") != "1" {
+		t.Skip("Skipping e2e test. Set RUN_E2E=1 to run.")
 	}
 
 	clusterName := "e2e-snapshot-test"
@@ -107,8 +107,8 @@ plugins:
 
 // TestSnapshotWithNamespace tests snapshot with namespace filtering
 func TestSnapshotWithNamespace(t *testing.T) {
-	if testing.Short() {
-		t.Skip("Skipping e2e test in short mode")
+	if os.Getenv("RUN_E2E") != "1" {
+		t.Skip("Skipping e2e test. Set RUN_E2E=1 to run.")
 	}
 
 	clusterName := "e2e-snapshot-ns-test"
