@@ -25,7 +25,7 @@ name: my-cluster  # Cluster name (used for kubecontext)
 #   - k3d:      Lightweight k3s clusters (requires k3d)
 #   - existing: Use an existing cluster (EKS, GKE, AKS, etc.)
 provider:
-  type: kind
+  type: existing
   # kubeconfig: ~/.kube/config  # Optional: for 'existing' provider
   # context: production         # Optional: kubectl context for 'existing' provider
 
@@ -33,10 +33,10 @@ provider:
 # Cluster Topology (ignored for 'existing' provider)
 # ═══════════════════════════════════════════════════════════════════════════════
 
-cluster:
-  controlPlanes: 1  # Number of control plane nodes (odd numbers recommended: 1, 3, 5)
-  workers: 2        # Number of worker nodes (0 = workloads run on control planes)
-  version: "v1.31.0"  # Kubernetes version (e.g., v1.31.0, v1.30.0)
+# cluster:
+#   controlPlanes: 1  # Number of control plane nodes (odd numbers recommended: 1, 3, 5)
+#   workers: 2        # Number of worker nodes (0 = workloads run on control planes)
+#   version: "v1.31.0"  # Kubernetes version (e.g., v1.31.0, v1.30.0)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Plugins Configuration
@@ -57,9 +57,10 @@ plugins:
   # Ingress: HTTP/HTTPS routing and load balancing
   # Required for: Exposing services via hostnames
   # ─────────────────────────────────────────────────────────────────────────────
-  # ingress:
-  #   enabled: true
-  #   type: nginx    # For kind provider
+  
+  ingress:
+    enabled: true
+    type: nginx    # For kind provider
   #   # type: traefik  # For k3d provider (uses built-in Traefik)
 
   # ─────────────────────────────────────────────────────────────────────────────
@@ -85,11 +86,12 @@ plugins:
   # Istio: Service mesh with mTLS, traffic management, and observability
   # Features: Mutual TLS, traffic routing, canary deployments
   # ─────────────────────────────────────────────────────────────────────────────
-  # istio:
-  #   enabled: true
-  #   profile: default  # Options: default, demo, minimal, ambient
-  #   ingressGateway: true  # Deploy ingress gateway
-  #   version: "1.24.0"
+
+  istio:
+    enabled: true
+    profile: default  # Options: default, demo, minimal, ambient
+    ingressGateway: true  # Deploy ingress gateway
+    version: "1.24.0"
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Monitoring: Prometheus + Grafana stack
@@ -109,15 +111,15 @@ plugins:
   # Dashboard: Headlamp - Modern Kubernetes Web UI
   # Features: Pod logs, resource editing, cluster overview
   # ─────────────────────────────────────────────────────────────────────────────
-  # dashboard:
-  #   enabled: true
-  #   type: headlamp
-  #   version: "0.25.0"
-  #   # Optional: expose Headlamp via ingress
-  #   # ingress:
-  #   #   enabled: true
-  #   #   host: headlamp.localhost
-  #   #   # Get token: kubectl create token headlamp -n headlamp
+  dashboard:
+    enabled: true
+    type: headlamp
+    version: "0.25.0"
+    # Optional: expose Headlamp via ingress
+    ingress:
+      enabled: true
+      host: headlamp.localhost
+      # Get token: kubectl create token headlamp -n headlamp
 
   # ─────────────────────────────────────────────────────────────────────────────
   # ArgoCD: GitOps continuous delivery

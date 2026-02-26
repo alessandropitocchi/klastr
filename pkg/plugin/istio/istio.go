@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"runtime"
 	"time"
 
 	"github.com/alepito/deploy-cluster/pkg/logger"
@@ -16,7 +18,7 @@ import (
 var execCommand = exec.Command
 
 const (
-	defaultVersion   = "1.24.0"
+	defaultVersion   = "1.29.0"
 	defaultNamespace = "istio-system"
 )
 
@@ -63,7 +65,7 @@ func (p *Plugin) Install(cfg interface{}, kubecontext string, providerType strin
 
 	// Create namespace
 	p.Log.Debug("Creating namespace '%s'...\n", defaultNamespace)
-	if err := p.runKubectl(kubecontext, "create", "namespace", defaultNamespace, "--dry-run=client", "-o", "yaml", "|", "kubectl", "apply", "-f", "-"); err != nil {
+	if err := p.runKubectl(kubecontext, "create", "namespace", defaultNamespace, "--dry-run=client", "-o", "yaml"); err != nil {
 		// Ignore if already exists
 		p.Log.Debug("Namespace may already exist, continuing...\n")
 	}
@@ -74,7 +76,7 @@ func (p *Plugin) Install(cfg interface{}, kubecontext string, providerType strin
 		"install",
 		"--set", fmt.Sprintf("profile=%s", profile),
 		"--set", fmt.Sprintf("values.global.istioNamespace=%s", defaultNamespace),
-		"--kube-context", kubecontext,
+		"--context", kubecontext,
 		"--skip-confirmation",
 	}
 
@@ -155,7 +157,7 @@ func (p *Plugin) Uninstall(cfg interface{}, kubecontext string) error {
 	}
 
 	// Uninstall Istio
-	cmd := execCommand(istioctlPath, "uninstall", "--purge", "-y", "--kube-context", kubecontext)
+	cmd := execCommand(istioctlPath, "uninstall", "--purge", "-y", "--context", kubecontext)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
@@ -256,23 +258,90 @@ func (p *Plugin) ensureIstioctl(version string) (string, error) {
 		return "", fmt.Errorf("failed to create directory: %w", err)
 	}
 
+	// Determine OS and architecture
+	goos := runtime.GOOS
+	goarch := runtime.GOARCH
+
+	// Map Go OS/arch to Istio naming
+	osMap := map[string]string{
+		"linux":   "linux",
+		"darwin":  "osx",
+		"windows": "win",
+	}
+
+	archMap := map[string]string{
+		"amd64": "amd64",
+		"arm64": "arm64",
+	}
+
+	istioOS, ok := osMap[goos]
+	if !ok {
+		istioOS = "linux" // fallback
+	}
+
+	istioArch, ok := archMap[goarch]
+	if !ok {
+		istioArch = "amd64" // fallback
+	}
+
 	// Download using curl
-	downloadURL := fmt.Sprintf("https://github.com/istio/istio/releases/download/%s/istioctl-%s-linux-amd64.tar.gz", version, version)
+	downloadURL := fmt.Sprintf("https://github.com/istio/istio/releases/download/%s/istioctl-%s-%s-%s.tar.gz",
+		version, version, istioOS, istioArch)
 	if os.Getenv("ISTIO_DOWNLOAD_URL") != "" {
 		downloadURL = os.Getenv("ISTIO_DOWNLOAD_URL")
 	}
 
 	p.Log.Debug("Downloading from: %s\n", downloadURL)
 
-	// Download and extract
-	curlCmd := exec.Command("curl", "-L", "-s", downloadURL, "-o", "/tmp/istioctl.tar.gz")
+	// Download
+	tmpFile := fmt.Sprintf("/tmp/istioctl-%s.tar.gz", version)
+	curlCmd := exec.Command("curl", "-L", "-s", downloadURL, "-o", tmpFile)
 	if err := curlCmd.Run(); err != nil {
 		return "", fmt.Errorf("failed to download istioctl: %w", err)
 	}
+	defer os.Remove(tmpFile)
 
-	tarCmd := exec.Command("tar", "-xzf", "/tmp/istioctl.tar.gz", "-C", fmt.Sprintf("%s/bin", istioctlDir), "istioctl")
+	// Extract - handle both flat structure (macOS) and nested structure (Linux)
+	tmpExtractDir := fmt.Sprintf("/tmp/istioctl-extract-%s", version)
+	os.RemoveAll(tmpExtractDir)
+	if err := os.MkdirAll(tmpExtractDir, 0755); err != nil {
+		return "", fmt.Errorf("failed to create extract directory: %w", err)
+	}
+	defer os.RemoveAll(tmpExtractDir)
+
+	// Extract to temp dir first
+	tarCmd := exec.Command("tar", "-xzf", tmpFile, "-C", tmpExtractDir)
 	if err := tarCmd.Run(); err != nil {
 		return "", fmt.Errorf("failed to extract istioctl: %w", err)
+	}
+
+	// Find the istioctl binary (could be at root or in subdir)
+	var istioctlBinary string
+	err = filepath.Walk(tmpExtractDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() && info.Name() == "istioctl" {
+			istioctlBinary = path
+			return filepath.SkipAll
+		}
+		return nil
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to find istioctl binary: %w", err)
+	}
+	if istioctlBinary == "" {
+		return "", fmt.Errorf("istioctl binary not found in archive")
+	}
+
+	// Copy to final destination
+	destPath := fmt.Sprintf("%s/bin/istioctl", istioctlDir)
+	input, err := os.ReadFile(istioctlBinary)
+	if err != nil {
+		return "", fmt.Errorf("failed to read istioctl binary: %w", err)
+	}
+	if err := os.WriteFile(destPath, input, 0755); err != nil {
+		return "", fmt.Errorf("failed to write istioctl binary: %w", err)
 	}
 
 	// Make executable
@@ -290,7 +359,7 @@ func (p *Plugin) installIngressGateway(kubecontext, istioctlPath string, cfg *te
 		"--set", "profile=empty",
 		"--set", "components.ingressGateways[0].name=istio-ingressgateway",
 		"--set", "components.ingressGateways[0].enabled=true",
-		"--kube-context", kubecontext,
+		"--context", kubecontext,
 		"--skip-confirmation",
 	}
 
@@ -312,7 +381,7 @@ func (p *Plugin) installEgressGateway(kubecontext, istioctlPath string, cfg *tem
 		"--set", "profile=empty",
 		"--set", "components.egressGateways[0].name=istio-egressgateway",
 		"--set", "components.egressGateways[0].enabled=true",
-		"--kube-context", kubecontext,
+		"--context", kubecontext,
 		"--skip-confirmation",
 	}
 

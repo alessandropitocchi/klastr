@@ -61,11 +61,6 @@ Use --dry-run to preview changes without applying them.`,
 
 		results := upgradePlugins(cfg, kubecontext, upgradeFailFast)
 
-		// Print summary
-		if len(results) > 0 {
-			printPluginSummary(results, log)
-		}
-
 		if hasErrors(results) {
 			return fmt.Errorf("some plugins failed to upgrade, see summary above")
 		}
