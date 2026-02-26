@@ -1,0 +1,12 @@
+# Base configuration for all environments
+name: myapp
+provider:
+  type: kind
+cluster:
+  controlPlanes: 1
+  workers: 1
+  version: v1.31.0
+plugins:
+  storage:
+    enabled: true
+    type: local-path

@@ -1,0 +1,19 @@
+name: production
+description: Production environment
+base: ../../
+patches:
+  - target: name
+    value: myapp-prod
+  - target: cluster.controlPlanes
+    value: 3
+  - target: cluster.workers
+    value: 5
+  - target: plugins.ingress.enabled
+    value: true
+  - target: plugins.monitoring.enabled
+    value: true
+  - target: plugins.certManager.enabled
+    value: true
+values:
+  DOMAIN: example.com
+  LOG_LEVEL: warn

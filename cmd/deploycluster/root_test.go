@@ -147,13 +147,13 @@ func TestRunCmd_Flags(t *testing.T) {
 		t.Errorf("--template shorthand = %q, want %q", cf.Shorthand, "t")
 	}
 
-	// --env
-	ef := f.Lookup("env")
+	// --env-file
+	ef := f.Lookup("env-file")
 	if ef == nil {
-		t.Fatal("run should have --env flag")
+		t.Fatal("run should have --env-file flag")
 	}
 	if ef.DefValue != ".env" {
-		t.Errorf("--env default = %q, want %q", ef.DefValue, ".env")
+		t.Errorf("--env-file default = %q, want %q", ef.DefValue, ".env")
 	}
 
 	// --fail-fast

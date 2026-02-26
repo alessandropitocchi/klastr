@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/alessandropitocchi/deploy-cluster/pkg/env"
 	"github.com/alessandropitocchi/deploy-cluster/pkg/template"
 	"github.com/spf13/cobra"
 )
@@ -11,6 +12,7 @@ var (
 	runTemplateFile string
 	runEnvFile      string
 	runFailFast     bool
+	runEnvironment  string
 )
 
 var runCmd = &cobra.Command{
@@ -30,7 +32,10 @@ For 'existing' provider, it skips cluster creation and only installs plugins.`,
   klastr run --template production.yaml
 
   # Deploy with environment variables
-  klastr run --template template.yaml --env secrets.env`,
+  klastr run --template template.yaml --env secrets.env
+
+  # Deploy using environment overlay
+  klastr run --env production`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		log := newLogger("")
 
@@ -39,11 +44,23 @@ For 'existing' provider, it skips cluster creation and only installs plugins.`,
 			return fmt.Errorf("failed to load env file: %w", err)
 		}
 
-		// Load config
-		log.Info("Loading template from %s...\n", runTemplateFile)
-		cfg, err := template.Load(runTemplateFile)
-		if err != nil {
-			return fmt.Errorf("failed to load template: %w", err)
+		var cfg *template.Template
+		var err error
+
+		// Load config (from environment or file)
+		if runEnvironment != "" {
+			log.Info("Loading environment %s...\n", runEnvironment)
+			envManager := env.NewManager(".")
+			cfg, err = envManager.Load(runEnvironment)
+			if err != nil {
+				return fmt.Errorf("failed to load environment: %w", err)
+			}
+		} else {
+			log.Info("Loading template from %s...\n", runTemplateFile)
+			cfg, err = template.Load(runTemplateFile)
+			if err != nil {
+				return fmt.Errorf("failed to load template: %w", err)
+			}
 		}
 
 		log.Info("\n")
@@ -112,7 +129,8 @@ For 'existing' provider, it skips cluster creation and only installs plugins.`,
 func init() {
 	runCmd.Flags().StringVarP(&runTemplateFile, "template", "t", "template.yaml", "cluster template file")
 	runCmd.Flags().StringVarP(&runTemplateFile, "file", "f", "template.yaml", "cluster template file (alias for -t)")
-	runCmd.Flags().StringVarP(&runEnvFile, "env", "e", ".env", "environment file for secrets")
+	runCmd.Flags().StringVarP(&runEnvFile, "env-file", "e", ".env", "environment file for secrets")
+	runCmd.Flags().StringVarP(&runEnvironment, "environment", "E", "", "environment overlay to use (dev, staging, production)")
 	runCmd.Flags().BoolVar(&runFailFast, "fail-fast", false, "stop at first plugin failure")
 	rootCmd.AddCommand(runCmd)
 }

@@ -12,6 +12,7 @@
 | [`uninstall`](#uninstall) | Uninstall plugins from a cluster (keeps cluster) |
 | [`status`](#status) | Show cluster and plugin status |
 | [`destroy`](#destroy) | Destroy the cluster |
+| [`env`](#env) | Manage multi-environment configurations |
 | [`get`](#get) | Subcommands for retrieving cluster information |
 | [`check`](#check) | Verify that all prerequisites are installed |
 | [`switch`](#switch) | Switch kubectl context between clusters |
@@ -397,6 +398,148 @@ klastr destroy [flags]
 klastr destroy --template template.yaml
 klastr destroy --name my-cluster
 ```
+
+---
+
+## `env`
+
+Manage multi-environment configurations for different deployment targets (dev, staging, production).
+
+Uses an overlay system similar to Kustomize where a base configuration is patched with environment-specific values.
+
+```bash
+klastr env [command]
+```
+
+### Directory Structure
+
+```
+my-cluster/
+├── klastr.yaml              # Base configuration
+└── environments/
+    ├── dev/
+    │   └── overlay.yaml     # Dev-specific patches
+    ├── staging/
+    │   └── overlay.yaml     # Staging-specific patches
+    └── production/
+        └── overlay.yaml     # Production-specific patches
+```
+
+### `env list`
+
+List all available environments.
+
+```bash
+klastr env list
+```
+
+**Example output:**
+```
+ENVIRONMENT  DESCRIPTION
+-----------  -----------
+dev          Development environment
+staging      Staging environment  
+production   Production environment
+```
+
+### `env create <name>`
+
+Create a new environment overlay.
+
+```bash
+klastr env create <name> [flags]
+```
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--base` | `../../` | Path to base configuration |
+
+**Examples:**
+```bash
+# Create dev environment
+klastr env create dev
+
+# Create production with custom base path
+klastr env create production --base ./base-config
+```
+
+### `env show <name>`
+
+Show the effective configuration for an environment (base + patches applied).
+
+```bash
+klastr env show <name>
+```
+
+**Example:**
+```bash
+klastr env show production
+```
+
+### Using Environments
+
+All main commands support the `--environment` (or `-E`) flag:
+
+```bash
+# Deploy dev environment
+klastr run --environment dev
+
+# Validate staging configuration
+klastr lint --environment staging
+
+# Upgrade production
+klastr upgrade --environment production
+
+# Check status
+klastr status --environment dev
+```
+
+### Overlay Configuration
+
+The `overlay.yaml` file defines environment-specific patches:
+
+```yaml
+name: production
+description: Production environment
+base: ../../                    # Relative path to base config
+patches:
+  - target: name                # Patch cluster name
+    value: myapp-prod
+  - target: cluster.workers     # Patch worker count
+    value: 5
+  - target: cluster.controlPlanes
+    value: 3
+  - target: plugins.monitoring.enabled
+    value: true
+  - target: plugins.certManager.enabled
+    value: true
+values:                         # Variables for templating
+  DOMAIN: example.com
+  LOG_LEVEL: warn
+```
+
+### Patch Targets
+
+Available patch targets:
+
+| Target | Type | Description |
+|--------|------|-------------|
+| `name` | string | Cluster name |
+| `cluster.controlPlanes` | int | Number of control plane nodes |
+| `cluster.workers` | int | Number of worker nodes |
+| `cluster.version` | string | Kubernetes version |
+| `provider.type` | string | Provider type |
+| `provider.kubeconfig` | string | Kubeconfig path |
+| `provider.context` | string | Kubectl context |
+| `plugins.storage.enabled` | bool | Enable storage plugin |
+| `plugins.ingress.enabled` | bool | Enable ingress plugin |
+| `plugins.monitoring.enabled` | bool | Enable monitoring plugin |
+| `plugins.dashboard.enabled` | bool | Enable dashboard plugin |
+| `plugins.certManager.enabled` | bool | Enable cert-manager plugin |
+| `snapshot.enabled` | bool | Enable S3 snapshots |
+| `snapshot.bucket` | string | S3 bucket name |
+| `snapshot.prefix` | string | S3 key prefix |
+| `snapshot.region` | string | AWS region |
 
 ---
 

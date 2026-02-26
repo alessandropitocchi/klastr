@@ -1,0 +1,15 @@
+name: staging
+description: Staging environment
+base: ../../
+patches:
+  - target: name
+    value: myapp-staging
+  - target: cluster.workers
+    value: 2
+  - target: plugins.ingress.enabled
+    value: true
+  - target: plugins.monitoring.enabled
+    value: true
+values:
+  DOMAIN: staging.example.com
+  LOG_LEVEL: info

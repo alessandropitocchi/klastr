@@ -97,7 +97,7 @@ func TestLoader_MergeTemplates(t *testing.T) {
 	}
 
 	// Merge
-	loader.mergeTemplates(base, overlay)
+	loader.MergeTemplates(base, overlay)
 
 	// Verify merge results
 	if base.Name != "overlay-cluster" {

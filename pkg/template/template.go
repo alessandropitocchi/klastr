@@ -596,7 +596,7 @@ func (l *Loader) LoadFromDirectory(dir string) (*Template, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to load %s: %w", f, err)
 		}
-		l.mergeTemplates(&merged, tmpl)
+		l.MergeTemplates(&merged, tmpl)
 	}
 
 	if err := merged.Validate(); err != nil {
@@ -633,7 +633,9 @@ func (l *Loader) findYAMLFiles(dir string) ([]string, error) {
 
 // mergeTemplates merges overlay template into base template.
 // Later files override earlier ones for simple fields.
-func (l *Loader) mergeTemplates(base, overlay *Template) {
+// MergeTemplates merges overlay template into base template.
+// Later files override earlier ones for simple fields, lists are additive.
+func (l *Loader) MergeTemplates(base, overlay *Template) {
 	// Merge name (overlay wins if non-empty)
 	if overlay.Name != "" {
 		base.Name = overlay.Name

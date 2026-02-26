@@ -62,6 +62,28 @@ go build -o klastr ./cmd/deploycluster
 ./klastr destroy --template template.yaml
 ```
 
+### Multi-Environment Support
+
+Manage multiple environments (dev, staging, production) with overlays:
+
+```bash
+# Create environments
+./klastr env create dev
+./klastr env create staging
+./klastr env create production
+
+# Deploy specific environment
+./klastr run --environment dev
+./klastr run --environment staging
+./klastr run --environment production
+
+# List and show environments
+./klastr env list
+./klastr env show production
+```
+
+See [Multi-Environment Configuration](docs/configuration.md#multi-environment-configuration) for details.
+
 ## Configuration Examples
 
 ### Local Cluster (kind)

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/alessandropitocchi/deploy-cluster/pkg/env"
 	"github.com/alessandropitocchi/deploy-cluster/pkg/linter"
 	"github.com/alessandropitocchi/deploy-cluster/pkg/template"
 	"github.com/spf13/cobra"
@@ -12,6 +13,7 @@ import (
 var (
 	lintTemplateFile string
 	lintStrict       bool
+	lintEnvironment  string
 )
 
 var lintCmd = &cobra.Command{
@@ -31,9 +33,19 @@ Use --strict to treat warnings as errors.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		log := newLogger("")
 
-		// Load config
-		log.Info("Loading template from %s...\n", lintTemplateFile)
-		cfg, err := template.Load(lintTemplateFile)
+		var cfg *template.Template
+		var err error
+
+		// Load config (from environment or file)
+		if lintEnvironment != "" {
+			log.Info("Loading environment %s...\n", lintEnvironment)
+			envManager := env.NewManager(".")
+			cfg, err = envManager.Load(lintEnvironment)
+		} else {
+			log.Info("Loading template from %s...\n", lintTemplateFile)
+			cfg, err = template.Load(lintTemplateFile)
+		}
+
 		if err != nil {
 			// Even if Load fails, try to lint what we have
 			log.Error("Template validation failed: %v\n", err)
@@ -64,6 +76,7 @@ Use --strict to treat warnings as errors.`,
 func init() {
 	lintCmd.Flags().StringVarP(&lintTemplateFile, "template", "t", "template.yaml", "cluster template file")
 	lintCmd.Flags().StringVarP(&lintTemplateFile, "file", "f", "template.yaml", "cluster template file (alias for -t)")
+	lintCmd.Flags().StringVarP(&lintEnvironment, "environment", "E", "", "environment overlay to use")
 	lintCmd.Flags().BoolVar(&lintStrict, "strict", false, "treat warnings as errors")
 	rootCmd.AddCommand(lintCmd)
 }

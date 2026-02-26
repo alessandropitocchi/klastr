@@ -59,11 +59,6 @@ func installPlugins(cfg *template.Template, kubecontext string, failFast bool) [
 	// Install all plugins
 	results := manager.InstallAll(enabledPlugins, opts)
 
-	// Print summary
-	if len(results) > 0 {
-		printPluginSummary(results, log)
-	}
-
 	return results
 }
 

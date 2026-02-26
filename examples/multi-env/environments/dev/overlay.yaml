@@ -1,0 +1,15 @@
+name: dev
+description: Development environment
+base: ../../
+patches:
+  - target: name
+    value: myapp-dev
+  - target: cluster.workers
+    value: 0
+  - target: plugins.ingress.enabled
+    value: true
+  - target: plugins.dashboard.enabled
+    value: true
+values:
+  DOMAIN: dev.localhost
+  LOG_LEVEL: debug
