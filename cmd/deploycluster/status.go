@@ -17,6 +17,7 @@ import (
 
 var (
 	statusTemplateFile string
+	statusName         string
 )
 
 var statusCmd = &cobra.Command{
@@ -24,9 +25,22 @@ var statusCmd = &cobra.Command{
 	Short: "Show the current status of a cluster",
 	Long:  `Show the current status of a cluster, including existence and installed plugins.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := template.Load(statusTemplateFile)
-		if err != nil {
-			return fmt.Errorf("failed to load template: %w", err)
+		var cfg *template.Template
+		var err error
+
+		if statusName != "" {
+			// Use provided name with default kind provider
+			cfg = &template.Template{
+				Name: statusName,
+				Provider: template.ProviderTemplate{
+					Type: "kind",
+				},
+			}
+		} else {
+			cfg, err = template.Load(statusTemplateFile)
+			if err != nil {
+				return fmt.Errorf("failed to load template: %w", err)
+			}
 		}
 
 		// Check cluster existence
@@ -179,5 +193,6 @@ var statusCmd = &cobra.Command{
 func init() {
 	statusCmd.Flags().StringVarP(&statusTemplateFile, "template", "t", "template.yaml", "cluster template file")
 	statusCmd.Flags().StringVarP(&statusTemplateFile, "file", "f", "template.yaml", "cluster template file (alias for -t)")
+	statusCmd.Flags().StringVarP(&statusName, "name", "n", "", "cluster name (overrides config)")
 	rootCmd.AddCommand(statusCmd)
 }
