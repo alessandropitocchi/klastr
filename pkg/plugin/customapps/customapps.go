@@ -241,7 +241,7 @@ func (p *Plugin) resolveValues(app template.CustomAppTemplate) (string, func(), 
 			return "", nil, fmt.Errorf("failed to marshal values: %w", err)
 		}
 
-		tmpFile, err := os.CreateTemp("", "deploy-cluster-values-*.yaml")
+		tmpFile, err := os.CreateTemp("", "klastr-values-*.yaml")
 		if err != nil {
 			return "", nil, fmt.Errorf("failed to create temp values file: %w", err)
 		}

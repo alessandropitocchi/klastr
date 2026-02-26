@@ -1,6 +1,6 @@
 # Existing Cluster Provider
 
-The `existing` provider allows you to deploy-cluster plugins to an existing Kubernetes cluster that was created outside of deploy-cluster.
+The `existing` provider allows you to klastr plugins to an existing Kubernetes cluster that was created outside of klastr.
 
 ## Use Cases
 
@@ -52,10 +52,10 @@ plugins:
 
 ```bash
 # Use current kubeconfig and context
-deploy-cluster run --template template-existing.yaml
+klastr run --template template-existing.yaml
 
 # Specify kubeconfig and context
-deploy-cluster run --template template-existing.yaml
+klastr run --template template-existing.yaml
 ```
 
 With template:
@@ -71,19 +71,19 @@ provider:
 
 ```bash
 export KUBECONFIG=~/.kube/my-cluster-config
-deploy-cluster run --template template.yaml
+klastr run --template template.yaml
 ```
 
 ### Drift Detection on Existing Cluster
 
 ```bash
-deploy-cluster drift --template template-existing.yaml
+klastr drift --template template-existing.yaml
 ```
 
 ### Upgrade Plugins
 
 ```bash
-deploy-cluster upgrade --template template-existing.yaml
+klastr upgrade --template template-existing.yaml
 ```
 
 ## Limitations
@@ -95,7 +95,7 @@ deploy-cluster upgrade --template template-existing.yaml
 ## Security Notes
 
 - The kubeconfig is read but never modified
-- Cluster credentials are not stored by deploy-cluster
+- Cluster credentials are not stored by klastr
 - All kubectl/helm operations use the provided kubeconfig
 
 ## Troubleshooting
@@ -107,7 +107,7 @@ Ensure the kubeconfig path is correct:
 ls -la ~/.kube/config
 # or
 export KUBECONFIG=/path/to/your/config
-deploy-cluster run --template template.yaml
+klastr run --template template.yaml
 ```
 
 ### "cannot connect to existing cluster"

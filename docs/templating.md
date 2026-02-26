@@ -1,6 +1,6 @@
 # Advanced Templating
 
-deploy-cluster supports Go templates in `template.yaml` files, allowing dynamic configuration based on environment variables, git information, and more.
+klastr supports Go templates in `template.yaml` files, allowing dynamic configuration based on environment variables, git information, and more.
 
 ## Overview
 
@@ -196,7 +196,7 @@ plugins:
     zone: "{{ env "ZONE" "example.com" }}"
 ```
 
-## Using with deploy-cluster
+## Using with klastr
 
 Templates are processed automatically when loading the template file:
 
@@ -207,7 +207,7 @@ export WORKERS="5"
 export CF_API_TOKEN="your-token"
 
 # Create cluster (template is processed automatically)
-deploy-cluster run --template template.yaml
+klastr run --template template.yaml
 ```
 
 ### Loading Additional Env Files
@@ -216,10 +216,10 @@ You can specify additional environment files:
 
 ```bash
 # Load from .env file
-deploy-cluster run --template template.yaml --env .env
+klastr run --template template.yaml --env .env
 
 # Or use environment variables directly
-CLUSTER_NAME=prod WORKERS=5 deploy-cluster run --template template.yaml
+CLUSTER_NAME=prod WORKERS=5 klastr run --template template.yaml
 ```
 
 ## Validation
@@ -227,7 +227,7 @@ CLUSTER_NAME=prod WORKERS=5 deploy-cluster run --template template.yaml
 The `lint` command validates templates including template syntax:
 
 ```bash
-deploy-cluster lint --template template.yaml
+klastr lint --template template.yaml
 ```
 
 If template processing fails, you'll get an error:
@@ -291,7 +291,7 @@ env | grep CLUSTER_NAME
 
 Use the `lint` command to catch syntax errors:
 ```bash
-deploy-cluster lint --template template.yaml
+klastr lint --template template.yaml
 ```
 
 ## See Also

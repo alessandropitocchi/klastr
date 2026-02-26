@@ -24,7 +24,7 @@
 Generates a `template.yaml` template file via an interactive wizard that guides you through plugin and option selection.
 
 ```bash
-deploy-cluster init [flags]
+klastr init [flags]
 ```
 
 ### Flags
@@ -37,10 +37,10 @@ deploy-cluster init [flags]
 
 ```bash
 # Generate template.yaml in the current directory
-deploy-cluster init
+klastr init
 
 # Generate with custom name
-deploy-cluster init -o my-cluster.yaml
+klastr init -o my-cluster.yaml
 ```
 
 The wizard asks in sequence:
@@ -56,7 +56,7 @@ The wizard asks in sequence:
 Validates the template file for errors, warnings, and best practices before creating or upgrading a cluster.
 
 ```bash
-deploy-cluster lint [flags]
+klastr lint [flags]
 ```
 
 ### Flags
@@ -81,12 +81,12 @@ deploy-cluster lint [flags]
 
 ```bash
 # Basic lint
-$ deploy-cluster lint
+$ klastr lint
 
   ✓ No issues found!
 
 # Lint with warnings
-$ deploy-cluster lint --template my-cluster.yaml
+$ klastr lint --template my-cluster.yaml
 
   ⚠ [WARN] cluster.controlPlanes: using 2 control planes (even number) is not recommended for etcd quorum, use odd numbers (1, 3, 5)
   ℹ [INFO] plugins.storage: consider enabling storage plugin for multi-node clusters (PVC support)
@@ -94,7 +94,7 @@ $ deploy-cluster lint --template my-cluster.yaml
 Total: 2 issues (0 errors, 1 warnings, 1 info)
 
 # Strict mode (treats warnings as errors)
-$ deploy-cluster lint --strict
+$ klastr lint --strict
 ```
 
 ---
@@ -110,7 +110,7 @@ This command handles both:
 For `existing` provider, it skips cluster creation and only installs plugins.
 
 ```bash
-deploy-cluster run [flags]
+klastr run [flags]
 ```
 
 ### Flags
@@ -140,16 +140,16 @@ Plugins are installed in this order:
 
 ```bash
 # Deploy from template (creates cluster if needed)
-deploy-cluster run --template template.yaml
+klastr run --template template.yaml
 
 # Deploy with environment variables
-deploy-cluster run --template template.yaml --env production.env
+klastr run --template template.yaml --env production.env
 
 # Deploy with extended timeout
-deploy-cluster run --template template.yaml --timeout 10m
+klastr run --template template.yaml --timeout 10m
 
 # Deploy to existing cluster (provider: existing)
-deploy-cluster run --template template-existing.yaml
+klastr run --template template-existing.yaml
 ```
 
 ---
@@ -159,7 +159,7 @@ deploy-cluster run --template template-existing.yaml
 Updates an existing cluster by applying only the differences from the current template. The cluster is not recreated.
 
 ```bash
-deploy-cluster upgrade [flags]
+klastr upgrade [flags]
 ```
 
 ### Flags
@@ -189,10 +189,10 @@ deploy-cluster upgrade [flags]
 
 ```bash
 # Preview
-deploy-cluster upgrade --template template.yaml --dry-run
+klastr upgrade --template template.yaml --dry-run
 
 # Apply
-deploy-cluster upgrade --template template.yaml
+klastr upgrade --template template.yaml
 ```
 
 ---
@@ -202,7 +202,7 @@ deploy-cluster upgrade --template template.yaml
 Detects drift between the cluster's actual state and the desired state defined in the template. Identifies missing resources, orphan resources, and configuration differences.
 
 ```bash
-deploy-cluster drift [flags]
+klastr drift [flags]
 ```
 
 ### Flags
@@ -225,13 +225,13 @@ deploy-cluster drift [flags]
 
 ```bash
 # Basic drift detection
-deploy-cluster drift
+klastr drift
 
 # With specific template
-deploy-cluster drift --template production.yaml
+klastr drift --template production.yaml
 
 # Exit with error if drift detected (useful for CI/CD)
-deploy-cluster drift --exit-error
+klastr drift --exit-error
 ```
 
 ### Sample Output
@@ -262,7 +262,7 @@ See [Drift Detection](drift.md) for detailed documentation.
 Uninstalls all enabled plugins from an existing cluster **without destroying the cluster itself**. Useful for resetting plugin state or cleaning up before a fresh plugin install.
 
 ```bash
-deploy-cluster uninstall [flags]
+klastr uninstall [flags]
 ```
 
 ### Flags
@@ -289,10 +289,10 @@ Plugins are uninstalled in reverse installation order:
 
 ```bash
 # Uninstall all plugins
-deploy-cluster uninstall --template template.yaml
+klastr uninstall --template template.yaml
 
 # Uninstall with fail-fast
-deploy-cluster uninstall --template template.yaml --fail-fast
+klastr uninstall --template template.yaml --fail-fast
 ```
 
 ---
@@ -302,7 +302,7 @@ deploy-cluster uninstall --template template.yaml --fail-fast
 Shows the current cluster status: existence, installed plugins, ArgoCD repositories and applications.
 
 ```bash
-deploy-cluster status [flags]
+klastr status [flags]
 ```
 
 ### Flags
@@ -314,7 +314,7 @@ deploy-cluster status [flags]
 ### Example
 
 ```bash
-deploy-cluster status --template template.yaml
+klastr status --template template.yaml
 ```
 
 ---
@@ -324,7 +324,7 @@ deploy-cluster status --template template.yaml
 Destroys the cluster. Deletes all associated Docker containers.
 
 ```bash
-deploy-cluster destroy [flags]
+klastr destroy [flags]
 ```
 
 ### Flags
@@ -337,8 +337,8 @@ deploy-cluster destroy [flags]
 ### Example
 
 ```bash
-deploy-cluster destroy --template template.yaml
-deploy-cluster destroy --name my-cluster
+klastr destroy --template template.yaml
+klastr destroy --name my-cluster
 ```
 
 ---
@@ -352,7 +352,7 @@ Subcommands for retrieving cluster information.
 List all existing kind clusters.
 
 ```bash
-deploy-cluster get clusters
+klastr get clusters
 ```
 
 ### `get nodes <name>`
@@ -360,7 +360,7 @@ deploy-cluster get clusters
 List nodes of a specific cluster.
 
 ```bash
-deploy-cluster get nodes my-cluster
+klastr get nodes my-cluster
 ```
 
 ### `get kubeconfig <name>`
@@ -368,10 +368,10 @@ deploy-cluster get nodes my-cluster
 Print the kubeconfig of a cluster.
 
 ```bash
-deploy-cluster get kubeconfig my-cluster
+klastr get kubeconfig my-cluster
 
 # Save to file
-deploy-cluster get kubeconfig my-cluster > kubeconfig.yaml
+klastr get kubeconfig my-cluster > kubeconfig.yaml
 ```
 
 ---
@@ -381,13 +381,13 @@ deploy-cluster get kubeconfig my-cluster > kubeconfig.yaml
 Verifies that all required tools are installed and shows their versions.
 
 ```bash
-deploy-cluster check
+klastr check
 ```
 
 ### Example
 
 ```bash
-$ deploy-cluster check
+$ klastr check
 
 Prerequisites
 ─────────────
@@ -414,14 +414,14 @@ The command exits with an error if any prerequisite is missing.
 Switches the active kubectl context to a kind cluster. Without arguments, lists all clusters and highlights the current context.
 
 ```bash
-deploy-cluster switch [cluster-name]
+klastr switch [cluster-name]
 ```
 
 ### Example
 
 ```bash
 # List clusters with current context marker
-$ deploy-cluster switch
+$ klastr switch
 
 KIND CLUSTERS
 ─────────────
@@ -430,7 +430,7 @@ KIND CLUSTERS
   staging
 
 # Switch to a specific cluster
-$ deploy-cluster switch my-cluster
+$ klastr switch my-cluster
 Switched to context 'kind-my-cluster'
 ```
 
@@ -445,7 +445,7 @@ Manage cluster snapshots — export Kubernetes resources to disk or S3 and resto
 Export all non-system resources from the cluster to a local snapshot or S3.
 
 ```bash
-deploy-cluster snapshot save <name> [flags]
+klastr snapshot save <name> [flags]
 ```
 
 #### Flags
@@ -465,7 +465,7 @@ deploy-cluster snapshot save <name> [flags]
 #### What gets exported
 
 - Dynamic resource discovery via `kubectl api-resources` (captures CRDs too)
-- One file per resource, stored at `~/.deploy-cluster/snapshots/<name>/` (local) or S3
+- One file per resource, stored at `~/.klastr/snapshots/<name>/` (local) or S3
 - Sanitized: removes `resourceVersion`, `uid`, `managedFields`, `status`, etc.
 
 #### What gets excluded
@@ -479,19 +479,19 @@ deploy-cluster snapshot save <name> [flags]
 
 ```bash
 # Save all non-system resources locally
-deploy-cluster snapshot save before-upgrade --template template.yaml
+klastr snapshot save before-upgrade --template template.yaml
 
 # Save only specific namespaces
-deploy-cluster snapshot save my-snap --namespace app,monitoring --template template.yaml
+klastr snapshot save my-snap --namespace app,monitoring --template template.yaml
 
 # Save to S3 using flags
-deploy-cluster snapshot save my-snap --s3 --s3-bucket my-backups --s3-prefix clusters/prod/
+klastr snapshot save my-snap --s3 --s3-bucket my-backups --s3-prefix clusters/prod/
 
 # Save to S3 using environment variables
 export DEPLOY_CLUSTER_S3_BUCKET=my-backups
 export DEPLOY_CLUSTER_S3_PREFIX=clusters/prod/
 export AWS_REGION=us-east-1
-deploy-cluster snapshot save my-snap --s3
+klastr snapshot save my-snap --s3
 ```
 
 ### `snapshot restore <name>`
@@ -499,7 +499,7 @@ deploy-cluster snapshot save my-snap --s3
 Restore resources from a saved snapshot to the cluster.
 
 ```bash
-deploy-cluster snapshot restore <name> [flags]
+klastr snapshot restore <name> [flags]
 ```
 
 #### Flags
@@ -530,13 +530,13 @@ Each `kubectl apply` uses retry with exponential backoff for transient errors.
 
 ```bash
 # Preview restore from local snapshot
-deploy-cluster snapshot restore before-upgrade --dry-run --template template.yaml
+klastr snapshot restore before-upgrade --dry-run --template template.yaml
 
 # Restore from S3
-deploy-cluster snapshot restore my-snap --s3 --s3-bucket my-backups --s3-prefix clusters/prod/
+klastr snapshot restore my-snap --s3 --s3-bucket my-backups --s3-prefix clusters/prod/
 
 # Apply restore
-deploy-cluster snapshot restore before-upgrade --template template.yaml
+klastr snapshot restore before-upgrade --template template.yaml
 ```
 
 ### `snapshot list`
@@ -544,7 +544,7 @@ deploy-cluster snapshot restore before-upgrade --template template.yaml
 Display all saved snapshots with metadata.
 
 ```bash
-deploy-cluster snapshot list [flags]
+klastr snapshot list [flags]
 ```
 
 #### Flags
@@ -559,7 +559,7 @@ deploy-cluster snapshot list [flags]
 
 ```bash
 # List local snapshots
-$ deploy-cluster snapshot list
+$ klastr snapshot list
 
 SNAPSHOTS
 ─────────────────────────────────────────────────────────────
@@ -569,7 +569,7 @@ SNAPSHOTS
   Created: 2025-01-15 10:30:00
 
 # List S3 snapshots
-$ deploy-cluster snapshot list --s3 --s3-bucket my-backups
+$ klastr snapshot list --s3 --s3-bucket my-backups
 
 S3 SNAPSHOTS
 ─────────────────────────────────────────────────────────────
@@ -582,7 +582,7 @@ S3 SNAPSHOTS
 Permanently delete a snapshot from disk or S3.
 
 ```bash
-deploy-cluster snapshot delete <name> [flags]
+klastr snapshot delete <name> [flags]
 ```
 
 #### Flags
@@ -597,10 +597,10 @@ deploy-cluster snapshot delete <name> [flags]
 
 ```bash
 # Delete local snapshot
-deploy-cluster snapshot delete before-upgrade
+klastr snapshot delete before-upgrade
 
 # Delete S3 snapshot
-deploy-cluster snapshot delete my-snap --s3 --s3-bucket my-backups
+klastr snapshot delete my-snap --s3 --s3-bucket my-backups
 ```
 
 ---
@@ -628,9 +628,9 @@ snapshot:
 
 With this configuration, all snapshot commands automatically use S3:
 ```bash
-deploy-cluster snapshot save my-backup    # Saves to S3 automatically
-deploy-cluster snapshot list              # Lists from S3 automatically
-deploy-cluster snapshot restore my-backup # Restores from S3 automatically
+klastr snapshot save my-backup    # Saves to S3 automatically
+klastr snapshot list              # Lists from S3 automatically
+klastr snapshot restore my-backup # Restores from S3 automatically
 ```
 
 #### 2. Environment Variables
@@ -651,7 +651,7 @@ deploy-cluster snapshot restore my-backup # Restores from S3 automatically
 Use `--s3` flag with optional configuration flags:
 
 ```bash
-deploy-cluster snapshot save my-backup --s3 \
+klastr snapshot save my-backup --s3 \
   --s3-bucket my-k8s-backups \
   --s3-prefix clusters/production/ \
   --s3-region us-east-1
@@ -676,9 +676,9 @@ snapshot:
 
 ```bash
 # All commands automatically use S3
-deploy-cluster snapshot save before-upgrade
-deploy-cluster snapshot list
-deploy-cluster snapshot restore before-upgrade
+klastr snapshot save before-upgrade
+klastr snapshot list
+klastr snapshot restore before-upgrade
 ```
 
 #### AWS S3 with Environment Variables
@@ -691,9 +691,9 @@ export AWS_ACCESS_KEY_ID=AKIA...
 export AWS_SECRET_ACCESS_KEY=...
 
 # Must use --s3 flag with env var config
-deploy-cluster snapshot save before-upgrade --s3
-deploy-cluster snapshot list --s3
-deploy-cluster snapshot restore before-upgrade --s3
+klastr snapshot save before-upgrade --s3
+klastr snapshot list --s3
+klastr snapshot restore before-upgrade --s3
 ```
 
 #### MinIO (S3-Compatible)
@@ -717,7 +717,7 @@ export AWS_ACCESS_KEY_ID=minioadmin
 export AWS_SECRET_ACCESS_KEY=minioadmin
 export DEPLOY_CLUSTER_S3_ENDPOINT=http://localhost:9000
 
-deploy-cluster snapshot save my-snap --s3
+klastr snapshot save my-snap --s3
 ```
 
 ### S3 Storage Structure

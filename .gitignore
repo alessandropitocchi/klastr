@@ -3,3 +3,4 @@ known_hosts
 *.test
 *.exe
 .DS_Store
+klastr

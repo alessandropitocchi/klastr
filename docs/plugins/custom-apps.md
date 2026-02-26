@@ -166,7 +166,7 @@ The `upgrade` command runs `helm upgrade --install` for each app in the list. It
 ## Dry-run
 
 ```bash
-deploy-cluster upgrade --template template.yaml --dry-run
+klastr upgrade --template template.yaml --dry-run
 ```
 
 Output:
@@ -180,7 +180,7 @@ Output:
 ## Status
 
 ```bash
-deploy-cluster status --template template.yaml
+klastr status --template template.yaml
 ```
 
 ```

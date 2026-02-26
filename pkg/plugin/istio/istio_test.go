@@ -157,5 +157,5 @@ func (p *Plugin) getIstioctlPath(version string) (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf("%s/.deploy-cluster/istio/%s/bin/istioctl", home, version), nil
+	return fmt.Sprintf("%s/.klastr/istio/%s/bin/istioctl", home, version), nil
 }

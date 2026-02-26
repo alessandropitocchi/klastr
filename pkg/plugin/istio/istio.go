@@ -244,7 +244,7 @@ func (p *Plugin) ensureIstioctl(version string) (string, error) {
 		return "", fmt.Errorf("failed to get home directory: %w", err)
 	}
 
-	istioctlDir := fmt.Sprintf("%s/.deploy-cluster/istio/%s", home, version)
+	istioctlDir := fmt.Sprintf("%s/.klastr/istio/%s", home, version)
 	istioctlPath := fmt.Sprintf("%s/bin/istioctl", istioctlDir)
 
 	// Check if already downloaded

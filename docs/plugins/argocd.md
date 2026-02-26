@@ -118,7 +118,7 @@ repos:
 Run with `--env .env`:
 
 ```bash
-deploy-cluster run --template template.yaml --env .env
+klastr run --template template.yaml --env .env
 ```
 
 ### HTTPS Authentication with Token
@@ -221,7 +221,7 @@ The `upgrade` command for ArgoCD is intelligent:
 ### Dry-run
 
 ```bash
-deploy-cluster upgrade --template template.yaml --dry-run
+klastr upgrade --template template.yaml --dry-run
 ```
 
 ```

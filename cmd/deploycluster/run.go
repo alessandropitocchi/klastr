@@ -24,13 +24,13 @@ This command handles both:
 
 For 'existing' provider, it skips cluster creation and only installs plugins.`,
 	Example: `  # Deploy from template.yaml
-  deploy-cluster run
+  klastr run
 
   # Deploy with specific template
-  deploy-cluster run --template production.yaml
+  klastr run --template production.yaml
 
   # Deploy with environment variables
-  deploy-cluster run --template template.yaml --env secrets.env`,
+  klastr run --template template.yaml --env secrets.env`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		log := newLogger("")
 

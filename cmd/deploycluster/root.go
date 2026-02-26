@@ -16,9 +16,9 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "deploy-cluster",
+	Use:   "klastr",
 	Short: "Deploy Kubernetes clusters with plugins",
-	Long: `deploy-cluster is a CLI tool for deploying Kubernetes clusters
+	Long: `klastr is a CLI tool for deploying Kubernetes clusters
 on various providers (kind, k3d) with configurable topology
 and plugin support (ArgoCD, storage, ingress).`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {

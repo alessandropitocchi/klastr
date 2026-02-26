@@ -13,9 +13,9 @@
 ## Installation
 
 ```bash
-git clone https://github.com/alepito/deploy-cluster.git
-cd deploy-cluster
-go build -o deploy-cluster ./cmd/deploycluster
+git clone https://github.com/alepito/klastr.git
+cd klastr
+go build -o klastr ./cmd/deploycluster
 ```
 
 ## Quick Start
@@ -23,7 +23,7 @@ go build -o deploy-cluster ./cmd/deploycluster
 ### 1. Generate the template
 
 ```bash
-./deploy-cluster init
+./klastr init
 ```
 
 The interactive wizard guides you through:
@@ -39,7 +39,7 @@ The result is a ready-to-use `template.yaml` file.
 Before creating the cluster, validate the template for errors and best practices:
 
 ```bash
-./deploy-cluster lint
+./klastr lint
 ```
 
 This checks for:
@@ -52,7 +52,7 @@ This checks for:
 ### 3. Create the cluster
 
 ```bash
-./deploy-cluster run --template template.yaml
+./klastr run --template template.yaml
 ```
 
 The tool creates the kind cluster and automatically installs all configured plugins in the correct order.
@@ -60,7 +60,7 @@ The tool creates the kind cluster and automatically installs all configured plug
 ### 4. Check status
 
 ```bash
-./deploy-cluster status --template template.yaml
+./klastr status --template template.yaml
 ```
 
 Example output:
@@ -96,16 +96,16 @@ Edit `template.yaml` and apply changes without recreating the cluster:
 
 ```bash
 # Preview changes
-./deploy-cluster upgrade --template template.yaml --dry-run
+./klastr upgrade --template template.yaml --dry-run
 
 # Apply
-./deploy-cluster upgrade --template template.yaml
+./klastr upgrade --template template.yaml
 ```
 
 ### 6. Destroy the cluster
 
 ```bash
-./deploy-cluster destroy --template template.yaml
+./klastr destroy --template template.yaml
 ```
 
 ## Next Steps

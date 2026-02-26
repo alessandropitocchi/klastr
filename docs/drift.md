@@ -7,13 +7,13 @@ The `drift` command detects differences between your cluster's actual state and 
 Drift occurs when the cluster state diverges from the template configuration. This can happen due to:
 - Manual changes made directly to the cluster
 - Failed or partial deployments
-- Resources deleted outside of deploy-cluster
-- Version upgrades applied outside of deploy-cluster
+- Resources deleted outside of klastr
+- Version upgrades applied outside of klastr
 
 ## Usage
 
 ```bash
-deploy-cluster drift [flags]
+klastr drift [flags]
 ```
 
 ### Flags
@@ -52,7 +52,7 @@ Resources where configuration differs between cluster and template:
 ### Basic Drift Detection
 
 ```bash
-deploy-cluster drift
+klastr drift
 ```
 
 Output:
@@ -79,7 +79,7 @@ Use `--exit-error` for CI/CD pipelines:
 
 ```bash
 # In your CI pipeline
-deploy-cluster drift --template template.yaml --exit-error
+klastr drift --template template.yaml --exit-error
 
 # This will fail the build if drift is detected
 ```
@@ -87,7 +87,7 @@ deploy-cluster drift --template template.yaml --exit-error
 ### With Specific Template
 
 ```bash
-deploy-cluster drift --template production.yaml
+klastr drift --template production.yaml
 ```
 
 ## Common Scenarios
@@ -97,7 +97,7 @@ deploy-cluster drift --template production.yaml
 Someone manually deleted a resource:
 
 ```bash
-$ deploy-cluster drift
+$ klastr drift
 
 Drift Detection Results:
 ------------------------------------------------------------
@@ -111,7 +111,7 @@ Total: 1 drift items (1 missing, 0 modified, 0 orphans)
 
 Fix by re-applying the template:
 ```bash
-deploy-cluster upgrade --template template.yaml
+klastr upgrade --template template.yaml
 ```
 
 ### After Adding Resources
@@ -119,7 +119,7 @@ deploy-cluster upgrade --template template.yaml
 You installed something manually that should be in the template:
 
 ```bash
-$ deploy-cluster drift
+$ klastr drift
 
 Drift Detection Results:
 ------------------------------------------------------------
@@ -135,7 +135,7 @@ Fix by adding to template or uninstalling:
 ```bash
 # Option 1: Add to template, then upgrade
 # Edit template.yaml to include postgresql
-deploy-cluster upgrade --template template.yaml
+klastr upgrade --template template.yaml
 
 # Option 2: Uninstall the orphan
 helm uninstall postgresql
@@ -146,7 +146,7 @@ helm uninstall postgresql
 The cluster has a different version than specified in template:
 
 ```bash
-$ deploy-cluster drift
+$ klastr drift
 
 Drift Detection Results:
 ------------------------------------------------------------
@@ -160,7 +160,7 @@ Total: 1 drift items (0 missing, 1 modified, 0 orphans)
 
 Fix by upgrading:
 ```bash
-deploy-cluster upgrade --template template.yaml
+klastr upgrade --template template.yaml
 ```
 
 ## GitOps Workflow
@@ -170,19 +170,19 @@ Drift detection is essential for GitOps workflows:
 ```bash
 # 1. Make changes to template.yaml
 # 2. Validate changes
-deploy-cluster lint --template template.yaml
+klastr lint --template template.yaml
 
 # 3. Check current drift
-deploy-cluster drift --template template.yaml
+klastr drift --template template.yaml
 
 # 4. Preview changes
-deploy-cluster upgrade --template template.yaml --dry-run
+klastr upgrade --template template.yaml --dry-run
 
 # 5. Apply changes
-deploy-cluster upgrade --template template.yaml
+klastr upgrade --template template.yaml
 
 # 6. Verify no drift remains
-deploy-cluster drift --template template.yaml --exit-error
+klastr drift --template template.yaml --exit-error
 ```
 
 ## CI/CD Integration
@@ -202,9 +202,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       
-      - name: Setup deploy-cluster
+      - name: Setup klastr
         run: |
-          go build -o deploy-cluster ./cmd/deploycluster
+          go build -o klastr ./cmd/deploycluster
           
       - name: Configure kubectl
         run: |
@@ -212,7 +212,7 @@ jobs:
           
       - name: Detect Drift
         run: |
-          ./deploy-cluster drift --template template.yaml --exit-error
+          ./klastr drift --template template.yaml --exit-error
 ```
 
 ### GitLab CI Example
@@ -220,8 +220,8 @@ jobs:
 ```yaml
 drift-detection:
   script:
-    - go build -o deploy-cluster ./cmd/deploycluster
-    - ./deploy-cluster drift --template template.yaml --exit-error
+    - go build -o klastr ./cmd/deploycluster
+    - ./klastr drift --template template.yaml --exit-error
   only:
     - schedules
 ```
@@ -231,7 +231,7 @@ drift-detection:
 1. **Run drift detection regularly**:
    ```bash
    # Add to your daily checks
-   deploy-cluster drift
+   klastr drift
    ```
 
 2. **Use in CI/CD**:

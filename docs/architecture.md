@@ -1,13 +1,13 @@
-# deploy-cluster Architecture
+# klastr Architecture
 
 ## Overview
 
-deploy-cluster is a CLI tool written in Go for provisioning local Kubernetes clusters with automatic plugin installation. The architecture is based on two main abstractions: **Provider** and **Plugin**.
+klastr is a CLI tool written in Go for provisioning local Kubernetes clusters with automatic plugin installation. The architecture is based on two main abstractions: **Provider** and **Plugin**.
 
 ## Project Structure
 
 ```
-deploy-cluster/
+klastr/
 ├── cmd/deploycluster/           # CLI entrypoint
 │   ├── main.go                  # Main
 │   ├── root.go                  # Root command (cobra)
@@ -86,12 +86,12 @@ deploy-cluster/
 
 ## Execution Flow
 
-### `deploy-cluster init`
+### `klastr init`
 
 1. Generates a `Template` with default values
 2. Serializes to YAML and writes to file
 
-### `deploy-cluster lint`
+### `klastr lint`
 
 Validates the template without modifying the cluster:
 
@@ -99,7 +99,7 @@ Validates the template without modifying the cluster:
 2. **Run linters**: Checks cluster name, version, topology, ingress hosts, dependencies
 3. **Report issues**: Outputs errors, warnings, and info messages
 
-### `deploy-cluster run`
+### `klastr run`
 
 ```
 Load .env → Load template.yaml → Create cluster (Provider) → Install plugins
@@ -123,7 +123,7 @@ Load .env → Load template.yaml → Create cluster (Provider) → Install plugi
    - **Custom Apps**: Helm install/upgrade for each app
    - **ArgoCD**: Creates namespace → Applies manifest → Waits for ready → Adds repos → Creates Applications
 
-### `deploy-cluster upgrade`
+### `klastr upgrade`
 
 Updates plugins on an existing cluster:
 
@@ -133,7 +133,7 @@ Updates plugins on an existing cluster:
    - Most plugins: Re-apply configuration (idempotent)
    - ArgoCD: Diff-based update (adds new repos/apps, removes deleted ones)
 
-### `deploy-cluster drift detect`
+### `klastr drift detect`
 
 Detects drift between cluster state and template:
 
@@ -146,7 +146,7 @@ Detects drift between cluster state and template:
 4. **Generate report**: Output results in text/json/yaml format
 5. **Save history**: Store report for drift tracking
 
-### `deploy-cluster uninstall`
+### `klastr uninstall`
 
 Removes plugins without destroying the cluster:
 
@@ -154,7 +154,7 @@ Removes plugins without destroying the cluster:
 2. **Uninstall plugins**: In reverse installation order
 3. **Keep cluster**: The kind/k3d cluster remains running
 
-### `deploy-cluster destroy`
+### `klastr destroy`
 
 1. Loads template or uses the name passed via flag
 2. Calls `provider.Delete()` which runs `kind delete cluster`
@@ -325,7 +325,7 @@ Discover API resources → Export CRDs → Export Namespaces → Export cluster-
 1. **Discovery**: `kubectl api-resources -o wide --verbs=list,get` identifies all resource types (including CRDs)
 2. **Filtering**: Excludes transient resources (events, endpoints, pods), infrastructure (nodes, leases), and controller-managed resources (ownerReferences)
 3. **Sanitization**: Removes cluster-specific fields (resourceVersion, uid, managedFields, status)
-4. **Storage**: One file per resource at `~/.deploy-cluster/snapshots/<name>/`
+4. **Storage**: One file per resource at `~/.klastr/snapshots/<name>/`
 
 ### Restore Flow
 
@@ -338,7 +338,7 @@ Resources are applied in dependency order with retry and exponential backoff for
 ### Snapshot Directory Layout
 
 ```
-~/.deploy-cluster/snapshots/<name>/
+~/.klastr/snapshots/<name>/
 ├── metadata.yaml
 ├── crds/
 ├── namespaces/

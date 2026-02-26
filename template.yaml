@@ -1,5 +1,5 @@
 # ╔══════════════════════════════════════════════════════════════════════════════╗
-# ║                     deploy-cluster Configuration Template                    ║
+# ║                     klastr Configuration Template                    ║
 # ╚══════════════════════════════════════════════════════════════════════════════╝
 #
 # This is a starter template with all available options documented.
@@ -7,11 +7,11 @@
 #
 # Quick Start:
 #   1. Edit this file to customize your cluster
-#   2. Validate:  deploy-cluster lint --template template.yaml
-#   3. Run:       deploy-cluster run --template template.yaml
-#   4. Upgrade:   deploy-cluster upgrade --template template.yaml
+#   2. Validate:  klastr lint --template template.yaml
+#   3. Run:       klastr run --template template.yaml
+#   4. Upgrade:   klastr upgrade --template template.yaml
 #
-# Documentation: https://github.com/alessandropitocchi/deploy-cluster#readme
+# Documentation: https://github.com/alessandropitocchi/klastr#readme
 #
 
 # ═══════════════════════════════════════════════════════════════════════════════

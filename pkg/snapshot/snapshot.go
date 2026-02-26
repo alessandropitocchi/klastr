@@ -15,7 +15,7 @@ func snapshotsDir() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to get home directory: %w", err)
 	}
-	return filepath.Join(home, ".deploy-cluster", "snapshots"), nil
+	return filepath.Join(home, ".klastr", "snapshots"), nil
 }
 
 // snapshotDir returns the directory for a specific snapshot.

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**deploy-cluster** is a CLI tool for deploying Kubernetes clusters on kind (Kubernetes in Docker) or k3d (K3s in Docker). It allows users to define cluster topology and install plugins (storage, ingress, cert-manager, monitoring, dashboard, custom Helm apps, ArgoCD) from a single YAML template file.
+**klastr** is a CLI tool for deploying Kubernetes clusters on kind (Kubernetes in Docker) or k3d (K3s in Docker). It allows users to define cluster topology and install plugins (storage, ingress, cert-manager, monitoring, dashboard, custom Helm apps, ArgoCD) from a single YAML template file.
 
 ## Architecture
 
@@ -78,7 +78,7 @@ Several plugins support optional `ingress` sub-config to expose their UI (ArgoCD
 
 ### Build & Test
 ```bash
-go build -o deploy-cluster ./cmd/deploycluster
+go build -o klastr ./cmd/deploycluster
 go test ./...
 ```
 

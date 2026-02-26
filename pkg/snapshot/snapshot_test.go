@@ -19,7 +19,7 @@ func TestSnapshotList_EmptyDir(t *testing.T) {
 		// If no snapshots dir exists, should return nil
 		t.Fatalf("List() error = %v", err)
 	}
-	// May or may not be nil depending on whether .deploy-cluster/snapshots exists
+	// May or may not be nil depending on whether .klastr/snapshots exists
 	_ = snapshots
 }
 

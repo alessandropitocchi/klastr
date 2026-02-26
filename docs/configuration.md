@@ -76,7 +76,7 @@ argocd:
 
 ## Templating
 
-deploy-cluster supports Go templates in `template.yaml` for dynamic configuration:
+klastr supports Go templates in `template.yaml` for dynamic configuration:
 
 ```yaml
 name: "{{ env "CLUSTER_NAME" "my-cluster" }}"

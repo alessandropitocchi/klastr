@@ -68,18 +68,18 @@ The Kubernetes context follows the format `kind-<cluster-name>`:
 kubectl cluster-info --context kind-my-cluster
 
 # Export kubeconfig
-deploy-cluster get kubeconfig my-cluster > kubeconfig.yaml
+klastr get kubeconfig my-cluster > kubeconfig.yaml
 ```
 
 ## Useful Commands
 
 ```bash
 # List kind clusters
-deploy-cluster get clusters
+klastr get clusters
 # or: kind get clusters
 
 # List nodes
-deploy-cluster get nodes my-cluster
+klastr get nodes my-cluster
 # or: kind get nodes --name my-cluster
 
 # Access a Docker node

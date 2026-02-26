@@ -20,10 +20,10 @@ The generated template includes comprehensive comments explaining each option,
 with sensible defaults to get you started quickly. Edit the file to customize
 your cluster configuration.`,
 	Example: `  # Generate template.yaml in current directory
-  deploy-cluster init
+  klastr init
 
   # Generate with custom name
-  deploy-cluster init --output my-cluster.yaml`,
+  klastr init --output my-cluster.yaml`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Check if file already exists
 		if _, err := os.Stat(initOutput); err == nil {
@@ -39,8 +39,8 @@ your cluster configuration.`,
 		fmt.Printf("✓ Created %s\n", initOutput)
 		fmt.Println("\nNext steps:")
 		fmt.Printf("  1. Edit %s to customize your cluster\n", initOutput)
-		fmt.Printf("  2. Validate: deploy-cluster lint --template %s\n", initOutput)
-		fmt.Printf("  3. Run:      deploy-cluster run --template %s\n", initOutput)
+		fmt.Printf("  2. Validate: klastr lint --template %s\n", initOutput)
+		fmt.Printf("  3. Run:      klastr run --template %s\n", initOutput)
 		return nil
 	},
 }
@@ -53,7 +53,7 @@ func init() {
 // generateStarterTemplate creates a comprehensive starter template with all options documented
 func generateStarterTemplate() string {
 	return `# ╔══════════════════════════════════════════════════════════════════════════════╗
-# ║                     deploy-cluster Configuration Template                    ║
+# ║                     klastr Configuration Template                    ║
 # ╚══════════════════════════════════════════════════════════════════════════════╝
 #
 # This is a starter template with all available options documented.
@@ -61,11 +61,11 @@ func generateStarterTemplate() string {
 #
 # Quick Start:
 #   1. Edit this file to customize your cluster
-#   2. Validate:  deploy-cluster lint --template template.yaml
-#   3. Run:       deploy-cluster run --template template.yaml
-#   4. Upgrade:   deploy-cluster upgrade --template template.yaml
+#   2. Validate:  klastr lint --template template.yaml
+#   3. Run:       klastr run --template template.yaml
+#   4. Upgrade:   klastr upgrade --template template.yaml
 #
-# Documentation: https://github.com/alessandropitocchi/deploy-cluster#readme
+# Documentation: https://github.com/alessandropitocchi/klastr#readme
 #
 
 # ═══════════════════════════════════════════════════════════════════════════════

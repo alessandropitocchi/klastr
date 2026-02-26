@@ -55,7 +55,7 @@ func (p *Provider) Create(cfg *template.Template) error {
 // Delete is a no-op for existing clusters.
 // We don't delete clusters we didn't create.
 func (p *Provider) Delete(name string) error {
-	return fmt.Errorf("cannot delete existing cluster '%s': use 'destroy' only for clusters created by deploy-cluster", name)
+	return fmt.Errorf("cannot delete existing cluster '%s': use 'destroy' only for clusters created by klastr", name)
 }
 
 // GetKubeconfig returns the path to the kubeconfig file.
