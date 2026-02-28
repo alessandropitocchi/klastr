@@ -48,47 +48,47 @@ klastr check
 
 ```bash
 # Check prerequisites
-./klastr check
+klastr check
 
 # Generate a single template file
-./klastr init
+klastr init
 
 # Or generate a directory structure (recommended for complex setups)
-./klastr init --dir --output my-cluster/
+klastr init --dir --output my-cluster/
 
 # Validate the template before creating
-./klastr lint --template template.yaml
-# Or for directory: ./klastr lint --template my-cluster/
+klastr lint --template template.yaml
+# Or for directory: klastr lint --template my-cluster/
 
 # Create the cluster with all configured plugins
-./klastr run --template template.yaml
-# Or for directory: ./klastr run --template my-cluster/
+klastr run --template template.yaml
+# Or for directory: klastr run --template my-cluster/
 
 # Check status
-./klastr status --template template.yaml
+klastr status --template template.yaml
 
 # Update plugins without recreating the cluster
-./klastr upgrade --template template.yaml
+klastr upgrade --template template.yaml
 
 # Detect drift between cluster and template
-./klastr drift --template template.yaml
+klastr drift --template template.yaml
 
 # Switch kubectl context between clusters
-./klastr switch my-cluster
+klastr switch my-cluster
 
 # Save a snapshot of cluster resources
-./klastr snapshot save my-snapshot --template template.yaml
+klastr snapshot save my-snapshot --template template.yaml
 
 # Restore a snapshot (preview first with --dry-run)
-./klastr snapshot restore my-snapshot --dry-run --template template.yaml
-./klastr snapshot restore my-snapshot --template template.yaml
+klastr snapshot restore my-snapshot --dry-run --template template.yaml
+klastr snapshot restore my-snapshot --template template.yaml
 
 # List and delete snapshots
-./klastr snapshot list
-./klastr snapshot delete my-snapshot
+klastr snapshot list
+klastr snapshot delete my-snapshot
 
 # Destroy the cluster
-./klastr destroy --template template.yaml
+klastr destroy --template template.yaml
 ```
 
 ### Multi-Environment Support
@@ -97,18 +97,18 @@ Manage multiple environments (dev, staging, production) with overlays:
 
 ```bash
 # Create environments
-./klastr env create dev
-./klastr env create staging
-./klastr env create production
+klastr env create dev
+klastr env create staging
+klastr env create production
 
 # Deploy specific environment
-./klastr run --environment dev
-./klastr run --environment staging
-./klastr run --environment production
+klastr run --environment dev
+klastr run --environment staging
+klastr run --environment production
 
 # List and show environments
-./klastr env list
-./klastr env show production
+klastr env list
+klastr env show production
 ```
 
 See [Multi-Environment Configuration](docs/configuration.md#multi-environment-configuration) for details.
@@ -194,7 +194,7 @@ For complex setups, you can organize your configuration across multiple files in
 
 ```bash
 # Generate a directory structure
-./klastr init --dir --output my-cluster/
+klastr init --dir --output my-cluster/
 ```
 
 This creates:

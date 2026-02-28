@@ -212,7 +212,7 @@ jobs:
           
       - name: Detect Drift
         run: |
-          ./klastr drift --template template.yaml --exit-error
+          klastr drift --template template.yaml --exit-error
 ```
 
 ### GitLab CI Example
@@ -221,7 +221,7 @@ jobs:
 drift-detection:
   script:
     - go build -o klastr ./cmd/deploycluster
-    - ./klastr drift --template template.yaml --exit-error
+    - klastr drift --template template.yaml --exit-error
   only:
     - schedules
 ```

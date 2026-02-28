@@ -133,16 +133,16 @@ plugins:
 
 ```bash
 # Create k3d cluster
-./klastr run --template template-k3d.yaml
+klastr run --template template-k3d.yaml
 
 # Check status
-./klastr status --template template-k3d.yaml
+klastr status --template template-k3d.yaml
 
 # Upgrade plugins
-./klastr upgrade --template template-k3d.yaml
+klastr upgrade --template template-k3d.yaml
 
 # Destroy cluster
-./klastr destroy --template template-k3d.yaml
+klastr destroy --template template-k3d.yaml
 ```
 
 ## k3d vs kind
