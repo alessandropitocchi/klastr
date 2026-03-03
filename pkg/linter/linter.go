@@ -200,6 +200,70 @@ func (l *Linter) checkTopology(t *template.Template) []Issue {
 		})
 	}
 
+	// Check extra port mappings
+	issues = append(issues, l.checkPortMappings(t)...)
+
+	return issues
+}
+
+// checkPortMappings validates extra port mappings configuration.
+func (l *Linter) checkPortMappings(t *template.Template) []Issue {
+	var issues []Issue
+
+	for i, pm := range t.Cluster.ExtraPortMappings {
+		path := fmt.Sprintf("cluster.extraPortMappings[%d]", i)
+
+		// Validate container port
+		if pm.ContainerPort < 1 || pm.ContainerPort > 65535 {
+			issues = append(issues, Issue{
+				Severity: SeverityError,
+				Path:     path + ".containerPort",
+				Message:  fmt.Sprintf("containerPort %d is out of range (1-65535)", pm.ContainerPort),
+			})
+		}
+
+		// Validate host port
+		if pm.HostPort < 1 || pm.HostPort > 65535 {
+			issues = append(issues, Issue{
+				Severity: SeverityError,
+				Path:     path + ".hostPort",
+				Message:  fmt.Sprintf("hostPort %d is out of range (1-65535)", pm.HostPort),
+			})
+		}
+
+		// Validate protocol
+		if pm.Protocol != "" {
+			protocol := strings.ToUpper(pm.Protocol)
+			if protocol != "TCP" && protocol != "UDP" && protocol != "SCTP" {
+				issues = append(issues, Issue{
+					Severity: SeverityError,
+					Path:     path + ".protocol",
+					Message:  fmt.Sprintf("protocol %q is not valid (must be TCP, UDP, or SCTP)", pm.Protocol),
+				})
+			}
+		}
+
+		// Validate listen address if provided
+		if pm.ListenAddress != "" {
+			if net.ParseIP(pm.ListenAddress) == nil {
+				issues = append(issues, Issue{
+					Severity: SeverityError,
+					Path:     path + ".listenAddress",
+					Message:  fmt.Sprintf("listenAddress %q is not a valid IP address", pm.ListenAddress),
+				})
+			}
+		}
+
+		// Warning for privileged ports
+		if pm.HostPort < 1024 {
+			issues = append(issues, Issue{
+				Severity: SeverityWarning,
+				Path:     path + ".hostPort",
+				Message:  fmt.Sprintf("hostPort %d is a privileged port (requires root on Linux/Mac)", pm.HostPort),
+			})
+		}
+	}
+
 	return issues
 }
 

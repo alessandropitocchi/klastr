@@ -37,9 +37,18 @@ type ProviderTemplate struct {
 }
 
 type ClusterTemplate struct {
-	ControlPlanes int    `yaml:"controlPlanes"`
-	Workers       int    `yaml:"workers"`
-	Version       string `yaml:"version,omitempty"` // Kubernetes version
+	ControlPlanes     int                 `yaml:"controlPlanes"`
+	Workers           int                 `yaml:"workers"`
+	Version           string              `yaml:"version,omitempty"`           // Kubernetes version
+	ExtraPortMappings []PortMapping       `yaml:"extraPortMappings,omitempty"` // Additional host port mappings
+}
+
+// PortMapping defines a port mapping from host to container
+type PortMapping struct {
+	ContainerPort int    `yaml:"containerPort"`          // Port inside the container
+	HostPort      int    `yaml:"hostPort"`               // Port on the host
+	Protocol      string `yaml:"protocol,omitempty"`     // TCP or UDP (default: TCP)
+	ListenAddress string `yaml:"listenAddress,omitempty"` // Bind address on host (default: 0.0.0.0)
 }
 
 // SnapshotConfig holds S3 snapshot configuration.

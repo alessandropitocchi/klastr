@@ -31,6 +31,7 @@ type KindPortMapping struct {
 	ContainerPort int    `yaml:"containerPort"`
 	HostPort      int    `yaml:"hostPort"`
 	Protocol      string `yaml:"protocol,omitempty"`
+	ListenAddress string `yaml:"listenAddress,omitempty"`
 }
 
 // Provider implements the Provider interface for kind
@@ -176,6 +177,24 @@ nodeRegistration:
 			node.ExtraPortMappings = []KindPortMapping{
 				{ContainerPort: 80, HostPort: 80, Protocol: "TCP"},
 				{ContainerPort: 443, HostPort: 443, Protocol: "TCP"},
+			}
+		}
+		// Add custom port mappings to first control-plane
+		if i == 0 && len(cfg.Cluster.ExtraPortMappings) > 0 {
+			for _, pm := range cfg.Cluster.ExtraPortMappings {
+				protocol := pm.Protocol
+				if protocol == "" {
+					protocol = "TCP"
+				}
+				kindPM := KindPortMapping{
+					ContainerPort: pm.ContainerPort,
+					HostPort:      pm.HostPort,
+					Protocol:      protocol,
+				}
+				if pm.ListenAddress != "" {
+					kindPM.ListenAddress = pm.ListenAddress
+				}
+				node.ExtraPortMappings = append(node.ExtraPortMappings, kindPM)
 			}
 		}
 		kindCfg.Nodes = append(kindCfg.Nodes, node)
