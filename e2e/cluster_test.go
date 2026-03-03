@@ -152,7 +152,7 @@ cluster:
 plugins:
   ingress:
     enabled: true
-    type: nginx
+    type: traefik
 `, clusterName)
 
 	if err := os.WriteFile(templateFile, []byte(template), 0644); err != nil {

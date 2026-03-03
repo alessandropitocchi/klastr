@@ -59,7 +59,7 @@ plugins:
 plugins:
   ingress:
     enabled: true
-    type: nginx
+    type: traefik
 `
 	if err := os.WriteFile(filepath.Join(clusterDir, "plugins", "ingress.yaml"), []byte(ingressContent), 0644); err != nil {
 		t.Fatalf("Failed to write ingress.yaml: %v", err)
@@ -134,7 +134,7 @@ plugins:
 plugins:
   ingress:
     enabled: true
-    type: nginx
+    type: traefik
 `
 	if err := os.WriteFile(filepath.Join(clusterDir, "plugins", "01-ingress.yaml"), []byte(ingressContent), 0644); err != nil {
 		t.Fatalf("Failed to write ingress.yaml: %v", err)
