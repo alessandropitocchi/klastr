@@ -54,9 +54,9 @@ func (p *Plugin) Install(cfg interface{}, kubecontext string, providerType strin
 
 	switch ingressCfg.Type {
 	case "traefik":
-		return p.installTraefik(kubecontext, providerType)
+		return p.installTraefik(ingressCfg, kubecontext, providerType)
 	case "nginx-gateway-fabric":
-		return p.installNginxGatewayFabric(kubecontext)
+		return p.installNginxGatewayFabric(ingressCfg, kubecontext)
 	default:
 		return fmt.Errorf("unsupported ingress type: %s (supported: traefik, nginx-gateway-fabric)", ingressCfg.Type)
 	}
@@ -129,12 +129,15 @@ func (p *Plugin) DryRun(cfg interface{}, kubecontext string, providerType string
 			fmt.Printf("  OCI Chart: %s\n", nginxGatewayOCIChart)
 			fmt.Printf("  Namespace: %s\n", nginxGatewayNamespace)
 		}
+		if ingressCfg.Version != "" {
+			fmt.Printf("  Version: %s\n", ingressCfg.Version)
+		}
 	}
 	return nil
 }
 
 // installTraefik installs Traefik with Gateway API support
-func (p *Plugin) installTraefik(kubecontext string, providerType string) error {
+func (p *Plugin) installTraefik(cfg *template.IngressTemplate, kubecontext string, providerType string) error {
 	p.Log.Info("Installing Traefik ingress controller with Gateway API support...\n")
 
 	// Add Traefik Helm repo
@@ -182,9 +185,25 @@ func (p *Plugin) installTraefik(kubecontext string, providerType string) error {
 			"--set", "providers.kubernetesGateway.enabled=true",
 			"--set", "ports.web.exposedPort=80",
 			"--set", "ports.websecure.exposedPort=443",
-			"--wait",
-			"--timeout", p.Timeout.String(),
 		}
+
+		// Add version if specified
+		if cfg.Version != "" {
+			args = append(args, "--version", cfg.Version)
+		}
+
+		// Add values from file if specified
+		if cfg.ValuesFile != "" {
+			args = append(args, "--values", cfg.ValuesFile)
+		}
+
+		// Add inline values
+		for key, value := range cfg.Values {
+			args = append(args, "--set", fmt.Sprintf("%s=%v", key, value))
+		}
+
+		args = append(args, "--wait", "--timeout", p.Timeout.String())
+
 		cmd := execCommand("helm", args...)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
@@ -224,7 +243,7 @@ func (p *Plugin) uninstallTraefik(kubecontext string) error {
 }
 
 // installNginxGatewayFabric installs NGINX Gateway Fabric (F5) with Gateway API support via Helm OCI
-func (p *Plugin) installNginxGatewayFabric(kubecontext string) error {
+func (p *Plugin) installNginxGatewayFabric(cfg *template.IngressTemplate, kubecontext string) error {
 	p.Log.Info("Installing NGINX Gateway Fabric (Gateway API)...\n")
 
 	// Install Gateway API CRDs first
@@ -247,9 +266,25 @@ func (p *Plugin) installNginxGatewayFabric(kubecontext string) error {
 			"--namespace", nginxGatewayNamespace,
 			"--kube-context", kubecontext,
 			"--create-namespace",
-			"--wait",
-			"--timeout", p.Timeout.String(),
 		}
+
+		// Add version if specified
+		if cfg.Version != "" {
+			args = append(args, "--version", cfg.Version)
+		}
+
+		// Add values from file if specified
+		if cfg.ValuesFile != "" {
+			args = append(args, "--values", cfg.ValuesFile)
+		}
+
+		// Add inline values
+		for key, value := range cfg.Values {
+			args = append(args, "--set", fmt.Sprintf("%s=%v", key, value))
+		}
+
+		args = append(args, "--wait", "--timeout", p.Timeout.String())
+
 		cmd := execCommand("helm", args...)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr

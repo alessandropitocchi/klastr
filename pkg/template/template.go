@@ -118,13 +118,18 @@ type StorageTemplate struct {
 }
 
 type IngressTemplate struct {
-	Enabled bool   `yaml:"enabled"`
-	Type    string `yaml:"type"` // nginx, traefik
+	Enabled    bool                   `yaml:"enabled"`
+	Type       string                 `yaml:"type"`                 // traefik, nginx-gateway-fabric
+	Version    string                 `yaml:"version,omitempty"`    // Chart version (optional)
+	Values     map[string]interface{} `yaml:"values,omitempty"`     // Additional Helm values
+	ValuesFile string                 `yaml:"valuesFile,omitempty"` // Path to external values file
 }
 
 type CertManagerTemplate struct {
-	Enabled bool   `yaml:"enabled"`
-	Version string `yaml:"version,omitempty"` // cert-manager version (default: v1.16.3)
+	Enabled    bool                   `yaml:"enabled"`
+	Version    string                 `yaml:"version,omitempty"`    // cert-manager version (default: v1.16.3)
+	Values     map[string]interface{} `yaml:"values,omitempty"`     // Additional Helm values
+	ValuesFile string                 `yaml:"valuesFile,omitempty"` // Path to external values file
 }
 
 type ExternalDNSTemplate struct {
@@ -147,10 +152,12 @@ type IstioTemplate struct {
 }
 
 type MonitoringTemplate struct {
-	Enabled bool                       `yaml:"enabled"`
-	Type    string                     `yaml:"type"`              // prometheus
-	Version string                     `yaml:"version,omitempty"` // chart version (default: 72.6.2)
-	Ingress *MonitoringIngressTemplate `yaml:"ingress,omitempty"` // Ingress for Grafana UI
+	Enabled    bool                       `yaml:"enabled"`
+	Type       string                     `yaml:"type"`              // prometheus
+	Version    string                     `yaml:"version,omitempty"` // chart version (default: 72.6.2)
+	Ingress    *MonitoringIngressTemplate `yaml:"ingress,omitempty"` // Ingress for Grafana UI
+	Values     map[string]interface{}     `yaml:"values,omitempty"`  // Additional Helm values
+	ValuesFile string                     `yaml:"valuesFile,omitempty"` // Path to external values file
 }
 
 type MonitoringIngressTemplate struct {
@@ -159,10 +166,12 @@ type MonitoringIngressTemplate struct {
 }
 
 type DashboardTemplate struct {
-	Enabled bool                      `yaml:"enabled"`
-	Type    string                    `yaml:"type"`              // headlamp
-	Version string                    `yaml:"version,omitempty"` // chart version
-	Ingress *DashboardIngressTemplate `yaml:"ingress,omitempty"` // Ingress for dashboard UI
+	Enabled    bool                      `yaml:"enabled"`
+	Type       string                    `yaml:"type"`              // headlamp
+	Version    string                    `yaml:"version,omitempty"` // chart version
+	Ingress    *DashboardIngressTemplate `yaml:"ingress,omitempty"` // Ingress for dashboard UI
+	Values     map[string]interface{}    `yaml:"values,omitempty"`  // Additional Helm values
+	ValuesFile string                    `yaml:"valuesFile,omitempty"` // Path to external values file
 }
 
 type DashboardIngressTemplate struct {

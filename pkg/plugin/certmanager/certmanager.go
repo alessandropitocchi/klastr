@@ -150,6 +150,12 @@ func (p *Plugin) DryRun(cfg interface{}, kubecontext string, providerType string
 		fmt.Println("  Status: not installed")
 	}
 	fmt.Printf("  Manifest: %s\n", p.manifestURL(version))
+
+	// Note: cert-manager uses static manifests, values are not supported
+	if len(certCfg.Values) > 0 || certCfg.ValuesFile != "" {
+		fmt.Println("  Note: values/valuesFile not supported for cert-manager (uses static manifests)")
+	}
+
 	return nil
 }
 

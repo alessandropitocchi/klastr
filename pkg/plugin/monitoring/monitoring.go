@@ -134,6 +134,16 @@ func (p *Plugin) installPrometheus(cfg *template.MonitoringTemplate, kubecontext
 		"--timeout", p.Timeout.String(),
 	}
 
+	// Add values from file if specified
+	if cfg.ValuesFile != "" {
+		args = append(args, "--values", cfg.ValuesFile)
+	}
+
+	// Add inline values
+	for key, value := range cfg.Values {
+		args = append(args, "--set", fmt.Sprintf("%s=%v", key, value))
+	}
+
 	err := retry.Run(3, 5*time.Second, p.Log.Warn, func() error {
 		cmd := execCommand("helm", args...)
 		cmd.Stdout = os.Stdout

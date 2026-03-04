@@ -22,6 +22,8 @@ plugins:
 | `version` | string | `0.40.0` | no | Helm chart version |
 | `ingress.enabled` | bool | `false` | no | Create an Ingress for Headlamp |
 | `ingress.host` | string | - | if ingress enabled | Hostname for Headlamp |
+| `values` | object | - | no | Additional Helm values (inline) |
+| `valuesFile` | string | - | no | Path to external values file |
 
 ## How It Works
 
@@ -86,6 +88,34 @@ Headlamp offers:
 - Built-in YAML editor
 - Multi-cluster support
 - Extensible plugin system
+
+## Custom Values
+
+You can customize the Helm deployment using `values` (inline) or `valuesFile` (external file):
+
+```yaml
+plugins:
+  dashboard:
+    enabled: true
+    type: headlamp
+    values:
+      replicaCount: 2
+      service:
+        type: LoadBalancer
+      resources:
+        requests:
+          memory: "256Mi"
+          cpu: "250m"
+```
+
+Or use an external values file:
+```yaml
+plugins:
+  dashboard:
+    enabled: true
+    type: headlamp
+    valuesFile: ./headlamp-values.yaml
+```
 
 ## Verification
 

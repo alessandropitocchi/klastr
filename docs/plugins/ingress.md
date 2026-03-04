@@ -15,6 +15,9 @@ plugins:
 |-------|------|---------|:---:|-------------|
 | `enabled` | bool | `false` | yes | Enable the plugin |
 | `type` | string | - | yes | Controller type: `traefik` or `nginx-gateway-fabric` |
+| `version` | string | - | no | Chart version (default: latest) |
+| `values` | object | - | no | Additional Helm values (inline) |
+| `valuesFile` | string | - | no | Path to external values file |
 
 ## Supported Types
 
@@ -40,7 +43,7 @@ Features:
 - Suitable for production workloads
 - Advanced traffic management
 
-Installation method: Official manifests from GitHub releases
+Installation method: Helm OCI chart from `oci://ghcr.io/nginx/charts/nginx-gateway-fabric`
 
 ## Prerequisites
 
@@ -160,6 +163,36 @@ kubectl get gatewayclass
 
 # Test
 curl http://argocd.localhost
+```
+
+## Custom Values
+
+Both ingress controllers support custom Helm values:
+
+```yaml
+plugins:
+  ingress:
+    enabled: true
+    type: traefik
+    version: "34.0.0"  # Optional: specify chart version
+    values:
+      replicaCount: 2
+      resources:
+        requests:
+          memory: "256Mi"
+          cpu: "250m"
+      additionalArguments:
+        - "--log.level=DEBUG"
+```
+
+Or use an external values file:
+```yaml
+plugins:
+  ingress:
+    enabled: true
+    type: traefik
+    version: "34.0.0"
+    valuesFile: ./traefik-values.yaml
 ```
 
 ## Notes

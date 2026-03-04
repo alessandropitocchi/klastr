@@ -22,6 +22,8 @@ plugins:
 | `version` | string | `72.6.2` | no | Helm chart version |
 | `ingress.enabled` | bool | `false` | no | Create an Ingress for Grafana |
 | `ingress.host` | string | - | if ingress enabled | Hostname for Grafana |
+| `values` | object | - | no | Additional Helm values (inline) |
+| `valuesFile` | string | - | no | Path to external values file |
 
 ## How It Works
 
@@ -90,6 +92,41 @@ The chart includes dashboards for:
 - API server
 - etcd
 - CoreDNS
+
+## Custom Values
+
+You can customize the Helm deployment using `values` (inline) or `valuesFile` (external file):
+
+```yaml
+plugins:
+  monitoring:
+    enabled: true
+    type: prometheus
+    values:
+      grafana:
+        adminPassword: mypassword
+        persistence:
+          enabled: true
+          size: 10Gi
+      prometheus:
+        prometheusSpec:
+          retention: 30d
+          storageSpec:
+            volumeClaimTemplate:
+              spec:
+                resources:
+                  requests:
+                    storage: 50Gi
+```
+
+Or use an external values file:
+```yaml
+plugins:
+  monitoring:
+    enabled: true
+    type: prometheus
+    valuesFile: ./monitoring-values.yaml
+```
 
 ## Upgrade
 
