@@ -2,6 +2,7 @@ package ingress
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -200,9 +201,7 @@ func (p *Plugin) installTraefik(cfg *template.IngressTemplate, kubecontext strin
 		}
 
 		// Add inline values
-		for key, value := range cfg.Values {
-			args = append(args, "--set", fmt.Sprintf("%s=%v", key, value))
-		}
+		args = append(args, helmSetArgs(cfg.Values)...)
 
 		args = append(args, "--wait", "--timeout", p.Timeout.String())
 
@@ -326,9 +325,7 @@ func (p *Plugin) installNginxGatewayFabric(cfg *template.IngressTemplate, kubeco
 		}
 
 		// Add inline values
-		for key, value := range cfg.Values {
-			args = append(args, "--set", fmt.Sprintf("%s=%v", key, value))
-		}
+		args = append(args, helmSetArgs(cfg.Values)...)
 
 		args = append(args, "--wait", "--timeout", p.Timeout.String())
 
@@ -373,4 +370,25 @@ func (p *Plugin) uninstallNginxGatewayFabric(kubecontext string) error {
 
 	p.Log.Success("NGINX Gateway Fabric uninstalled\n")
 	return nil
+}
+
+// helmSetArgs converts values map to helm --set or --set-json arguments
+func helmSetArgs(values map[string]interface{}) []string {
+	var args []string
+	for key, value := range values {
+		switch v := value.(type) {
+		case map[string]interface{}:
+			// For nested objects, use --set-json
+			jsonBytes, _ := json.Marshal(v)
+			args = append(args, "--set-json", fmt.Sprintf("%s=%s", key, string(jsonBytes)))
+		case []interface{}:
+			// For arrays, use --set-json
+			jsonBytes, _ := json.Marshal(v)
+			args = append(args, "--set-json", fmt.Sprintf("%s=%s", key, string(jsonBytes)))
+		default:
+			// For simple values, use --set
+			args = append(args, "--set", fmt.Sprintf("%s=%v", key, value))
+		}
+	}
+	return args
 }
