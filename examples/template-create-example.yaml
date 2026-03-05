@@ -36,13 +36,13 @@ plugins:
             host: argocd.localhost
         repos:
         - name: app-repo
-          url: git@git.elmec.com:PITOCCHI/test-argo.git
+          url: https://github.com/myorg/myrepo.git
           type: git
           sshKeyFile: ~/.ssh/id_ed25519
         apps:
         - name: application-bootstrap
           namespace: argocd
-          repoURL: git@git.elmec.com:PITOCCHI/test-argo.git
+          repoURL: https://github.com/myorg/myrepo.git
           targetRevision: main
           path: argocd
           autoSync: true 
